@@ -1,41 +1,54 @@
+This is an experimental and unofficial Blender branch (https://www.blender.org/). Its main goal is to improve the performance of the compositor. It may tackle many if not all of the objectives described in this task: https://developer.blender.org/T74491
 
-.. Keep this document short & concise,
-   linking to external resources instead of including content in-line.
-   See 'release/text/readme.html' for the end user read-me.
+I tried to reuse as much of compositor code as possible but in the end I almost changed everything, it's a very different approach from the previous compositor. So it could be said it's a new compositor system. 
 
+Currently I'm adapting all image operations to this new system. Only the following nodes are implemented at the moment (don't try the others, don't work):
 
-Blender
-=======
+- All input nodes (including Memory Cache)
+- All output nodes
+- All color nodes
+- From distort group: Scale and Translate nodes
+- From convert group: Math node
+- All things from group and layout can used too.
 
-Blender is the free and open source 3D creation suite.
-It supports the entirety of the 3D pipeline-modeling, rigging, animation, simulation, rendering, compositing,
-motion tracking and video editing.
+These are some of the changes from the previous system (is explained from development point of view):
 
-.. figure:: https://code.blender.org/wp-content/uploads/2018/12/springrg.jpg
-   :scale: 50 %
-   :align: center
+About writing and reading pixels
+=================================
+-  In the previous system, writing and reading calls where executed pixel by pixel on every read (not saved on a buffer). So if there were many operations that were reading from this previous operation in the tree (connected to its output socket) the pixel would be calculated as many times as readers were reading. For complex operations this was been fixed by surrounding them with a WriteBufferOperation and a ReadBufferOperation which behaved as buffers and fixed the issue but this buffers were not recycled. I've never tried very complicated trees on the compositor but I think the memory consumption must be very high for very complicated trees which use many complex operations.
+- In the new system calculation and writing of the pixels are always done by rectangles on a precreated/recycled full operation size buffer. Writing is only and always done once for every operation, no matter how many readers there are. For CPU writing the operation its divided on as many rectangles as threads the system can execute at full performance, there is no need for the user to choose "chunk size" anymore. For OpenCL writing is divided  depending on the best work group size for the GPU device. Operations buffers are always recycled once writing and readings of the operation are finished. This avoids a lot of allocations and deallocations of buffers which could affect performance and memory consumption.
 
+About implementing image algorithms in operations
+=================================================
+- In the previous system when implementing an operation you had to overwrite "executePixel" and sometimes "executePixelSampled". And you have to implement "determineDependingAreaOfInterest" which I think is for telling "I need this area from the operations I need to read" so that it's buffered by ReadBufferOperation or WriteBufferOperation. And sometimes you need to implement initializeTileData to do precalculations that needed to read the full operations rects before writing, which was usually done in a single thread. I don't understand it yet very well, the system is fine it works, but is a bit complicated. I think you shouldn't care about sampling when implementing the algorithm, this is a decision of the reader if he wants sample the result of the operation. Neither you should need to tell I need this area from the operations I'm going to read, you just should get an entire buffer of the operations you need to read and read it in whichever way (sampling or pixel) and in any coordinate without needing to tell anyone. I guess this complication is caused because operations are not buffered by default and pixel by pixel calculation calls.
+- In the new system you just need to implement execPixels() where you first get the buffers of all the operations you need to read by calling getPixels on them. And then you define a lambda function for CPU write which will later receive all rectangles that must be written one by one on multithreading. In case of an operation that has OpenCL support, instead of doing a cpu lambda function, you define a kernel method in the same file which can be executed either by the cpu as c++ code or as a OpenCL kernel when is available and enabled (explained later). As in the previous system you still need to implement the determineResolution method when the operation have a predetermined resolution. On cpu writing you receive a WriteRectContext which you can use to check the total number of rects and the current pass you are in. This is useful for complicated algorithms in which you may need several passes to do precalculations before writing, you just override the method getNPasses() (default is 1) to tell how many passes you want. See ToneMapOperation as an example.
 
-Project Pages
--------------
+About implementing compatible CPU/GPU code for computing systems (OpenCL right now)
+================================================================
+- In the previous system only a few operations were implemented with OpenCL and were done separately for both C++ code and OpenCL code.
+- In the new system all the OpenCL/C++ code for operations that support it are 100% shared (up until now), to achieve this is neccesary to always use a few predefined macros for reading/writing pixels. This problem is already very well solved in Cycles, I just took code from it and modified or added what I needed. I did a tool "defmerge" so that I can write each kernel in the same cpp file as the operation, I just surround the kernel code by "#define OPENCL_CODE" and "#undef OPENCL_CODE". Later defmege will look through all the operations files for the code between OPENCL_CODE tags and merge it into a single file or string. The header "#include "COM_kernel_opencl.h"" is added and it uses a method from cycles that resolves all the includes and preprocessing stuff so that is ready for reading by OpenCL. I'll try to implement as many operations with kernels for OpenCL compatibility as possible but still many operations use very internal things of blender which are hard to implement in kernels. Others may need several passes to do precalculations and need synchronizing stuff, which would need very specific way of adding work to OpenCL. Right now I didn't try to implement such possibility, will see in the future if really necessary. And for most output/input operations don't have much sense because you are reading/writing resources. The way I implemented OpenCL compatibility is very abstracted, in the future it may be possible to add other computing systems as Cycles does for CUDA/OpenCL/Optix... without excessive work if necessary.
 
-- `Main Website <http://www.blender.org>`__
-- `Reference Manual <https://docs.blender.org/manual/en/latest/index.html>`__
-- `User Community <https://www.blender.org/community/>`__
+About vectorizing
+=================
+- In the previous system there were no vectoring at all.
+- In the new system there is the possibility to use vectors. Vectors types implementation taken from Cycles, just modified and added what was needed. Right now I'm  using sometimes vectors where possible for simplicity more than trying to improve performance, otherwise it would take a lot of time to get all the nodes available.
 
-Development
------------
+About new features
+==================
+Only added these 3 new features which I think was really necessary:
 
-- `Build Instructions <https://wiki.blender.org/wiki/Building_Blender>`__
-- `Code Review & Bug Tracker <https://developer.blender.org>`__
-- `Developer Forum <https://devtalk.blender.org>`__
-- `Developer Documentation <https://wiki.blender.org>`__
+- **Any data sockets**: I created a new socket type (green), it just intends to indicate to the user the he can input any kind of image data (1 (gray),3 (purple) or 4 channels (yellow)) and it will be treated appropiately (not converted). For output sockets it means that it will be same type of data as the main input socket. An example is the Scale node which it doesn't matter how many channels the data has, you just want to resize image.
+- **Memory Cache Node**: This is a feature I've seen a lot of people asking for, basically you place this node anywhere in the tree and all the previous operations result is cached in Memory RAM, if you modify a node ahead of this node it calculates everything from this point only, don't need to recalculate what is behing the Memory Cache Node. If you modify a parameter or the tree structure behind the Memory Cache Node it will automatically recalculate everything is behind and cache it. Of course you can place as many of this nodes as you want and should work as expected, being aware that it uses your RAM. How much? The last operation -> (n_channels * width * height * 4) bytes. I could implement this thanks to the hashParams() method that all operations must implement. Here you call "hashParam" on every parameter of the operation that if changed would imply a change in the output result. It's very important to hash the right parameters otherwise the system wouldn't be updated correctly. This is not only used for Memory Cache Node, is used in general to uniquely identify the operation with its current parameters in current and between executions.
+- **Previews and Viewers are now cached**: This is again thanks to what I said before. I think it's necessary to do this so that compositor execution don't depend on the UI, because it may have glitches or just calling the compositor execution when it really don't need update as in fact happens. For example if you disconnect a socket by pressing without releasing and connect it again in the same place it calls the compositor to recalculate everything when it's not necessary. So now if such thing happens, the compositor operations hashes would be exactly the same so it just returns the cached previews and viewers very fast. The added memory consumption that this implies it's very little, only the current previews because they are deleted when next execution is called (I have to duplicated them yes). I can't keep previews that I pass back to the node system tree between executions because of an internal blender implementation that its shared with other parts of blender and I dont want to touch it. But the right behavior would be that they are not deleted between executions (only if the user closes the preview) and the compositor(c++ part) decides to update/delete them or not.
 
+Removed options from UI
+=======================
+- **Buffers groups**: This is not needed anymore, as now all the operations are buffered.
+- **Chunk size**: Now how operations writing is divided is implementation defined (depending on the number of threads system can execute at full performance and best work group size for GPU devices). This how it must be since the user shouldn't care about this things.
+- **Two pass**: This option skipped the execution of some nodes and skipped low priority outputs (viewers and previews I guess) on first pass. I don't think this is needed anymore, because now only viewers or previews that need update are updated. Performance in general should improve and together with MemoryCacheNodes, I don't see much utility in doing a first pass to show something that is not going to be the final result (because it skips slow operations as blur for example). User should better try to put a MemoryCacheNode ahead of slow operations or ahead of nodes that he knows he rarely need to touch and work from there.
 
-License
--------
-
-Blender as a whole is licensed under the GNU Public License, Version 3.
-Individual files may have a different, but compatible license.
-
-See `blender.org/about/license <https://www.blender.org/about/license>`__ for details.
+Final words
+===========
+If someone may want to try it, I'll appreciate it if you report any issue you may find as there will be for sure. But don't use it with production files please, it's very experimental yet.
+When I finish adapting all operations I'll concentrate on fixing issues, making little improvements and getting people feedback to see if it really improves user experience respect the previous compositor and see what can be improved.
+I cannot know if this branch has any future in terms of Blender, but at least I can say I like this part of Blender and I want finish it leaving it in a usable state with all the nodes available as soon as possible. Only a big issue would stop me.
