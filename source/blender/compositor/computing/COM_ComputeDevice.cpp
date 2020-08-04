@@ -16,6 +16,21 @@
  * Copyright 2020, Blender Foundation.
  */
 
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD:source/blender/compositor/util/COM_MemBufferUtil.cpp
+#include "COM_MemBufferUtil.h"
+#include "BLI_Rect.h"
+#include "BLI_assert.h"
+#include <algorithm>
+#include <utility>
+
+namespace MemBufferUtil {
+
+}  // namespace MemBufferUtil
+
+=======
+>>>>>>> f7ffde26628... First commmit
 #include "COM_ComputeDevice.h"
 #include "BLI_assert.h"
 #include "COM_ExecutionManager.h"
@@ -25,4 +40,9 @@ ComputeDevice::ComputeDevice() : m_initialized(false)
 }
 ComputeDevice::~ComputeDevice()
 {
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> f7ffde26628... First commmit:source/blender/compositor/computing/COM_ComputeDevice.cpp
+>>>>>>> f7ffde26628... First commmit
