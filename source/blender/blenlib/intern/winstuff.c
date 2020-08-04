@@ -84,7 +84,10 @@ void BLI_windows_register_blend_extension(const bool background)
   char SysDir[FILE_MAXDIR];
   const char *ThumbHandlerDLL;
   char RegCmd[MAX_PATH * 2];
+  /* not needed for binaries other than blender.*/
+#  ifndef USE_STANDALONE
   char MBox[256];
+#  endif
   char *blender_app;
 #  ifndef _WIN64
   BOOL IsWOW64;
