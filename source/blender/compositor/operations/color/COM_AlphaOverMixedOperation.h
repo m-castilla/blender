@@ -16,7 +16,12 @@
  * Copyright 2011, Blender Foundation.
  */
 
+<<<<<<< HEAD:source/blender/compositor/operations/color/COM_AlphaOverMixedOperation.h
 #pragma once
+=======
+#ifndef __COM_ALPHAOVERMIXEDOPERATION_H__
+#define __COM_ALPHAOVERMIXEDOPERATION_H__
+>>>>>>> f7ffde26628... First commmit:source/blender/compositor/operations/COM_AlphaOverMixedOperation.h
 
 #include "COM_MixOperation.h"
 
