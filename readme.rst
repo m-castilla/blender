@@ -9,7 +9,7 @@ Currently I'm adapting all image operations to this new system. Only the followi
 - All color nodes
 - From distort group: Scale and Translate nodes
 - From convert group: Math node
-- All things from group and layout can used too.
+- All things from group and layout can be used too.
 
 These are some of the changes from the previous system (is explained from development point of view):
 
