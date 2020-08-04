@@ -22,14 +22,19 @@
 
 CurveBaseOperation::CurveBaseOperation() : NodeOperation()
 {
-  this->m_curveMapping = NULL;
+  this->m_curveMapping = nullptr;
+}
+void CurveBaseOperation::hashParams()
+{
+  NodeOperation::hashParams();
+  hashParam(m_curveMapping->changed_timestamp);
 }
 
 CurveBaseOperation::~CurveBaseOperation()
 {
   if (this->m_curveMapping) {
     BKE_curvemapping_free(this->m_curveMapping);
-    this->m_curveMapping = NULL;
+    this->m_curveMapping = nullptr;
   }
 }
 
@@ -41,7 +46,7 @@ void CurveBaseOperation::deinitExecution()
 {
   if (this->m_curveMapping) {
     BKE_curvemapping_free(this->m_curveMapping);
-    this->m_curveMapping = NULL;
+    this->m_curveMapping = nullptr;
   }
 }
 
