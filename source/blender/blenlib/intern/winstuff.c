@@ -36,7 +36,11 @@
 #  include "BLI_utildefines.h"
 #  include "BLI_winstuff.h"
 
-#  include "../blenkernel/BKE_global.h" /* G.background, bad level include (no function calls) */
+/* not needed for binaries other than blender. This header would force a dependency on blender
+ * kernel which is huge  and have lots of dependencies */
+#  ifndef USE_STANDALONE
+#    include "../blenkernel/BKE_global.h" /* G.background, bad level include (no function calls) */
+#  endif
 
 #  include "utf_winfunc.h"
 #  include "utfconv.h"
@@ -66,9 +70,12 @@ static void RegisterBlendExtension_Fail(HKEY root)
   if (root) {
     RegCloseKey(root);
   }
+/* not needed for binaries other than blender.*/
+#  ifndef USE_STANDALONE
   if (!G.background) {
     MessageBox(0, "Could not register file extension.", "Blender error", MB_OK | MB_ICONERROR);
   }
+#  endif
   TerminateProcess(GetCurrentProcess(), 1);
 }
 
@@ -86,7 +93,10 @@ void RegisterBlendExtension(void)
   char SysDir[FILE_MAXDIR];
   const char *ThumbHandlerDLL;
   char RegCmd[MAX_PATH * 2];
+  /* not needed for binaries other than blender.*/
+#  ifndef USE_STANDALONE
   char MBox[256];
+#  endif
   char *blender_app;
 #  ifndef _WIN64
   BOOL IsWOW64;
@@ -179,6 +189,8 @@ void RegisterBlendExtension(void)
 
   RegCloseKey(root);
   printf("success (%s)\n", usr_mode ? "user" : "system");
+/* not needed for binaries other than blender.*/
+#  ifndef USE_STANDALONE
   if (!G.background) {
     sprintf(MBox,
             "File extension registered for %s.",
@@ -186,6 +198,7 @@ void RegisterBlendExtension(void)
                        "all users");
     MessageBox(0, MBox, "Blender", MB_OK | MB_ICONINFORMATION);
   }
+#  endif
   TerminateProcess(GetCurrentProcess(), 0);
 }
 

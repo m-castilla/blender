@@ -16,31 +16,8 @@
 # ***** END GPL LICENSE BLOCK *****
 
 
-# -----------------------------------------------------------------------------
-# Build defmerger library
-
-# set(INC 
-#   .
-#   ../blenlib
-#   ../../../intern/guardedalloc
-#   ../../../intern/cycles
-#   ../makesdna
-# )
-
-# set(INC_SYS 
-#   defmerge.cpp
-#   defmerge.h
-# )
-
-# set(SRC 
-#   defmerge.cpp
-#   defmerge.h
-# )
-
-# set(LIB
-#   bf_blenlib
-#   cycles_util
-# )
+# Build defmerger executable
+# ---------------------------
 
 if(WIN32)
   include_directories(
@@ -52,20 +29,18 @@ if(WIN32)
   )
 endif()
 
-# blender_add_lib(defmerge "${SRC}" "${INC}" "${INC_SYS}" "${LIB}")
-
-# Build defmerger executable
-# ---------------------------
 set(SRC_EXEC 
-  ${SRC}
   defmerger.cpp
 )
 
+  # for winstuff.cw and winstuff_dir.c. winstuff.c has a dependency on blender kernel from not needed code for a binary other than blender. 
+  # With this we avoid such dependency. And it indicates that this is a binary that is not blender.
+  add_definitions(-DUSE_STANDALONE)
+
 if(WIN32)
   set(CMAKE_EXE_LINKER_FLAGS_DEBUG "${CMAKE_EXE_LINKER_FLAGS_DEBUG} /nodefaultlib:MSVCRT.lib")
-  # for winstuff.cw and winstuff_dir.c. winstuff.c has a dependency on blender kernel from not needed code for a binary other than blender. 
-  # With this we avoid such dependency.
-  add_definitions(-DUSE_STANDALONE)
+
+
 
   list(APPEND SRC_EXEC
     ../blenlib/intern/winstuff.c
