@@ -30,6 +30,7 @@ class BilateralBlurOperation : public NodeOperation, public QualityStepHelper {
 
  public:
   BilateralBlurOperation();
+  virtual void hashParams();
 
   /**
    * the inner loop of this program

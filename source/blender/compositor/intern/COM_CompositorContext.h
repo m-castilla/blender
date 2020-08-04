@@ -73,11 +73,6 @@ class CompositorContext {
    */
   bool m_hasActiveOpenCLDevices;
 
-  /**
-   * \brief Skip slow nodes
-   */
-  bool m_fastCalculation;
-
   /* \brief color management settings */
   const ColorManagedViewSettings *m_viewSettings;
   const ColorManagedDisplaySettings *m_displaySettings;
@@ -87,11 +82,58 @@ class CompositorContext {
    */
   const char *m_viewName;
 
+  size_t m_max_cache_bytes;
+
+  std::string m_execution_id;
+
+  int m_cpu_work_threads;
+  int m_preview_w, m_preview_h;
+
+ private:
+  CompositorContext();
+
  public:
   /**
    * \brief constructor initializes the context with default values.
    */
-  CompositorContext();
+  static CompositorContext build(const std::string &execution_id,
+                                 RenderData *rd,
+                                 Scene *scene,
+                                 bNodeTree *editingtree,
+                                 bool rendering,
+                                 const ColorManagedViewSettings *viewSettings,
+                                 const ColorManagedDisplaySettings *displaySettings,
+                                 const char *viewName);
+
+  bool isBreaked() const;
+
+  void setNCpuWorkThreads(int n_threads)
+  {
+    m_cpu_work_threads = n_threads;
+  }
+  int getNCpuWorkThreads() const
+  {
+    return m_cpu_work_threads;
+  }
+  void setExecutionId(const std::string &execution_id)
+  {
+    m_execution_id = execution_id;
+  }
+
+  std::string getExecutionId() const
+  {
+    return m_execution_id;
+  }
+
+  void setBufferCacheSize(size_t bytes)
+  {
+    m_max_cache_bytes = bytes;
+  }
+
+  size_t getBufferCacheSize() const
+  {
+    return m_max_cache_bytes;
+  }
 
   /**
    * \brief set the rendering field of the context
@@ -128,7 +170,7 @@ class CompositorContext {
   /**
    * \brief get the bnodetree of the context
    */
-  const bNodeTree *getbNodeTree() const
+  bNodeTree *getbNodeTree() const
   {
     return this->m_bnodetree;
   }
@@ -251,19 +293,6 @@ class CompositorContext {
     this->m_viewName = viewName;
   }
 
-  int getChunksize() const
-  {
-    return this->getbNodeTree()->chunksize;
-  }
-
-  void setFastCalculation(bool fastCalculation)
-  {
-    this->m_fastCalculation = fastCalculation;
-  }
-  bool isFastCalculation() const
-  {
-    return this->m_fastCalculation;
-  }
   bool isGroupnodeBufferEnabled() const
   {
     return (this->getbNodeTree()->flag & NTREE_COM_GROUPNODE_BUFFER) != 0;

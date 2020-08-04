@@ -9895,28 +9895,9 @@ static void rna_def_composite_nodetree(BlenderRNA *brna)
   RNA_def_property_enum_items(prop, node_quality_items);
   RNA_def_property_ui_text(prop, "Edit Quality", "Quality when editing");
 
-  prop = RNA_def_property(srna, "chunk_size", PROP_ENUM, PROP_NONE);
-  RNA_def_property_enum_sdna(prop, NULL, "chunksize");
-  RNA_def_property_enum_items(prop, node_chunksize_items);
-  RNA_def_property_ui_text(prop,
-                           "Chunksize",
-                           "Max size of a tile (smaller values gives better distribution "
-                           "of multiple threads, but more overhead)");
-
   prop = RNA_def_property(srna, "use_opencl", PROP_BOOLEAN, PROP_NONE);
   RNA_def_property_boolean_sdna(prop, NULL, "flag", NTREE_COM_OPENCL);
   RNA_def_property_ui_text(prop, "OpenCL", "Enable GPU calculations");
-
-  prop = RNA_def_property(srna, "use_groupnode_buffer", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", NTREE_COM_GROUPNODE_BUFFER);
-  RNA_def_property_ui_text(prop, "Buffer Groups", "Enable buffering of group nodes");
-
-  prop = RNA_def_property(srna, "use_two_pass", PROP_BOOLEAN, PROP_NONE);
-  RNA_def_property_boolean_sdna(prop, NULL, "flag", NTREE_TWO_PASS);
-  RNA_def_property_ui_text(prop,
-                           "Two Pass",
-                           "Use two pass execution during editing: first calculate fast nodes, "
-                           "second pass calculate all nodes");
 
   prop = RNA_def_property(srna, "use_viewer_border", PROP_BOOLEAN, PROP_NONE);
   RNA_def_property_boolean_sdna(prop, NULL, "flag", NTREE_VIEWER_BORDER);

@@ -52,7 +52,7 @@ class ChannelMatteOperation : public NodeOperation {
    * Default constructor
    */
   ChannelMatteOperation();
-
+  virtual void hashParams();
   /**
    * the inner loop of this program
    */

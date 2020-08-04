@@ -19,6 +19,7 @@
 #ifndef __COM_DEBUG_H__
 #define __COM_DEBUG_H__
 
+#include <ctime>
 #include <map>
 #include <string>
 
@@ -28,6 +29,7 @@ class Node;
 class NodeOperation;
 class ExecutionSystem;
 class ExecutionGroup;
+struct bContext;
 
 class DebugInfo {
  public:
@@ -51,9 +53,15 @@ class DebugInfo {
   static void execution_group_started(const ExecutionGroup *group);
   static void execution_group_finished(const ExecutionGroup *group);
 
-  static void graphviz(const ExecutionSystem *system);
+  static void update_graphviz(const ExecutionSystem *system);
+  static void save_graphviz();
 
-#ifdef COM_DEBUG
+  static void start_benchmark();
+  static void end_benchmark();
+
+  static void clear();
+
+#if defined(COM_DEBUG) || defined(DEBUG)
  protected:
   static int graphviz_operation(const ExecutionSystem *system,
                                 const NodeOperation *operation,
@@ -69,12 +77,18 @@ class DebugInfo {
   static bool graphviz_system(const ExecutionSystem *system, char *str, int maxlen);
 
  private:
+  static const int GRAPHVIZ_MAX_LENGTH = 3000000;
   static int m_file_index;
   static NodeNameMap m_node_names;        /**< map nodes to usable names for debug output */
   static OpNameMap m_op_names;            /**< map operations to usable names for debug output */
   static std::string m_current_node_name; /**< base name for all operations added by a node */
   static std::string m_current_op_name;   /**< base name for automatic sub-operations */
   static GroupStateMap m_group_states;    /**< for visualizing group states */
+  static char last_graphviz[GRAPHVIZ_MAX_LENGTH]; /**< saves last created update_graphviz of a
+                                                        execution system */
+  static clock_t start_bench_ticks;
+  static clock_t end_bench_ticks;
+  static bool bench_started;
 #endif
 };
 

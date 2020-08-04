@@ -35,7 +35,7 @@ class ChromaMatteOperation : public NodeOperation {
    * Default constructor
    */
   ChromaMatteOperation();
-
+  virtual void hashParams();
   /**
    * the inner loop of this program
    */

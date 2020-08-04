@@ -96,8 +96,10 @@ class NodeOperationBuilder {
    */
   ViewerOperation *m_active_viewer;
 
+  ExecutionSystem &m_sys;
+
  public:
-  NodeOperationBuilder(const CompositorContext *context, bNodeTree *b_nodetree);
+  NodeOperationBuilder(ExecutionSystem &sys, bNodeTree *b_nodetree);
   ~NodeOperationBuilder();
 
   const CompositorContext &context() const
@@ -105,7 +107,7 @@ class NodeOperationBuilder {
     return *m_context;
   }
 
-  void convertToOperations(ExecutionSystem *system);
+  void convertToOperations();
 
   void addOperation(NodeOperation *operation);
 
@@ -152,12 +154,14 @@ class NodeOperationBuilder {
 
   /** Helper function to store connected inputs for replacement */
   OpInputs cache_output_links(NodeOperationOutput *output) const;
+
   /** Find a connected write buffer operation to an OpOutput */
-  WriteBufferOperation *find_attached_write_buffer_operation(NodeOperationOutput *output) const;
+  // WriteBufferOperation *find_attached_write_buffer_operation(NodeOperationOutput *output) const;
+
   /** Add read/write buffer operations around complex operations */
-  void add_complex_operation_buffers();
-  void add_input_buffers(NodeOperation *operation, NodeOperationInput *input);
-  void add_output_buffers(NodeOperation *operation, NodeOperationOutput *output);
+  // void add_complex_operation_buffers();
+  // void add_input_buffers(NodeOperation *operation, NodeOperationInput *input);
+  // void add_output_buffers(NodeOperation *operation, NodeOperationOutput *output);
 
   /** Remove unreachable operations */
   void prune_operations();

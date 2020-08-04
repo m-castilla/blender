@@ -37,7 +37,7 @@ class BokehBlurOperation : public NodeOperation, public QualityStepHelper {
 
  public:
   BokehBlurOperation();
-
+  virtual void hashParams();
   void *initializeTileData(rcti *rect);
   /**
    * the inner loop of this program

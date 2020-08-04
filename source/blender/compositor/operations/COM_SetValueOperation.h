@@ -26,7 +26,7 @@
  */
 class SetValueOperation : public NodeOperation {
  private:
-  float m_value;
+  float m_value[1];
 
  public:
   /**
@@ -34,24 +34,34 @@ class SetValueOperation : public NodeOperation {
    */
   SetValueOperation();
 
+  virtual bool canCompute() const override
+  {
+    return false;
+  }
+
   float getValue()
   {
-    return this->m_value;
+    return *m_value;
   }
   void setValue(float value)
   {
-    this->m_value = value;
+    *m_value = value;
   }
 
-  /**
-   * the inner loop of this program
-   */
-  void executePixelSampled(float output[4], float x, float y, PixelSampler sampler);
-  void determineResolution(unsigned int resolution[2], unsigned int preferredResolution[2]);
-
-  bool isSetOperation() const
+  BufferType getBufferType() const override
+  {
+    return BufferType::NO_BUFFER_NO_WRITE;
+  }
+  bool isSingleElem() const override
   {
     return true;
   }
+  float *getSingleElem() override
+  {
+    return m_value;
+  }
+
+ protected:
+  void hashParams() override;
 };
 #endif

@@ -52,6 +52,7 @@ class BlurBaseOperation : public NodeOperation, public QualityStepHelper {
   bool m_extend_bounds;
 
  public:
+  virtual void hashParams();
   /**
    * Initialize the execution
    */

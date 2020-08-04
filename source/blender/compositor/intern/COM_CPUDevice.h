@@ -19,22 +19,21 @@
 #ifndef __COM_CPUDEVICE_H__
 #define __COM_CPUDEVICE_H__
 
-#include "COM_Device.h"
-
+class WorkPackage;
 /**
  * \brief class representing a CPU device.
  * \note for every hardware thread in the system a CPUDevice instance
  * will exist in the workscheduler.
  */
-class CPUDevice : public Device {
+class CPUDevice {
  public:
-  CPUDevice(int thread_id);
+  CPUDevice(int thread_id, int n_threads);
 
   /**
    * \brief execute a WorkPackage
    * \param work: the WorkPackage to execute
    */
-  void execute(WorkPackage *work);
+  void execute(WorkPackage &work);
 
   int thread_id()
   {
@@ -43,6 +42,7 @@ class CPUDevice : public Device {
 
  protected:
   int m_thread_id;
+  int m_n_threads;
 };
 
 #endif

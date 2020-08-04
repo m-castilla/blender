@@ -47,10 +47,10 @@ class SocketProxyNode : public Node {
   bool m_use_conversion;
 };
 
-class SocketBufferNode : public Node {
- public:
-  SocketBufferNode(bNode *editorNode, bNodeSocket *editorInput, bNodeSocket *editorOutput);
-  void convertToOperations(NodeConverter &converter, const CompositorContext &context) const;
-};
+// class SocketBufferNode : public Node {
+//  public:
+//   SocketBufferNode(bNode *editorNode, bNodeSocket *editorInput, bNodeSocket *editorOutput);
+//   void convertToOperations(NodeConverter &converter, const CompositorContext &context) const;
+// };
 
 #endif

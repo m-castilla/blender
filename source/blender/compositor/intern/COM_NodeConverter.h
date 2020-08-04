@@ -22,6 +22,7 @@
 #ifdef WITH_CXX_GUARDEDALLOC
 #  include "MEM_guardedalloc.h"
 #endif
+#include "DNA_node_types.h"
 
 class NodeInput;
 class NodeOutput;
@@ -72,13 +73,13 @@ class NodeConverter {
    * This operation will be removed later and replaced
    * by direct links between the connected operations.
    */
-  NodeOperationOutput *addInputProxy(NodeInput *input, bool use_conversion);
+  NodeOperationOutput *addInputProxy(NodeInput *input);
   /**
    * Create a proxy operation for a node output.
    * This operation will be removed later and replaced
    * by direct links between the connected operations.
    */
-  NodeOperationInput *addOutputProxy(NodeOutput *output, bool use_conversion);
+  NodeOperationInput *addOutputProxy(NodeOutput *output);
 
   /** Define a constant input value. */
   void addInputValue(NodeOperationInput *input, float value);
@@ -118,7 +119,7 @@ class NodeConverter {
   NodeOperationBuilder *m_builder;
 
 #ifdef WITH_CXX_GUARDEDALLOC
-  MEM_CXX_CLASS_ALLOC_FUNCS("COM:NodeCompiler")
+  MEM_CXX_CLASS_ALLOC_FUNCS("COM:NodeConverter")
 #endif
 };
 

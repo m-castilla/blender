@@ -15,52 +15,46 @@
  *
  * Copyright 2011, Blender Foundation.
  */
-
-class WorkPackage;
-
 #ifndef __COM_WORKPACKAGE_H__
 #define __COM_WORKPACKAGE_H__
-class ExecutionGroup;
-#include "COM_ExecutionGroup.h"
+
+#include "COM_NodeOperation.h"
+#include "MEM_guardedalloc.h"
+#include <atomic>
+#include <functional>
+#include <memory>
+
+class PixelsRect;
 
 /**
  * \brief contains data about work that can be scheduled
  * \see WorkScheduler
  */
+struct WriteRectContext;
 class WorkPackage {
  private:
-  /**
-   * \brief executionGroup with the operations-setup to be evaluated
-   */
-  ExecutionGroup *m_executionGroup;
-
-  /**
-   * \brief number of the chunk to be executed
-   */
-  unsigned int m_chunkNumber;
+  std::shared_ptr<PixelsRect> m_write_rect;
+  std::function<void(PixelsRect &, const WriteRectContext &)> &m_cpu_write_func;
+  std::atomic<bool> m_finished;
+  WriteRectContext m_write_ctx;
 
  public:
-  /**
-   * constructor
-   * \param group: the ExecutionGroup
-   * \param chunkNumber: the number of the chunk
-   */
-  WorkPackage(ExecutionGroup *group, unsigned int chunkNumber);
-
-  /**
-   * \brief get the ExecutionGroup
-   */
-  ExecutionGroup *getExecutionGroup() const
+  WorkPackage(std::shared_ptr<PixelsRect> write_rect,
+              std::function<void(PixelsRect &, const WriteRectContext &)> &cpu_write_func);
+  ~WorkPackage();
+  void setWriteContext(WriteRectContext ctx);
+  void exec();
+  bool hasFinished()
   {
-    return this->m_executionGroup;
+    return m_finished;
   }
-
-  /**
-   * \brief get the number of the chunk
-   */
-  unsigned int getChunkNumber() const
+  void reportFinished()
   {
-    return this->m_chunkNumber;
+    m_finished = true;
+  }
+  void reset()
+  {
+    m_finished = false;
   }
 
 #ifdef WITH_CXX_GUARDEDALLOC
