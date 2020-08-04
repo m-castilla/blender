@@ -16,8 +16,8 @@
  * Copyright 2011, Blender Foundation.
  */
 
-#pragma once
-
+#ifndef __COM_BRIGHTNESSOPERATION_H__
+#define __COM_BRIGHTNESSOPERATION_H__
 #include "COM_NodeOperation.h"
 
 class BrightnessOperation : public NodeOperation {
@@ -33,3 +33,4 @@ class BrightnessOperation : public NodeOperation {
   void hashParams() override;
   void execPixels(ExecutionManager &man) override;
 };
+#endif
