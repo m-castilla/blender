@@ -945,6 +945,18 @@ function(delayed_do_install
   endif()
 endfunction()
 
+function(defmerger
+  tag file_to header PARSED_PATHS_LIST
+  )
+
+  get_filename_component(_file_to_path ${file_to} PATH)
+  message(STATUS "defmerger \"${tag}\" \"${file_to}\" \"${header}\" ${${PARSED_PATHS_LIST}}")
+  add_custom_command(
+    OUTPUT ${file_to}
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${_file_to_path}
+    COMMAND "$<TARGET_FILE:defmerger>" "${tag}" "${file_to}" "${header}" ${${PARSED_PATHS_LIST}}
+    DEPENDS defmerger)
+endfunction()
 
 function(data_to_c
   file_from file_to
