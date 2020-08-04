@@ -96,7 +96,8 @@ class NODE_HT_header(Header):
                     row.template_ID(ob, "active_material", new="material.new")
                 # Material ID, but not for Lights
                 if id_from and ob_type != 'LIGHT':
-                    row.template_ID(id_from, "active_material", new="material.new")
+                    row.template_ID(id_from, "active_material",
+                                    new="material.new")
 
             if snode.shader_type == 'WORLD':
                 NODE_MT_editor_menus.draw_collapsible(context, layout)
@@ -126,7 +127,8 @@ class NODE_HT_header(Header):
 
                     row = layout.row()
                     row.enabled = not snode.pin
-                    row.template_ID(lineset, "linestyle", new="scene.freestyle_linestyle_new")
+                    row.template_ID(lineset, "linestyle",
+                                    new="scene.freestyle_linestyle_new")
 
         elif snode.tree_type == 'TextureNodeTree':
             layout.prop(snode, "texture_type", text="")
@@ -142,7 +144,8 @@ class NODE_HT_header(Header):
                 if snode.texture_type == 'BRUSH':
                     layout.template_ID(id_from, "texture", new="texture.new")
                 else:
-                    layout.template_ID(id_from, "active_texture", new="texture.new")
+                    layout.template_ID(
+                        id_from, "active_texture", new="texture.new")
 
         elif snode.tree_type == 'CompositorNodeTree':
 
@@ -185,7 +188,8 @@ class NODE_HT_header(Header):
             row.prop(snode, "show_backdrop", toggle=True)
             sub = row.row(align=True)
             sub.active = snode.show_backdrop
-            sub.prop(snode, "backdrop_channels", icon_only=True, text="", expand=True)
+            sub.prop(snode, "backdrop_channels",
+                     icon_only=True, text="", expand=True)
 
         # Snap
         row = layout.row(align=True)
@@ -218,7 +222,8 @@ class NODE_MT_add(bpy.types.Menu):
         layout.operator_context = 'INVOKE_DEFAULT'
 
         if nodeitems_utils.has_node_categories(context):
-            props = layout.operator("node.add_search", text="Search...", icon='VIEWZOOM')
+            props = layout.operator(
+                "node.add_search", text="Search...", icon='VIEWZOOM')
             props.use_transform = True
 
             layout.separator()
@@ -257,9 +262,12 @@ class NODE_MT_view(Menu):
             layout.separator()
 
             layout.operator("node.backimage_move", text="Backdrop Move")
-            layout.operator("node.backimage_zoom", text="Backdrop Zoom In").factor = 1.2
-            layout.operator("node.backimage_zoom", text="Backdrop Zoom Out").factor = 1.0 / 1.2
-            layout.operator("node.backimage_fit", text="Fit Backdrop to Available Space")
+            layout.operator("node.backimage_zoom",
+                            text="Backdrop Zoom In").factor = 1.2
+            layout.operator("node.backimage_zoom",
+                            text="Backdrop Zoom Out").factor = 1.0 / 1.2
+            layout.operator("node.backimage_fit",
+                            text="Fit Backdrop to Available Space")
 
         layout.separator()
 
@@ -284,8 +292,10 @@ class NODE_MT_select(Menu):
         layout.separator()
 
         layout.operator("node.select_grouped").extend = False
-        layout.operator("node.select_same_type_step", text="Activate Same Type Previous").prev = True
-        layout.operator("node.select_same_type_step", text="Activate Same Type Next").prev = False
+        layout.operator("node.select_same_type_step",
+                        text="Activate Same Type Previous").prev = True
+        layout.operator("node.select_same_type_step",
+                        text="Activate Same Type Next").prev = False
 
         layout.separator()
 
@@ -317,7 +327,8 @@ class NODE_MT_node(Menu):
         layout.separator()
 
         layout.operator("node.link_make").replace = False
-        layout.operator("node.link_make", text="Make and Replace Links").replace = True
+        layout.operator("node.link_make",
+                        text="Make and Replace Links").replace = True
         layout.operator("node.links_cut")
         layout.operator("node.links_detach")
 
@@ -368,7 +379,8 @@ class NODE_PT_material_slots(Panel):
         col = row.column()
 
         ob = context.object
-        col.template_list("MATERIAL_UL_matslots", "", ob, "material_slots", ob, "active_material_index")
+        col.template_list("MATERIAL_UL_matslots", "", ob,
+                          "material_slots", ob, "active_material_index")
 
         col = row.column(align=True)
         col.operator("object.material_slot_add", icon='ADD', text="")
@@ -381,8 +393,10 @@ class NODE_PT_material_slots(Panel):
         if len(ob.material_slots) > 1:
             col.separator()
 
-            col.operator("object.material_slot_move", icon='TRIA_UP', text="").direction = 'UP'
-            col.operator("object.material_slot_move", icon='TRIA_DOWN', text="").direction = 'DOWN'
+            col.operator("object.material_slot_move",
+                         icon='TRIA_UP', text="").direction = 'UP'
+            col.operator("object.material_slot_move",
+                         icon='TRIA_DOWN', text="").direction = 'DOWN'
 
         if ob.mode == 'EDIT':
             row = layout.row(align=True)
@@ -443,7 +457,8 @@ class NODE_MT_context_menu(Menu):
             layout.separator()
 
             layout.operator("node.link_make").replace = False
-            layout.operator("node.link_make", text="Make and Replace Links").replace = True
+            layout.operator("node.link_make",
+                            text="Make and Replace Links").replace = True
             layout.operator("node.links_detach")
 
             layout.separator()
@@ -508,7 +523,8 @@ class NODE_PT_active_node_color(Panel):
 
         row = layout.row()
         row.prop(node, "color", text="")
-        row.menu("NODE_MT_node_color_context_menu", text="", icon='DOWNARROW_HLT')
+        row.menu("NODE_MT_node_color_context_menu",
+                 text="", icon='DOWNARROW_HLT')
 
 
 class NODE_PT_active_node_properties(Panel):
@@ -535,7 +551,8 @@ class NODE_PT_active_node_properties(Panel):
 
         # XXX this could be filtered further to exclude socket types
         # which don't have meaningful input values (e.g. cycles shader)
-        value_inputs = [socket for socket in node.inputs if socket.enabled and not socket.is_linked]
+        value_inputs = [
+            socket for socket in node.inputs if socket.enabled and not socket.is_linked]
         if value_inputs:
             layout.separator()
             layout.label(text="Inputs:")
@@ -545,7 +562,8 @@ class NODE_PT_active_node_properties(Panel):
                     context,
                     row,
                     node,
-                    iface_(socket.label if socket.label else socket.name, socket.bl_rna.translation_context),
+                    iface_(socket.label if socket.label else socket.name,
+                           socket.bl_rna.translation_context),
                 )
 
 
@@ -645,12 +663,9 @@ class NODE_PT_quality(bpy.types.Panel):
         col = layout.column()
         col.prop(tree, "render_quality", text="Render")
         col.prop(tree, "edit_quality", text="Edit")
-        col.prop(tree, "chunk_size")
 
         col = layout.column()
         col.prop(tree, "use_opencl")
-        col.prop(tree, "use_groupnode_buffer")
-        col.prop(tree, "use_two_pass")
         col.prop(tree, "use_viewer_border")
         col.separator()
         col.prop(snode, "use_auto_render")

@@ -133,12 +133,6 @@ void NodeGraph::add_bNode(const CompositorContext &context,
     return;
   }
 
-  /* replace slow nodes with proxies for fast execution */
-  if (context.isFastCalculation() && !Converter::is_fast_node(b_node)) {
-    add_proxies_skip(b_ntree, b_node, key, is_active_group);
-    return;
-  }
-
   /* special node types */
   if (ELEM(b_node->type, NODE_GROUP, NODE_CUSTOM_GROUP)) {
     add_proxies_group(context, b_node, key);
@@ -268,7 +262,7 @@ void NodeGraph::add_proxies_group_inputs(bNode *b_node, bNode *b_node_io)
   }
 }
 
-void NodeGraph::add_proxies_group_outputs(bNode *b_node, bNode *b_node_io, bool use_buffer)
+void NodeGraph::add_proxies_group_outputs(bNode *b_node, bNode *b_node_io)
 {
   bNodeTree *b_group_tree = (bNodeTree *)b_node->id;
   BLI_assert(b_group_tree); /* should have been checked in advance */
@@ -281,14 +275,8 @@ void NodeGraph::add_proxies_group_outputs(bNode *b_node, bNode *b_node_io, bool 
        b_sock_io = b_sock_io->next) {
     bNodeSocket *b_sock_group = find_b_node_output(b_node, b_sock_io->identifier);
     if (b_sock_group) {
-      if (use_buffer) {
-        SocketBufferNode *buffer = new SocketBufferNode(b_node_io, b_sock_io, b_sock_group);
-        add_node(buffer, b_group_tree, key, is_active_group);
-      }
-      else {
-        SocketProxyNode *proxy = new SocketProxyNode(b_node_io, b_sock_io, b_sock_group, true);
-        add_node(proxy, b_group_tree, key, is_active_group);
-      }
+      SocketProxyNode *proxy = new SocketProxyNode(b_node_io, b_sock_io, b_sock_group, true);
+      add_node(proxy, b_group_tree, key, is_active_group);
     }
   }
 }
@@ -317,7 +305,7 @@ void NodeGraph::add_proxies_group(const CompositorContext &context,
     }
 
     if (b_node_io->type == NODE_GROUP_OUTPUT && (b_node_io->flag & NODE_DO_OUTPUT)) {
-      add_proxies_group_outputs(b_node, b_node_io, context.isGroupnodeBufferEnabled());
+      add_proxies_group_outputs(b_node, b_node_io);
     }
   }
 

@@ -26,13 +26,13 @@
 /* **************** Translate  ******************** */
 
 static bNodeSocketTemplate cmp_node_translate_in[] = {
-    {SOCK_RGBA, N_("Image"), 1.0f, 1.0f, 1.0f, 1.0f},
+    {SOCK_ANY_DATA, N_("Image"), 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, PROP_NONE, SOCK_HIDE_VALUE},
     {SOCK_FLOAT, N_("X"), 0.0f, 0.0f, 0.0f, 0.0f, -10000.0f, 10000.0f, PROP_NONE},
     {SOCK_FLOAT, N_("Y"), 0.0f, 0.0f, 0.0f, 0.0f, -10000.0f, 10000.0f, PROP_NONE},
     {-1, ""},
 };
 static bNodeSocketTemplate cmp_node_translate_out[] = {
-    {SOCK_RGBA, N_("Image")},
+    {SOCK_ANY_DATA, N_("Image"), 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, PROP_NONE, SOCK_HIDE_VALUE},
     {-1, ""},
 };
 

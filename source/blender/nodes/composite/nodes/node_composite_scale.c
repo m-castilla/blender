@@ -26,11 +26,13 @@
 /* **************** Scale  ******************** */
 
 static bNodeSocketTemplate cmp_node_scale_in[] = {
-    {SOCK_RGBA, N_("Image"), 1.0f, 1.0f, 1.0f, 1.0f},
+    {SOCK_ANY_DATA, N_("Image"), 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, PROP_NONE, SOCK_HIDE_VALUE},
     {SOCK_FLOAT, N_("X"), 1.0f, 0.0f, 0.0f, 0.0f, 0.0001f, CMP_SCALE_MAX, PROP_NONE},
     {SOCK_FLOAT, N_("Y"), 1.0f, 0.0f, 0.0f, 0.0f, 0.0001f, CMP_SCALE_MAX, PROP_NONE},
     {-1, ""}};
-static bNodeSocketTemplate cmp_node_scale_out[] = {{SOCK_RGBA, N_("Image")}, {-1, ""}};
+static bNodeSocketTemplate cmp_node_scale_out[] = {
+    {SOCK_ANY_DATA, N_("Image"), 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, PROP_NONE, SOCK_HIDE_VALUE},
+    {-1, ""}};
 
 static void node_composite_update_scale(bNodeTree *UNUSED(ntree), bNode *node)
 {

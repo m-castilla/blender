@@ -18,21 +18,14 @@
 
 #pragma once
 
-#include "DNA_node_types.h"
-#include <algorithm>
-#include <string>
-#include <vector>
-
 /* common node includes
  * added here so node files don't have to include themselves
  */
 #include "COM_CompositorContext.h"
 #include "COM_NodeConverter.h"
+#include "DNA_node_types.h"
 
-class Node;
 class NodeOperation;
-class NodeConverter;
-
 /**
  * My node documentation.
  */
@@ -71,6 +64,8 @@ class Node {
    * \brief Instance key to identify the node in an instance hash table
    */
   bNodeInstanceKey m_instanceKey;
+
+  int m_main_input_socket_idx;
 
  protected:
   /**
@@ -150,7 +145,7 @@ class Node {
    * \param index:
    * the index of the needed outputsocket
    */
-  NodeOutput *getOutputSocket(const unsigned int index) const;
+  NodeOutput *getOutputSocket(const int index) const;
 
   /**
    * get the reference to the first outputsocket
@@ -167,7 +162,20 @@ class Node {
    * \param index:
    * the index of the needed inputsocket
    */
-  NodeInput *getInputSocket(const unsigned int index) const;
+  NodeInput *getInputSocket(const int index) const;
+
+  NodeInput *getMainInputSocket() const;
+
+  /**
+   * \brief set the index of the input socket that will determine the DataType of output sockets
+   * that are of type SocketType::Dynamic. Only needs to be set if there is any dynamic output
+   * socket. By default will be 0 (the first input)
+   * \param index: the index to set
+   */
+  void setMainInputSocket(int idx)
+  {
+    m_main_input_socket_idx = idx;
+  }
 
   /** Check if this is an input node
    * An input node is a node that only has output sockets and no input sockets
@@ -208,17 +216,6 @@ class Node {
   virtual void convertToOperations(NodeConverter &converter,
                                    const CompositorContext &context) const = 0;
 
-  /**
-   * Create dummy warning operation, use when we can't get the source data.
-   */
-  NodeOperation *convertToOperations_invalid_index(NodeConverter *compiler, int index) const;
-  /**
-   * when a node has no valid data (missing image or a group nodes ID pointer is NULL)
-   * call this function from #convertToOperations, this way the node sockets are converted
-   * into valid outputs, without this the compositor system gets confused and crashes, see [#32490]
-   */
-  void convertToOperations_invalid(NodeConverter *compiler) const;
-
   void setInstanceKey(bNodeInstanceKey instance_key)
   {
     m_instanceKey = instance_key;
@@ -234,16 +231,16 @@ class Node {
    * \note may only be called in an constructor
    * \param socket: the NodeInput to add
    */
-  void addInputSocket(DataType datatype);
-  void addInputSocket(DataType datatype, bNodeSocket *socket);
+  void addInputSocket(SocketType socket_type);
+  void addInputSocket(SocketType socket_type, bNodeSocket *socket);
 
   /**
    * \brief add an NodeOutput to the collection of outputsockets
    * \note may only be called in an constructor
    * \param socket: the NodeOutput to add
    */
-  void addOutputSocket(DataType datatype);
-  void addOutputSocket(DataType datatype, bNodeSocket *socket);
+  void addOutputSocket(SocketType socket_type);
+  void addOutputSocket(SocketType socket_type, bNodeSocket *socket);
 
   bNodeSocket *getEditorInputSocket(int editorNodeInputSocketIndex);
   bNodeSocket *getEditorOutputSocket(int editorNodeOutputSocketIndex);
@@ -258,7 +255,7 @@ class NodeInput {
   Node *m_node;
   bNodeSocket *m_editorSocket;
 
-  DataType m_datatype;
+  SocketType m_socket_type;
 
   /**
    * \brief link connected to this NodeInput.
@@ -267,15 +264,16 @@ class NodeInput {
   NodeOutput *m_link;
 
  public:
-  NodeInput(Node *node, bNodeSocket *b_socket, DataType datatype);
+  NodeInput(Node *node, bNodeSocket *b_socket, SocketType socket_type);
 
   Node *getNode() const
   {
     return this->m_node;
   }
-  DataType getDataType() const
+  DataType getDataType() const;
+  SocketType getSocketType() const
   {
-    return m_datatype;
+    return m_socket_type;
   }
   bNodeSocket *getbNodeSocket() const
   {
@@ -306,18 +304,19 @@ class NodeOutput {
   Node *m_node;
   bNodeSocket *m_editorSocket;
 
-  DataType m_datatype;
+  SocketType m_socket_type;
 
  public:
-  NodeOutput(Node *node, bNodeSocket *b_socket, DataType datatype);
+  NodeOutput(Node *node, bNodeSocket *b_socket, SocketType socket_type);
 
   Node *getNode() const
   {
     return this->m_node;
   }
-  DataType getDataType() const
+  DataType getDataType() const;
+  SocketType getSocketType() const
   {
-    return m_datatype;
+    return m_socket_type;
   }
   bNodeSocket *getbNodeSocket() const
   {

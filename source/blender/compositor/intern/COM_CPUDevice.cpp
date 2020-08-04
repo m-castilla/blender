@@ -17,20 +17,17 @@
  */
 
 #include "COM_CPUDevice.h"
+#include "COM_ExecutionGroup.h"
+#include "COM_ExecutionManager.h"
+#include "COM_WorkPackage.h"
 
-CPUDevice::CPUDevice(int thread_id) : Device(), m_thread_id(thread_id)
+CPUDevice::CPUDevice(int thread_idx, int n_threads)
+    : m_thread_id(thread_idx), m_n_threads(n_threads)
 {
 }
 
-void CPUDevice::execute(WorkPackage *work)
+void CPUDevice::execute(WorkPackage &work)
 {
-  const unsigned int chunkNumber = work->getChunkNumber();
-  ExecutionGroup *executionGroup = work->getExecutionGroup();
-  rcti rect;
-
-  executionGroup->determineChunkRect(&rect, chunkNumber);
-
-  executionGroup->getOutputOperation()->executeRegion(&rect, chunkNumber);
-
-  executionGroup->finalizeChunkExecution(chunkNumber, NULL);
+  work.exec();
+  work.reportFinished();
 }

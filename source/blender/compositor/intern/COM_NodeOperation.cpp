@@ -16,229 +16,186 @@
  * Copyright 2011, Blender Foundation.
  */
 
-#include <stdio.h>
-#include <typeinfo>
-
-#include "COM_ExecutionSystem.h"
-#include "COM_defines.h"
-
 #include "COM_NodeOperation.h" /* own include */
+#include "BLI_assert.h"
+#include "COM_BufferUtil.h"
+#include "COM_ComputeDevice.h"
+#include "COM_ExecutionManager.h"
+#include "COM_GlobalManager.h"
+#include "COM_MathUtil.h"
+#include "COM_Node.h"
+
+using namespace std::placeholders;
 
 /*******************
  **** NodeOperation ****
  *******************/
-
 NodeOperation::NodeOperation()
+    : m_float_hasher(),
+      m_key_calculated(false),
+      m_key(),
+      m_op_hash_calculated(false),
+      m_op_hash(0),
+      m_exec_pixels_optimized(false)
 {
-  this->m_resolutionInputSocketIndex = 0;
-  this->m_complex = false;
-  this->m_width = 0;
-  this->m_height = 0;
-  this->m_isResolutionSet = false;
-  this->m_openCL = false;
-  this->m_btree = NULL;
 }
 
 NodeOperation::~NodeOperation()
 {
-  while (!this->m_outputs.empty()) {
-    delete (this->m_outputs.back());
-    this->m_outputs.pop_back();
-  }
-  while (!this->m_inputs.empty()) {
-    delete (this->m_inputs.back());
-    this->m_inputs.pop_back();
-  }
 }
 
-NodeOperationOutput *NodeOperation::getOutputSocket(unsigned int index) const
+void NodeOperation::hashParams()
 {
-  BLI_assert(index < m_outputs.size());
-  return m_outputs[index];
-}
-
-NodeOperationInput *NodeOperation::getInputSocket(unsigned int index) const
-{
-  BLI_assert(index < m_inputs.size());
-  return m_inputs[index];
-}
-
-void NodeOperation::addInputSocket(DataType datatype, InputResizeMode resize_mode)
-{
-  NodeOperationInput *socket = new NodeOperationInput(this, datatype, resize_mode);
-  m_inputs.push_back(socket);
-}
-
-void NodeOperation::addOutputSocket(DataType datatype)
-{
-  NodeOperationOutput *socket = new NodeOperationOutput(this, datatype);
-  m_outputs.push_back(socket);
-}
-
-void NodeOperation::determineResolution(unsigned int resolution[2],
-                                        unsigned int preferredResolution[2])
-{
-  unsigned int temp[2];
-  unsigned int temp2[2];
-
-  for (unsigned int index = 0; index < m_inputs.size(); index++) {
-    NodeOperationInput *input = m_inputs[index];
-    if (input->isConnected()) {
-      if (index == this->m_resolutionInputSocketIndex) {
-        input->determineResolution(resolution, preferredResolution);
-        temp2[0] = resolution[0];
-        temp2[1] = resolution[1];
-        break;
-      }
-    }
-  }
-  for (unsigned int index = 0; index < m_inputs.size(); index++) {
-    NodeOperationInput *input = m_inputs[index];
-    if (input->isConnected()) {
-      if (index != this->m_resolutionInputSocketIndex) {
-        input->determineResolution(temp, temp2);
-      }
+  const type_info &typeInfo = typeid(*this);
+  m_op_hash = typeInfo.hash_code();
+  hashParam(m_width);
+  hashParam(m_height);
+  for (auto input : m_inputs) {
+    auto input_op = input->getLinkedOp();
+    if (input_op) {
+      MathUtil::hashCombine(m_op_hash, input_op->getOpHash());
     }
   }
 }
-void NodeOperation::setResolutionInputSocketIndex(unsigned int index)
+
+void NodeOperation::hashDataAsParam(const float *data, size_t length, int increment)
 {
-  this->m_resolutionInputSocketIndex = index;
+  const float *end = data + length;
+  const float *current = data;
+  while (current < end) {
+    MathUtil::hashCombine(m_op_hash, m_float_hasher(*current));
+    current += increment;
+  }
 }
+
+size_t NodeOperation::getOpHash()
+{
+  if (!m_op_hash_calculated) {
+    hashParams();
+    m_op_hash_calculated = true;
+  }
+  return m_op_hash;
+}
+
 void NodeOperation::initExecution()
 {
-  /* pass */
-}
-
-void NodeOperation::initMutex()
-{
-  BLI_mutex_init(&this->m_mutex);
-}
-
-void NodeOperation::lockMutex()
-{
-  BLI_mutex_lock(&this->m_mutex);
-}
-
-void NodeOperation::unlockMutex()
-{
-  BLI_mutex_unlock(&this->m_mutex);
-}
-
-void NodeOperation::deinitMutex()
-{
-  BLI_mutex_end(&this->m_mutex);
+  m_exec_pixels_optimized = false;
 }
 
 void NodeOperation::deinitExecution()
 {
-  /* pass */
-}
-SocketReader *NodeOperation::getInputSocketReader(unsigned int inputSocketIndex)
-{
-  return this->getInputSocket(inputSocketIndex)->getReader();
 }
 
-NodeOperation *NodeOperation::getInputOperation(unsigned int inputSocketIndex)
+bool NodeOperation::isComputed(ExecutionManager &man) const
 {
-  NodeOperationInput *input = getInputSocket(inputSocketIndex);
-  if (input && input->isConnected()) {
-    return &input->getLink()->getOperation();
-  }
-
-  return NULL;
-}
-
-void NodeOperation::getConnectedInputSockets(Inputs *sockets)
-{
-  for (Inputs::const_iterator it = m_inputs.begin(); it != m_inputs.end(); ++it) {
-    NodeOperationInput *input = *it;
-    if (input->isConnected()) {
-      sockets->push_back(input);
-    }
-  }
-}
-
-bool NodeOperation::determineDependingAreaOfInterest(rcti *input,
-                                                     ReadBufferOperation *readOperation,
-                                                     rcti *output)
-{
-  if (isInputOperation()) {
-    BLI_rcti_init(output, input->xmin, input->xmax, input->ymin, input->ymax);
+  BufferType btype = getBufferType();
+  if (btype == BufferType::CUSTOM || btype == BufferType::NO_BUFFER_NO_WRITE ||
+      getWriteType() == WriteType::SINGLE_THREAD) {
     return false;
   }
+  else {
+    return GlobalMan->ComputeMan->canCompute() && this->canCompute();
+  }
+}
 
-  rcti tempOutput;
-  bool first = true;
-  for (int i = 0; i < getNumberOfInputSockets(); i++) {
-    NodeOperation *inputOperation = this->getInputOperation(i);
-    if (inputOperation &&
-        inputOperation->determineDependingAreaOfInterest(input, readOperation, &tempOutput)) {
-      if (first) {
-        output->xmin = tempOutput.xmin;
-        output->ymin = tempOutput.ymin;
-        output->xmax = tempOutput.xmax;
-        output->ymax = tempOutput.ymax;
-        first = false;
+const OpKey &NodeOperation::getKey()
+{
+  if (!m_key_calculated) {
+    hashParams();
+    m_key.op_width = m_width;
+    m_key.op_height = m_height;
+    m_key.op_data_type = getNumberOfOutputSockets() > 0 ? getOutputSocket(0)->getDataType() :
+                                                          DataType::COLOR;
+    m_key.op_type_hash = typeid(*this).hash_code();
+    m_key.op_hash = getOpHash();
+
+    m_key_calculated = true;
+  }
+  return m_key;
+}
+
+void NodeOperation::cpuWriteSeek(
+    ExecutionManager &man, std::function<void(PixelsRect &, const WriteRectContext &)> cpu_func)
+{
+  cpuWriteSeek(man, cpu_func, {});
+}
+
+void NodeOperation::cpuWriteSeek(
+    ExecutionManager &man,
+    std::function<void(PixelsRect &, const WriteRectContext &)> cpu_func,
+    std::function<void(PixelsRect &)> after_write_func)
+{
+  BLI_assert(!this->canCompute());
+  computeWriteSeek(man, cpu_func, after_write_func, "", {}, false);
+}
+
+void NodeOperation::computeWriteSeek(
+    ExecutionManager &man,
+    std::function<void(PixelsRect &, const WriteRectContext &)> cpu_func,
+    std::string compute_kernel,
+    std::function<void(ComputeKernel *)> add_kernel_args_func,
+    bool check_call)
+{
+  computeWriteSeek(man, cpu_func, {}, compute_kernel, add_kernel_args_func, check_call);
+}
+
+void NodeOperation::computeWriteSeek(
+    ExecutionManager &man,
+    std::function<void(PixelsRect &, const WriteRectContext &)> cpu_func,
+    std::function<void(PixelsRect &)> after_write_func,
+    std::string compute_kernel,
+    std::function<void(ComputeKernel *)> add_kernel_args_func,
+    bool check_call)
+{
+  if (check_call) {
+    BLI_assert(this->canCompute());
+  }
+  if (!isBreaked() && man.getOperationMode() == OperationMode::Exec) {
+    GlobalMan->BufferMan->writeSeek(this,
+                                    man,
+                                    std::bind(&ExecutionManager::execWriteJob,
+                                              man,
+                                              this,
+                                              _1,
+                                              cpu_func,
+                                              after_write_func,
+                                              compute_kernel,
+                                              add_kernel_args_func));
+  }
+}
+
+// Returns empty when OperationMode is ReadOptimize and when execution has cancelled.
+// To assert that you should have gotten your pixels, Check the condition (!isBreaked() and
+// man.getOperationMode()==OperationMode::Exec) after the call. If true, the pixels must have
+// been returned, if not is an implementation error.
+std::shared_ptr<PixelsRect> NodeOperation::getPixels(NodeOperation *reader_op,
+                                                     ExecutionManager &man)
+{
+  if (!isBreaked()) {
+    if (man.getOperationMode() == OperationMode::Optimize) {
+      if (!m_exec_pixels_optimized) {
+        execPixels(man);
+        m_exec_pixels_optimized = true;
+      }
+      GlobalMan->BufferMan->readOptimize(this, reader_op, man);
+    }
+    else {
+      auto result = GlobalMan->BufferMan->readSeek(this, reader_op, man);
+      if (result.is_written) {
+        return result.pixels;
       }
       else {
-        output->xmin = min(output->xmin, tempOutput.xmin);
-        output->ymin = min(output->ymin, tempOutput.ymin);
-        output->xmax = max(output->xmax, tempOutput.xmax);
-        output->ymax = max(output->ymax, tempOutput.ymax);
+        execPixels(man);
+        auto result = GlobalMan->BufferMan->readSeek(this, reader_op, man);
+        return result.pixels;
       }
     }
   }
-  return !first;
+
+  return std::shared_ptr<PixelsRect>();
 }
 
-/*****************
- **** OpInput ****
- *****************/
-
-NodeOperationInput::NodeOperationInput(NodeOperation *op,
-                                       DataType datatype,
-                                       InputResizeMode resizeMode)
-    : m_operation(op), m_datatype(datatype), m_resizeMode(resizeMode), m_link(NULL)
+void NodeOperation::execPixels(ExecutionManager &man)
 {
-}
-
-SocketReader *NodeOperationInput::getReader()
-{
-  if (isConnected()) {
-    return &m_link->getOperation();
-  }
-
-  return NULL;
-}
-
-void NodeOperationInput::determineResolution(unsigned int resolution[2],
-                                             unsigned int preferredResolution[2])
-{
-  if (m_link) {
-    m_link->determineResolution(resolution, preferredResolution);
-  }
-}
-
-/******************
- **** OpOutput ****
- ******************/
-
-NodeOperationOutput::NodeOperationOutput(NodeOperation *op, DataType datatype)
-    : m_operation(op), m_datatype(datatype)
-{
-}
-
-void NodeOperationOutput::determineResolution(unsigned int resolution[2],
-                                              unsigned int preferredResolution[2])
-{
-  NodeOperation &operation = getOperation();
-  if (operation.isResolutionSet()) {
-    resolution[0] = operation.getWidth();
-    resolution[1] = operation.getHeight();
-  }
-  else {
-    operation.determineResolution(resolution, preferredResolution);
-    operation.setResolution(resolution);
-  }
+  cpuWriteSeek(man, [&](PixelsRect &dst, const WriteRectContext &ctx) {});
 }

@@ -4089,6 +4089,7 @@ static void registerCompositNodes(void)
   register_node_type_cmp_splitviewer();
   register_node_type_cmp_output_file();
   register_node_type_cmp_view_levels();
+  register_node_type_cmp_memcache();
 
   register_node_type_cmp_curve_rgb();
   register_node_type_cmp_mix_rgb();

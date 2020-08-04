@@ -50,6 +50,7 @@ void register_node_type_cmp_viewer(void);
 void register_node_type_cmp_splitviewer(void);
 void register_node_type_cmp_output_file(void);
 void register_node_type_cmp_view_levels(void);
+void register_node_type_cmp_memcache(void);
 
 void register_node_type_cmp_curve_rgb(void);
 void register_node_type_cmp_mix_rgb(void);

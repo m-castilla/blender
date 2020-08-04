@@ -31,6 +31,13 @@ BilateralBlurOperation::BilateralBlurOperation() : NodeOperation()
   this->m_inputColorProgram = NULL;
   this->m_inputDeterminatorProgram = NULL;
 }
+void BilateralBlurOperation::hashParams()
+{
+  NodeOperation::hashParams();
+  hashParam(m_data->sigma_space);
+  hashParam(m_data->sigma_color);
+  hashParam(m_data->iter);
+}
 
 void BilateralBlurOperation::initExecution()
 {

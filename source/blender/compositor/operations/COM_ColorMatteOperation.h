@@ -35,6 +35,7 @@ class ColorMatteOperation : public NodeOperation {
    * Default constructor
    */
   ColorMatteOperation();
+  virtual void hashParams();
 
   /**
    * the inner loop of this program

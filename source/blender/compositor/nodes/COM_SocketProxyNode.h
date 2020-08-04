@@ -45,9 +45,3 @@ class SocketProxyNode : public Node {
   /** If true, the proxy will convert input and output data to/from the proxy socket types. */
   bool m_use_conversion;
 };
-
-class SocketBufferNode : public Node {
- public:
-  SocketBufferNode(bNode *editorNode, bNodeSocket *editorInput, bNodeSocket *editorOutput);
-  void convertToOperations(NodeConverter &converter, const CompositorContext &context) const;
-};

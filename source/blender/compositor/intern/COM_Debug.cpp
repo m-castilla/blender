@@ -18,9 +18,11 @@
 
 #include "COM_Debug.h"
 
-#ifdef COM_DEBUG
+#if defined(COM_DEBUG) || defined(DEBUG)
 
+#  include <ctime>
 #  include <map>
+#  include <string.h>
 #  include <typeinfo>
 #  include <vector>
 
@@ -31,7 +33,10 @@ extern "C" {
 #  include "BLI_sys_types.h"
 
 #  include "BKE_appdir.h"
+#  include "BKE_context.h"
 #  include "BKE_node.h"
+#  include "BKE_report.h"
+
 #  include "DNA_node_types.h"
 }
 
@@ -39,9 +44,8 @@ extern "C" {
 #  include "COM_ExecutionSystem.h"
 #  include "COM_Node.h"
 
-#  include "COM_ReadBufferOperation.h"
 #  include "COM_ViewerOperation.h"
-#  include "COM_WriteBufferOperation.h"
+#  include <fstream>
 
 int DebugInfo::m_file_index = 0;
 DebugInfo::NodeNameMap DebugInfo::m_node_names;
@@ -49,6 +53,10 @@ DebugInfo::OpNameMap DebugInfo::m_op_names;
 std::string DebugInfo::m_current_node_name;
 std::string DebugInfo::m_current_op_name;
 DebugInfo::GroupStateMap DebugInfo::m_group_states;
+char DebugInfo::last_graphviz[GRAPHVIZ_MAX_LENGTH] = "";
+clock_t DebugInfo::start_bench_ticks;
+clock_t DebugInfo::end_bench_ticks;
+bool DebugInfo::bench_started = false;
 
 std::string DebugInfo::node_name(const Node *node)
 {
@@ -139,15 +147,15 @@ int DebugInfo::graphviz_operation(const ExecutionSystem *system,
   else if (operation->isOutputOperation(system->getContext().isRendering())) {
     fillcolor = "dodgerblue1";
   }
-  else if (operation->isSetOperation()) {
+  else if (operation->isSingleElem()) {
     fillcolor = "khaki1";
   }
-  else if (operation->isReadBufferOperation()) {
-    fillcolor = "darkolivegreen3";
-  }
-  else if (operation->isWriteBufferOperation()) {
-    fillcolor = "darkorange";
-  }
+  // else if (operation->isReadBufferOperation()) {
+  //  fillcolor = "darkolivegreen3";
+  //}
+  // else if (operation->isWriteBufferOperation()) {
+  //  fillcolor = "darkorange";
+  //}
 
   len += snprintf(str + len, maxlen > len ? maxlen - len : 0, "// OPERATION: %p\r\n", operation);
   if (group) {
@@ -171,13 +179,13 @@ int DebugInfo::graphviz_operation(const ExecutionSystem *system,
       }
       len += snprintf(str + len, maxlen > len ? maxlen - len : 0, "<IN_%p>", socket);
       switch (socket->getDataType()) {
-        case COM_DT_VALUE:
+        case DataType::VALUE:
           len += snprintf(str + len, maxlen > len ? maxlen - len : 0, "Value");
           break;
-        case COM_DT_VECTOR:
+        case DataType::VECTOR:
           len += snprintf(str + len, maxlen > len ? maxlen - len : 0, "Vector");
           break;
-        case COM_DT_COLOR:
+        case DataType::COLOR:
           len += snprintf(str + len, maxlen > len ? maxlen - len : 0, "Color");
           break;
       }
@@ -188,8 +196,9 @@ int DebugInfo::graphviz_operation(const ExecutionSystem *system,
 
   len += snprintf(str + len,
                   maxlen > len ? maxlen - len : 0,
-                  "%s\\n(%s)",
+                  "%sID: %u\\n(%s)",
                   m_op_names[operation].c_str(),
+                  operation->getOrder(),
                   typeid(*operation).name());
 
   len += snprintf(str + len,
@@ -209,13 +218,13 @@ int DebugInfo::graphviz_operation(const ExecutionSystem *system,
       }
       len += snprintf(str + len, maxlen > len ? maxlen - len : 0, "<OUT_%p>", socket);
       switch (socket->getDataType()) {
-        case COM_DT_VALUE:
+        case DataType::VALUE:
           len += snprintf(str + len, maxlen > len ? maxlen - len : 0, "Value");
           break;
-        case COM_DT_VECTOR:
+        case DataType::VECTOR:
           len += snprintf(str + len, maxlen > len ? maxlen - len : 0, "Vector");
           break;
-        case COM_DT_COLOR:
+        case DataType::COLOR:
           len += snprintf(str + len, maxlen > len ? maxlen - len : 0, "Color");
           break;
       }
@@ -388,8 +397,10 @@ bool DebugInfo::graphviz_system(const ExecutionSystem *system, char *str, int ma
     len += graphviz_operation(system, operation, 0, str + len, maxlen > len ? maxlen - len : 0);
   }
 
-  for (int i = 0; i < totops; i++) {
+  /* TODO: Fix this for the new implementation*/
+  /*for (int i = 0; i < totops; i++) {
     NodeOperation *operation = system->m_operations[i];
+
 
     if (operation->isReadBufferOperation()) {
       ReadBufferOperation *read = (ReadBufferOperation *)operation;
@@ -409,7 +420,7 @@ bool DebugInfo::graphviz_system(const ExecutionSystem *system, char *str, int ma
         }
       }
     }
-  }
+}*/
 
   for (int i = 0; i < totops; i++) {
     NodeOperation *op = system->m_operations[i];
@@ -425,19 +436,19 @@ bool DebugInfo::graphviz_system(const ExecutionSystem *system, char *str, int ma
 
       std::string color;
       switch (from->getDataType()) {
-        case COM_DT_VALUE:
+        case DataType::VALUE:
           color = "gray";
           break;
-        case COM_DT_VECTOR:
+        case DataType::VECTOR:
           color = "blue";
           break;
-        case COM_DT_COLOR:
+        case DataType::COLOR:
           color = "orange";
           break;
       }
 
-      NodeOperation *to_op = &to->getOperation();
-      NodeOperation *from_op = &from->getOperation();
+      NodeOperation *to_op = to->getOperation();
+      NodeOperation *from_op = from->getOperation();
       std::vector<std::string> &from_groups = op_groups[from_op];
       std::vector<std::string> &to_groups = op_groups[to_op];
 
@@ -474,23 +485,54 @@ bool DebugInfo::graphviz_system(const ExecutionSystem *system, char *str, int ma
   return (len < maxlen);
 }
 
-void DebugInfo::graphviz(const ExecutionSystem *system)
+void DebugInfo::update_graphviz(const ExecutionSystem *sys)
 {
-  char str[1000000];
-  if (graphviz_system(system, str, sizeof(str) - 1)) {
-    char basename[FILE_MAX];
-    char filename[FILE_MAX];
-
-    BLI_snprintf(basename, sizeof(basename), "compositor_%d.dot", m_file_index);
-    BLI_join_dirfile(filename, sizeof(filename), BKE_tempdir_session(), basename);
-    m_file_index++;
-
-    FILE *fp = BLI_fopen(filename, "wb");
-    fputs(str, fp);
-    fclose(fp);
+  if (COM_DEBUG_LEVEL == ComDebugLevel::FULL) {
+    graphviz_system(sys, last_graphviz, sizeof(last_graphviz) - 1);
+    printf("\nCompositor graphviz updated:\n");
+    printf(DebugInfo::last_graphviz);
+    printf("\n");
   }
 }
 
+void DebugInfo::save_graphviz()
+{
+  char basename[FILE_MAX];
+  char filename[FILE_MAX];
+
+  BLI_snprintf(basename, sizeof(basename), "compositor_%d.dot", m_file_index);
+  BLI_join_dirfile(filename, sizeof(filename), BKE_tempdir_session(), basename);
+  m_file_index++;
+
+  FILE *fp = BLI_fopen(filename, "wb");
+  fputs(last_graphviz, fp);
+  fclose(fp);
+}
+
+void DebugInfo::clear()
+{
+  m_current_op_name.clear();
+  m_current_node_name.clear();
+  m_group_states.clear();
+  m_current_node_name.clear();
+  m_node_names.clear();
+}
+
+void DebugInfo::start_benchmark()
+{
+  BLI_assert(!bench_started);
+  bench_started = true;
+  start_bench_ticks = clock();
+}
+
+void DebugInfo::end_benchmark()
+{
+  BLI_assert(bench_started);
+  end_bench_ticks = clock();
+  bench_started = false;
+  float secs = (end_bench_ticks - start_bench_ticks) / (float)CLOCKS_PER_SEC;
+  printf("\nCompositor execution time: %f seconds\n", secs);
+}
 #else
 
 std::string DebugInfo::node_name(const Node * /*node*/)
@@ -504,7 +546,7 @@ std::string DebugInfo::operation_name(const NodeOperation * /*op*/)
 void DebugInfo::convert_started()
 {
 }
-void DebugInfo::execute_started(const ExecutionSystem * /*system*/)
+void DebugInfo::execute_started(const ExecutionSystem * /*sys*/)
 {
 }
 void DebugInfo::node_added(const Node * /*node*/)
@@ -525,7 +567,24 @@ void DebugInfo::execution_group_started(const ExecutionGroup * /*group*/)
 void DebugInfo::execution_group_finished(const ExecutionGroup * /*group*/)
 {
 }
-void DebugInfo::graphviz(const ExecutionSystem * /*system*/)
+
+void DebugInfo::update_graphviz(const ExecutionSystem *sys)
+{
+}
+
+void DebugInfo::save_graphviz()
+{
+}
+
+void DebugInfo::clear()
+{
+}
+
+void DebugInfo::start_benchmark()
+{
+}
+
+void DebugInfo::end_benchmark()
 {
 }
 

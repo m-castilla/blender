@@ -26,10 +26,7 @@
  */
 class SetVectorOperation : public NodeOperation {
  private:
-  float m_x;
-  float m_y;
-  float m_z;
-  float m_w;
+  float m_vector[3];
 
  public:
   /**
@@ -37,48 +34,34 @@ class SetVectorOperation : public NodeOperation {
    */
   SetVectorOperation();
 
+  virtual bool canCompute() const override
+  {
+    return false;
+  }
+
   float getX()
   {
-    return this->m_x;
+    return m_vector[0];
   }
   void setX(float value)
   {
-    this->m_x = value;
+    m_vector[0] = value;
   }
   float getY()
   {
-    return this->m_y;
+    return m_vector[1];
   }
   void setY(float value)
   {
-    this->m_y = value;
+    m_vector[1] = value;
   }
   float getZ()
   {
-    return this->m_z;
+    return m_vector[2];
   }
   void setZ(float value)
   {
-    this->m_z = value;
-  }
-  float getW()
-  {
-    return this->m_w;
-  }
-  void setW(float value)
-  {
-    this->m_w = value;
-  }
-
-  /**
-   * the inner loop of this program
-   */
-  void executePixelSampled(float output[4], float x, float y, PixelSampler sampler);
-
-  void determineResolution(unsigned int resolution[2], unsigned int preferredResolution[2]);
-  bool isSetOperation() const
-  {
-    return true;
+    m_vector[2] = value;
   }
 
   void setVector(const float vector[3])
@@ -87,4 +70,20 @@ class SetVectorOperation : public NodeOperation {
     setY(vector[1]);
     setZ(vector[2]);
   }
+
+  bool isSingleElem() const override
+  {
+    return true;
+  }
+  float *getSingleElem() override
+  {
+    return m_vector;
+  }
+  BufferType getBufferType() const override
+  {
+    return BufferType::NO_BUFFER_NO_WRITE;
+  }
+
+ protected:
+  void hashParams() override;
 };

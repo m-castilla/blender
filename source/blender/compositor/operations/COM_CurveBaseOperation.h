@@ -23,9 +23,6 @@
 
 class CurveBaseOperation : public NodeOperation {
  protected:
-  /**
-   * Cached reference to the inputProgram
-   */
   CurveMapping *m_curveMapping;
 
  public:
@@ -39,4 +36,7 @@ class CurveBaseOperation : public NodeOperation {
   void deinitExecution();
 
   void setCurveMapping(CurveMapping *mapping);
+
+ protected:
+  virtual void hashParams() override;
 };

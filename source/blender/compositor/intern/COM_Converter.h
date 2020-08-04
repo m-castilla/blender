@@ -22,7 +22,7 @@
 #  include "MEM_guardedalloc.h"
 #endif
 
-struct bNode;
+#include "DNA_node_types.h"
 
 class Node;
 class NodeOperation;
