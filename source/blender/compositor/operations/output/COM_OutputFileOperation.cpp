@@ -119,8 +119,9 @@ static float *init_buffer(unsigned int width, unsigned int height, DataType data
     return (float *)MEM_mallocN((size_t)width * height * size * sizeof(float),
                                 "OutputFile buffer");
   }
-
-  return NULL;
+  else {
+    return NULL;
+  }
 }
 
 OutputSingleLayerOperation::OutputSingleLayerOperation(
