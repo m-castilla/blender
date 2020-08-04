@@ -101,6 +101,7 @@ set(SRC_DNA_INC
 )
 
 add_subdirectory(datatoc)
+add_subdirectory(defmerger)
 add_subdirectory(editors)
 add_subdirectory(windowmanager)
 add_subdirectory(blenkernel)

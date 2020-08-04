@@ -24,11 +24,55 @@ CompositorContext::CompositorContext()
 {
   this->m_scene = NULL;
   this->m_rd = NULL;
-  this->m_quality = COM_QUALITY_HIGH;
+  this->m_quality = CompositorQuality::HIGH;
   this->m_hasActiveOpenCLDevices = false;
-  this->m_fastCalculation = false;
   this->m_viewSettings = NULL;
   this->m_displaySettings = NULL;
+  m_cpu_work_threads = 0;
+  m_preview_h = 0;
+  m_preview_w = 0;
+}
+
+CompositorContext CompositorContext::build(const std::string &execution_id,
+                                           RenderData *rd,
+                                           Scene *scene,
+                                           bNodeTree *editingtree,
+                                           bool rendering,
+                                           const ColorManagedViewSettings *viewSettings,
+                                           const ColorManagedDisplaySettings *displaySettings,
+                                           const char *viewName)
+{
+  const int DEFAULT_BUFFER_CACHE_BYTES = 256 * 1024 * 1024;
+
+  CompositorContext context;
+  context.setExecutionId(execution_id);
+  context.setBufferCacheSize(DEFAULT_BUFFER_CACHE_BYTES);
+  context.setViewName(viewName);
+  context.setScene(scene);
+  context.setbNodeTree(editingtree);
+  context.setPreviewHash(editingtree->previews);
+  /* initialize the CompositorContext */
+  if (rendering) {
+    context.setQuality(static_cast<CompositorQuality>(editingtree->render_quality));
+  }
+  else {
+    context.setQuality(static_cast<CompositorQuality>(editingtree->edit_quality));
+  }
+  context.setRendering(rendering);
+
+  /* TODO */
+  // context.setHasActiveOpenCLDevices(WorkScheduler::hasGPUDevices() &&
+  //                                          (editingtree->flag & NTREE_COM_OPENCL));
+
+  context.setRenderData(rd);
+  context.setViewSettings(viewSettings);
+  context.setDisplaySettings(displaySettings);
+  return std::move(context);
+}
+
+bool CompositorContext::isBreaked() const
+{
+  return m_bnodetree->test_break(m_bnodetree->tbh);
 }
 
 int CompositorContext::getFramenumber() const
