@@ -36,6 +36,7 @@ set(INC
   ${CMP_NODES}/vector
   ${CMP_NODES}/filter
   ${CMP_NODES}/distort
+  ${CMP_NODES}/layout
   ${CMP_OPS}
   ${CMP_OPS}/input
   ${CMP_OPS}/output
@@ -198,6 +199,8 @@ set(SRC
   ${CMP_NODES}/input/COM_ImageNode.h
   ${CMP_NODES}/input/COM_MaskNode.cpp
   ${CMP_NODES}/input/COM_MaskNode.h
+  ${CMP_NODES}/input/COM_MemoryCacheNode.cpp
+  ${CMP_NODES}/input/COM_MemoryCacheNode.h
   ${CMP_NODES}/input/COM_MovieClipNode.cpp
   ${CMP_NODES}/input/COM_MovieClipNode.h
   ${CMP_NODES}/input/COM_RenderLayersNode.cpp
@@ -214,8 +217,6 @@ set(SRC
   # output nodes
   ${CMP_NODES}/output/COM_CompositorNode.cpp
   ${CMP_NODES}/output/COM_CompositorNode.h
-  ${CMP_NODES}/output/COM_MemoryCacheNode.cpp
-  ${CMP_NODES}/output/COM_MemoryCacheNode.h
   ${CMP_NODES}/output/COM_OutputFileNode.cpp
   ${CMP_NODES}/output/COM_OutputFileNode.h
   ${CMP_NODES}/output/COM_SplitViewerNode.cpp
@@ -368,6 +369,7 @@ set(LIB
   bf_defmerger
   bf_blenkernel
   bf_blenlib
+  bf_depsgraph
   cycles_util
   extern_clew
   ${BOOST_LIBRARIES}
