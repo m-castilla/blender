@@ -34,51 +34,60 @@ class SetColorOperation : public NodeOperation {
    */
   SetColorOperation();
 
+  virtual bool canCompute() const override
+  {
+    return false;
+  }
+
+  float getChannel0()
+  {
+    return m_color[0];
+  }
+  void setChannel0(float value)
+  {
+    m_color[0] = value;
+  }
   float getChannel1()
   {
-    return this->m_color[0];
+    return m_color[1];
   }
   void setChannel1(float value)
   {
-    this->m_color[0] = value;
+    m_color[1] = value;
   }
   float getChannel2()
   {
-    return this->m_color[1];
+    return m_color[2];
   }
   void setChannel2(float value)
   {
-    this->m_color[1] = value;
+    m_color[2] = value;
   }
   float getChannel3()
   {
-    return this->m_color[2];
+    return m_color[3];
   }
   void setChannel3(float value)
   {
-    this->m_color[2] = value;
-  }
-  float getChannel4()
-  {
-    return this->m_color[3];
-  }
-  void setChannel4(const float value)
-  {
-    this->m_color[3] = value;
+    m_color[3] = value;
   }
   void setChannels(const float value[4])
   {
-    copy_v4_v4(this->m_color, value);
+    memcpy(m_color, value, sizeof(float) * 4);
   }
-
-  /**
-   * the inner loop of this program
-   */
-  void executePixelSampled(float output[4], float x, float y, PixelSampler sampler);
-
-  void determineResolution(unsigned int resolution[2], unsigned int preferredResolution[2]);
-  bool isSetOperation() const
+  BufferType getBufferType() const override
+  {
+    return BufferType::NO_BUFFER_NO_WRITE;
+  }
+  bool isSingleElem() const override
   {
     return true;
   }
+  float *getSingleElem() override
+  {
+    return m_color;
+  }
+
+ protected:
+  void hashParams() override;
 };

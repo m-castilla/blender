@@ -40,7 +40,7 @@ class ColorSpillOperation : public NodeOperation {
    * Default constructor
    */
   ColorSpillOperation();
-
+  virtual void hashParams();
   /**
    * the inner loop of this program
    */

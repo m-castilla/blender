@@ -36,6 +36,21 @@
  **** Node ****
  **************/
 
+static SocketType getSocketType(bNodeSocket *socket)
+{
+  SocketType st = SocketType::DYNAMIC;
+  if (socket->type == SOCK_RGBA) {
+    st = SocketType::COLOR;
+  }
+  else if (socket->type == SOCK_VECTOR) {
+    st = SocketType::VECTOR;
+  }
+  else if (socket->type == SOCK_FLOAT) {
+    st = SocketType::VALUE;
+  }
+  return st;
+}
+
 Node::Node(bNode *editorNode, bool create_sockets)
     : m_editorNodeTree(NULL),
       m_editorNode(editorNode),
@@ -45,31 +60,16 @@ Node::Node(bNode *editorNode, bool create_sockets)
   if (create_sockets) {
     bNodeSocket *input = (bNodeSocket *)editorNode->inputs.first;
     while (input != NULL) {
-      DataType dt = COM_DT_VALUE;
-      if (input->type == SOCK_RGBA) {
-        dt = COM_DT_COLOR;
-      }
-      if (input->type == SOCK_VECTOR) {
-        dt = COM_DT_VECTOR;
-      }
-
-      this->addInputSocket(dt, input);
+      this->addInputSocket(getSocketType(input), input);
       input = input->next;
     }
     bNodeSocket *output = (bNodeSocket *)editorNode->outputs.first;
     while (output != NULL) {
-      DataType dt = COM_DT_VALUE;
-      if (output->type == SOCK_RGBA) {
-        dt = COM_DT_COLOR;
-      }
-      if (output->type == SOCK_VECTOR) {
-        dt = COM_DT_VECTOR;
-      }
-
-      this->addOutputSocket(dt, output);
+      this->addOutputSocket(getSocketType(output), output);
       output = output->next;
     }
   }
+  m_main_input_socket_idx = 0;
 }
 
 Node::~Node()
@@ -84,37 +84,42 @@ Node::~Node()
   }
 }
 
-void Node::addInputSocket(DataType datatype)
+void Node::addInputSocket(SocketType socket_type)
 {
-  this->addInputSocket(datatype, NULL);
+  this->addInputSocket(socket_type, NULL);
 }
 
-void Node::addInputSocket(DataType datatype, bNodeSocket *bSocket)
+void Node::addInputSocket(SocketType socket_type, bNodeSocket *bSocket)
 {
-  NodeInput *socket = new NodeInput(this, bSocket, datatype);
+  NodeInput *socket = new NodeInput(this, bSocket, socket_type);
   this->m_inputsockets.push_back(socket);
 }
 
-void Node::addOutputSocket(DataType datatype)
+void Node::addOutputSocket(SocketType socket_type)
 {
-  this->addOutputSocket(datatype, NULL);
+  this->addOutputSocket(socket_type, NULL);
 }
-void Node::addOutputSocket(DataType datatype, bNodeSocket *bSocket)
+void Node::addOutputSocket(SocketType socket_type, bNodeSocket *bSocket)
 {
-  NodeOutput *socket = new NodeOutput(this, bSocket, datatype);
+  NodeOutput *socket = new NodeOutput(this, bSocket, socket_type);
   this->m_outputsockets.push_back(socket);
 }
 
-NodeOutput *Node::getOutputSocket(unsigned int index) const
+NodeOutput *Node::getOutputSocket(int index) const
 {
   BLI_assert(index < this->m_outputsockets.size());
   return this->m_outputsockets[index];
 }
 
-NodeInput *Node::getInputSocket(unsigned int index) const
+NodeInput *Node::getInputSocket(int index) const
 {
   BLI_assert(index < this->m_inputsockets.size());
   return this->m_inputsockets[index];
+}
+
+NodeInput *Node::getMainInputSocket() const
+{
+  return getInputSocket(m_main_input_socket_idx);
 }
 
 bNodeSocket *Node::getEditorInputSocket(int editorNodeInputSocketIndex)
@@ -148,14 +153,30 @@ bNodeSocket *Node::getEditorOutputSocket(int editorNodeOutputSocketIndex)
  **** NodeInput ****
  *******************/
 
-NodeInput::NodeInput(Node *node, bNodeSocket *b_socket, DataType datatype)
-    : m_node(node), m_editorSocket(b_socket), m_datatype(datatype), m_link(NULL)
+NodeInput::NodeInput(Node *node, bNodeSocket *b_socket, SocketType socket_type)
+    : m_node(node), m_editorSocket(b_socket), m_socket_type(socket_type), m_link(NULL)
 {
 }
 
 void NodeInput::setLink(NodeOutput *link)
 {
   m_link = link;
+}
+
+DataType NodeInput::getDataType() const
+{
+  switch (m_socket_type) {
+    case SocketType::VALUE:
+      return DataType::VALUE;
+    case SocketType::VECTOR:
+      return DataType::VECTOR;
+    case SocketType::COLOR:
+      return DataType::COLOR;
+    case SocketType::DYNAMIC:
+      // A dynamic input requires a linked input
+      BLI_assert(m_link);
+      return m_link->getDataType();
+  }
 }
 
 float NodeInput::getEditorValueFloat()
@@ -183,9 +204,27 @@ void NodeInput::getEditorValueVector(float *value)
  **** NodeOutput ****
  ********************/
 
-NodeOutput::NodeOutput(Node *node, bNodeSocket *b_socket, DataType datatype)
-    : m_node(node), m_editorSocket(b_socket), m_datatype(datatype)
+NodeOutput::NodeOutput(Node *node, bNodeSocket *b_socket, SocketType socket_type)
+    : m_node(node), m_editorSocket(b_socket), m_socket_type(socket_type)
 {
+}
+
+DataType NodeOutput::getDataType() const
+{
+  switch (m_socket_type) {
+    case SocketType::VALUE:
+      return DataType::VALUE;
+    case SocketType::VECTOR:
+      return DataType::VECTOR;
+    case SocketType::COLOR:
+      return DataType::COLOR;
+    case SocketType::DYNAMIC:
+      // A main input socket must be set when a node has a dynamic output socket
+      return m_node->getMainInputSocket()->getDataType();
+    default:
+      BLI_assert(!"Non implemented SocketType");
+      return (DataType)0;
+  }
 }
 
 float NodeOutput::getEditorValueFloat()

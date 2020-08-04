@@ -30,6 +30,16 @@ BoxMaskOperation::BoxMaskOperation() : NodeOperation()
   this->m_cosine = 0.0f;
   this->m_sine = 0.0f;
 }
+void BoxMaskOperation::hashParams()
+{
+  NodeOperation::hashParams();
+  hashParam(m_maskType);
+  hashParam(m_data->height);
+  hashParam(m_data->rotation);
+  hashParam(m_data->width);
+  hashParam(m_data->x);
+  hashParam(m_data->y);
+}
 void BoxMaskOperation::initExecution()
 {
   this->m_inputMask = this->getInputSocketReader(0);
