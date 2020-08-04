@@ -31,7 +31,18 @@ ColorSpillOperation::ColorSpillOperation() : NodeOperation()
   this->m_spillChannel = 1;  // GREEN
   this->m_spillMethod = 0;
 }
-
+void ColorSpillOperation::hashParams()
+{
+  NodeOperation::hashParams();
+  hashParam(m_spillChannel);
+  hashParam(m_spillMethod);
+  hashParam(m_settings->limchan);
+  hashParam(m_settings->limscale);
+  hashParam(m_settings->unspill);
+  hashParam(m_settings->uspillb);
+  hashParam(m_settings->uspillr);
+  hashParam(m_settings->uspillg);
+}
 void ColorSpillOperation::initExecution()
 {
   this->m_inputImageReader = this->getInputSocketReader(0);

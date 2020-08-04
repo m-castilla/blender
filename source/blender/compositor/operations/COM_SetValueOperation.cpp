@@ -17,23 +17,15 @@
  */
 
 #include "COM_SetValueOperation.h"
+#include "COM_PixelsUtil.h"
 
-SetValueOperation::SetValueOperation() : NodeOperation()
+SetValueOperation::SetValueOperation() : NodeOperation(), m_value()
 {
-  this->addOutputSocket(COM_DT_VALUE);
+  this->addOutputSocket(SocketType::VALUE);
 }
 
-void SetValueOperation::executePixelSampled(float output[4],
-                                            float /*x*/,
-                                            float /*y*/,
-                                            PixelSampler /*sampler*/)
+void SetValueOperation::hashParams()
 {
-  output[0] = this->m_value;
-}
-
-void SetValueOperation::determineResolution(unsigned int resolution[2],
-                                            unsigned int preferredResolution[2])
-{
-  resolution[0] = preferredResolution[0];
-  resolution[1] = preferredResolution[1];
+  NodeOperation::hashParams();
+  hashParam(*m_value);
 }

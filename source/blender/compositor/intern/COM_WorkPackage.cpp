@@ -17,9 +17,26 @@
  */
 
 #include "COM_WorkPackage.h"
+#include "COM_NodeOperation.h"
+#include "COM_Rect.h"
 
-WorkPackage::WorkPackage(ExecutionGroup *group, unsigned int chunkNumber)
+WorkPackage::WorkPackage(
+    std::shared_ptr<PixelsRect> write_rect,
+    std::function<void(PixelsRect &, const WriteRectContext &)> &cpu_write_func)
+    : m_write_rect(write_rect), m_cpu_write_func(cpu_write_func), m_finished(false)
 {
-  this->m_executionGroup = group;
-  this->m_chunkNumber = chunkNumber;
+}
+WorkPackage::~WorkPackage()
+{
+  int i = 0;
+}
+
+void WorkPackage::setWriteContext(WriteRectContext ctx)
+{
+  m_write_ctx = ctx;
+}
+
+void WorkPackage::exec()
+{
+  m_cpu_write_func(*m_write_rect, m_write_ctx);
 }

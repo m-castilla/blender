@@ -35,6 +35,30 @@ BlurBaseOperation::BlurBaseOperation(DataType data_type) : NodeOperation()
   this->m_sizeavailable = false;
   this->m_extend_bounds = false;
 }
+void BlurBaseOperation::hashParams()
+{
+  NodeOperation::hashParams();
+  if (m_sizeavailable) {
+    hashParam(m_size);
+  }
+  hashParam(m_extend_bounds);
+  hashParam(m_data.aspect);
+  hashParam(m_data.bokeh);
+  hashParam(m_data.curved);
+  hashParam(m_data.fac);
+  hashParam(m_data.filtertype);
+  hashParam(m_data.gamma);
+  hashParam(m_data.image_in_height);
+  hashParam(m_data.image_in_width);
+  hashParam(m_data.maxspeed);
+  hashParam(m_data.minspeed);
+  hashParam(m_data.percentx);
+  hashParam(m_data.percenty);
+  hashParam(m_data.relative);
+  hashParam(m_data.samples);
+  hashParam(m_data.sizex);
+  hashParam(m_data.sizey);
+}
 void BlurBaseOperation::initExecution()
 {
   this->m_inputProgram = this->getInputSocketReader(0);

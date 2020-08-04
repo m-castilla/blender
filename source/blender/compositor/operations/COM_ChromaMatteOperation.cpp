@@ -28,6 +28,13 @@ ChromaMatteOperation::ChromaMatteOperation() : NodeOperation()
   this->m_inputImageProgram = NULL;
   this->m_inputKeyProgram = NULL;
 }
+void ChromaMatteOperation::hashParams()
+{
+  NodeOperation::hashParams();
+  hashParam(m_settings->t1);
+  hashParam(m_settings->t2);
+  hashParam(m_settings->fstrength);
+}
 
 void ChromaMatteOperation::initExecution()
 {

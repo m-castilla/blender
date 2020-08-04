@@ -1,0 +1,414 @@
+# ***** BEGIN GPL LICENSE BLOCK *****
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+#
+# The Original Code is Copyright (C) 2011, Blender Foundation
+# All rights reserved.
+# ***** END GPL LICENSE BLOCK *****
+
+set(CMP_BASE ${CMAKE_CURRENT_SOURCE_DIR}/..)
+set(CMP_NODES ${CMP_BASE}/nodes)
+set(CMP_OPS ${CMP_BASE}/operations)
+
+set(INC
+  ${CMP_BASE}
+  ${CMP_BASE}/buffering
+  ../build_defmerger
+  ${CMP_BASE}/intern
+  ${CMP_NODES}
+  ${CMP_NODES}/input
+  ${CMP_NODES}/output
+  ${CMP_NODES}/color
+  ${CMP_NODES}/matte
+  ${CMP_NODES}/converter
+  ${CMP_NODES}/vector
+  ${CMP_NODES}/filter
+  ${CMP_NODES}/distort
+  ${CMP_OPS}
+  ${CMP_OPS}/input
+  ${CMP_OPS}/output
+  ${CMP_OPS}/color
+  ${CMP_OPS}/matte
+  ${CMP_OPS}/converter
+  ${CMP_OPS}/vector
+  ${CMP_OPS}/filter
+  ${CMP_OPS}/distort
+  ${CMP_BASE}/util
+  ${CMP_BASE}/computing
+  ${CMP_BASE}/../blenkernel
+  ${CMP_BASE}/../blenlib
+  ${CMP_BASE}/../blentranslation
+  ${CMP_BASE}/../depsgraph
+  ${CMP_BASE}/../imbuf
+  ${CMP_BASE}/../makesdna
+  ${CMP_BASE}/../makesrna
+  ${CMP_BASE}/../nodes
+  ${CMP_BASE}/../windowmanager
+  ${CMP_BASE}/../nodes/composite
+  ${CMP_BASE}/../nodes/intern
+  ${CMP_BASE}/../render/extern/include
+  ${CMP_BASE}/../render/intern/include
+  ${CMP_BASE}/../../../extern/clew/include
+  ${CMP_BASE}/../../../intern/atomic
+  ${CMP_BASE}/../../../intern/cycles
+  ${CMP_BASE}/../../../intern/guardedalloc
+)
+
+set(INC_SYS
+  ${BOOST_INCLUDE_DIR}
+)
+
+set(SRC
+  ${CMP_BASE}/COM_compositor.h
+  ${CMP_BASE}/COM_defines.h
+
+  #intern
+  ${CMP_BASE}/intern/COM_CPUDevice.cpp
+  ${CMP_BASE}/intern/COM_CPUDevice.h
+  ${CMP_BASE}/intern/COM_ExecutionManager.cpp
+  ${CMP_BASE}/intern/COM_ExecutionManager.h
+  ${CMP_BASE}/intern/COM_CompositorContext.cpp
+  ${CMP_BASE}/intern/COM_CompositorContext.h
+  ${CMP_BASE}/intern/COM_Converter.cpp
+  ${CMP_BASE}/intern/COM_Converter.h
+  ${CMP_BASE}/intern/COM_Debug.cpp
+  ${CMP_BASE}/intern/COM_Debug.h
+  ${CMP_BASE}/intern/COM_ExecutionGroup.cpp
+  ${CMP_BASE}/intern/COM_ExecutionGroup.h
+  ${CMP_BASE}/intern/COM_ExecutionSystem.cpp
+  ${CMP_BASE}/intern/COM_ExecutionSystem.h
+  ${CMP_BASE}/intern/COM_GlobalManager.cpp
+  ${CMP_BASE}/intern/COM_GlobalManager.h
+  ${CMP_BASE}/intern/COM_Node.cpp
+  ${CMP_BASE}/intern/COM_Node.h
+  ${CMP_BASE}/intern/COM_NodeConverter.cpp
+  ${CMP_BASE}/intern/COM_NodeConverter.h
+  ${CMP_BASE}/intern/COM_NodeGraph.cpp
+  ${CMP_BASE}/intern/COM_NodeGraph.h
+  ${CMP_BASE}/intern/COM_NodeOperation.cpp
+  ${CMP_BASE}/intern/COM_NodeOperation.h
+  ${CMP_BASE}/intern/COM_NodeOperationBuilder.cpp
+  ${CMP_BASE}/intern/COM_NodeOperationBuilder.h
+  ${CMP_BASE}/intern/COM_NodeSocketReader.cpp
+  ${CMP_BASE}/intern/COM_NodeSocketReader.h
+  ${CMP_BASE}/intern/COM_WorkPackage.cpp
+  ${CMP_BASE}/intern/COM_WorkPackage.h
+  ${CMP_BASE}/intern/COM_WorkScheduler.cpp
+  ${CMP_BASE}/intern/COM_WorkScheduler.h
+  ${CMP_BASE}/intern/COM_compositor.cpp
+
+  # buffering
+  ${CMP_BASE}/buffering/COM_BufferManager.cpp
+  ${CMP_BASE}/buffering/COM_BufferManager.h
+  ${CMP_BASE}/buffering/COM_Buffer.h
+  ${CMP_BASE}/buffering/COM_BufferRecycler.h
+  ${CMP_BASE}/buffering/COM_BufferRecycler.cpp
+  ${CMP_BASE}/buffering/COM_Rect.cpp
+  ${CMP_BASE}/buffering/COM_Rect.h
+  ${CMP_BASE}/buffering/COM_Pixels.cpp
+  ${CMP_BASE}/buffering/COM_Pixels.h
+  ${CMP_BASE}/buffering/COM_ReadsOptimizer.h
+  ${CMP_BASE}/buffering/COM_ReadsOptimizer.cpp
+  ${CMP_BASE}/buffering/COM_ViewCacheManager.h
+  ${CMP_BASE}/buffering/COM_ViewCacheManager.cpp
+
+  # util
+  ${CMP_BASE}/util/COM_Bmp.cpp
+  ${CMP_BASE}/util/COM_Bmp.h
+  ${CMP_BASE}/util/COM_PixelsUtil.cpp
+  ${CMP_BASE}/util/COM_PixelsUtil.h
+  ${CMP_BASE}/util/COM_RectUtil.cpp
+  ${CMP_BASE}/util/COM_RectUtil.h
+  ${CMP_BASE}/util/COM_MathUtil.cpp
+  ${CMP_BASE}/util/COM_MathUtil.h
+  ${CMP_BASE}/util/COM_BufferUtil.cpp
+  ${CMP_BASE}/util/COM_BufferUtil.h
+
+  # computing
+  ${CMP_BASE}/computing/COM_ComputeDevice.cpp
+  ${CMP_BASE}/computing/COM_ComputeDevice.h
+  ${CMP_BASE}/computing/COM_ComputeKernel.h
+  ${CMP_BASE}/computing/COM_ComputePlatform.cpp
+  ${CMP_BASE}/computing/COM_ComputePlatform.h
+  ${CMP_BASE}/computing/COM_ComputeManager.cpp
+  ${CMP_BASE}/computing/COM_ComputeManager.h
+  ${CMP_BASE}/computing/COM_ComputeNoneManager.h
+  ${CMP_BASE}/computing/COM_kernel_cpu.h
+  ${CMP_BASE}/computing/COM_kernel_cpu_nocompat.h
+  ${CMP_BASE}/computing/COM_kernel_opencl.h
+  ${CMP_BASE}/computing/kernel_util/COM_kernel_algo.h
+  ${CMP_BASE}/computing/kernel_util/COM_kernel_defines.h
+  ${CMP_BASE}/computing/kernel_util/COM_kernel_color.h
+  ${CMP_BASE}/computing/kernel_util/COM_kernel_math.h
+  ${CMP_BASE}/computing/kernel_util/COM_kernel_math_float2.h
+  ${CMP_BASE}/computing/kernel_util/COM_kernel_math_float3.h
+  ${CMP_BASE}/computing/kernel_util/COM_kernel_math_float4.h
+  ${CMP_BASE}/computing/kernel_util/COM_kernel_math_int2.h
+  ${CMP_BASE}/computing/kernel_util/COM_kernel_math_int3.h
+  ${CMP_BASE}/computing/kernel_util/COM_kernel_math_int4.h
+  ${CMP_BASE}/computing/kernel_util/COM_kernel_optimization.h
+  ${CMP_BASE}/computing/kernel_util/COM_kernel_simd.h
+  ${CMP_BASE}/computing/kernel_util/COM_kernel_simd.cpp
+  ${CMP_BASE}/computing/kernel_util/COM_kernel_types.h
+  ${CMP_BASE}/computing/kernel_util/COM_kernel_types_float2.h
+  ${CMP_BASE}/computing/kernel_util/COM_kernel_types_float2_impl.h
+  ${CMP_BASE}/computing/kernel_util/COM_kernel_types_float3.h
+  ${CMP_BASE}/computing/kernel_util/COM_kernel_types_float3_impl.h
+  ${CMP_BASE}/computing/kernel_util/COM_kernel_types_float4.h
+  ${CMP_BASE}/computing/kernel_util/COM_kernel_types_float4_impl.h
+  ${CMP_BASE}/computing/kernel_util/COM_kernel_types_int2.h
+  ${CMP_BASE}/computing/kernel_util/COM_kernel_types_int2_impl.h
+  ${CMP_BASE}/computing/kernel_util/COM_kernel_types_int3.h
+  ${CMP_BASE}/computing/kernel_util/COM_kernel_types_int3_impl.h
+  ${CMP_BASE}/computing/kernel_util/COM_kernel_types_int4.h
+  ${CMP_BASE}/computing/kernel_util/COM_kernel_types_int4_impl.h
+
+  # opencl
+  ${CMP_BASE}/computing/opencl/COM_OpenCLManager.cpp
+  ${CMP_BASE}/computing/opencl/COM_OpenCLManager.h
+  ${CMP_BASE}/computing/opencl/COM_OpenCLDevice.cpp
+  ${CMP_BASE}/computing/opencl/COM_OpenCLDevice.h
+  ${CMP_BASE}/computing/opencl/COM_OpenCLKernel.cpp
+  ${CMP_BASE}/computing/opencl/COM_OpenCLKernel.h
+  ${CMP_BASE}/computing/opencl/COM_OpenCLPlatform.cpp
+  ${CMP_BASE}/computing/opencl/COM_OpenCLPlatform.h
+
+  # Internal nodes
+  ${CMP_NODES}/COM_SocketProxyNode.cpp
+  ${CMP_NODES}/COM_SocketProxyNode.h
+
+  # input nodes
+  ${CMP_NODES}/input/COM_BokehImageNode.cpp
+  ${CMP_NODES}/input/COM_BokehImageNode.h
+  ${CMP_NODES}/input/COM_ColorNode.cpp
+  ${CMP_NODES}/input/COM_ColorNode.h
+  ${CMP_NODES}/input/COM_ImageNode.cpp
+  ${CMP_NODES}/input/COM_ImageNode.h
+  ${CMP_NODES}/input/COM_MaskNode.cpp
+  ${CMP_NODES}/input/COM_MaskNode.h
+  ${CMP_NODES}/input/COM_MovieClipNode.cpp
+  ${CMP_NODES}/input/COM_MovieClipNode.h
+  ${CMP_NODES}/input/COM_RenderLayersNode.cpp
+  ${CMP_NODES}/input/COM_RenderLayersNode.h
+  ${CMP_NODES}/input/COM_TextureNode.cpp
+  ${CMP_NODES}/input/COM_TextureNode.h
+  ${CMP_NODES}/input/COM_TimeNode.cpp
+  ${CMP_NODES}/input/COM_TimeNode.h
+  ${CMP_NODES}/input/COM_TrackPositionNode.cpp
+  ${CMP_NODES}/input/COM_TrackPositionNode.h
+  ${CMP_NODES}/input/COM_ValueNode.cpp
+  ${CMP_NODES}/input/COM_ValueNode.h
+
+  # output nodes
+  ${CMP_NODES}/output/COM_CompositorNode.cpp
+  ${CMP_NODES}/output/COM_CompositorNode.h
+  ${CMP_NODES}/output/COM_MemoryCacheNode.cpp
+  ${CMP_NODES}/output/COM_MemoryCacheNode.h
+  ${CMP_NODES}/output/COM_OutputFileNode.cpp
+  ${CMP_NODES}/output/COM_OutputFileNode.h
+  ${CMP_NODES}/output/COM_SplitViewerNode.cpp
+  ${CMP_NODES}/output/COM_SplitViewerNode.h
+  ${CMP_NODES}/output/COM_ViewerNode.cpp
+  ${CMP_NODES}/output/COM_ViewerNode.h
+  ${CMP_NODES}/output/COM_ViewLevelsNode.cpp
+  ${CMP_NODES}/output/COM_ViewLevelsNode.h
+
+  # distort nodes
+  ${CMP_NODES}/distort/COM_ScaleNode.cpp
+  ${CMP_NODES}/distort/COM_ScaleNode.h
+  ${CMP_NODES}/distort/COM_TranslateNode.cpp
+  ${CMP_NODES}/distort/COM_TranslateNode.h
+
+  # color nodes
+  ${CMP_NODES}/color/COM_AlphaOverNode.cpp
+  ${CMP_NODES}/color/COM_AlphaOverNode.h
+  ${CMP_NODES}/color/COM_BrightnessNode.cpp
+  ${CMP_NODES}/color/COM_BrightnessNode.h
+  ${CMP_NODES}/color/COM_ColorBalanceNode.cpp
+  ${CMP_NODES}/color/COM_ColorBalanceNode.h
+  ${CMP_NODES}/color/COM_ColorCorrectionNode.cpp
+  ${CMP_NODES}/color/COM_ColorCorrectionNode.h
+  ${CMP_NODES}/color/COM_ColorCurveNode.cpp
+  ${CMP_NODES}/color/COM_ColorCurveNode.h
+  ${CMP_NODES}/color/COM_GammaNode.cpp
+  ${CMP_NODES}/color/COM_GammaNode.h
+  ${CMP_NODES}/color/COM_HueSaturationValueCorrectNode.cpp
+  ${CMP_NODES}/color/COM_HueSaturationValueCorrectNode.h
+  ${CMP_NODES}/color/COM_HueSaturationValueNode.cpp
+  ${CMP_NODES}/color/COM_HueSaturationValueNode.h
+  ${CMP_NODES}/color/COM_InvertNode.cpp
+  ${CMP_NODES}/color/COM_InvertNode.h
+  ${CMP_NODES}/color/COM_MixNode.cpp
+  ${CMP_NODES}/color/COM_MixNode.h
+  ${CMP_NODES}/color/COM_TonemapNode.cpp
+  ${CMP_NODES}/color/COM_TonemapNode.h
+  ${CMP_NODES}/color/COM_ZCombineNode.cpp
+  ${CMP_NODES}/color/COM_ZCombineNode.h
+
+  # converter nodes
+  ${CMP_NODES}/converter/COM_MathNode.cpp
+  ${CMP_NODES}/converter/COM_MathNode.h
+
+  # layout nodes
+  ${CMP_NODES}/layout/COM_SwitchNode.cpp
+  ${CMP_NODES}/layout/COM_SwitchNode.h
+
+  # Internal operations
+  ${CMP_OPS}/COM_SocketProxyOperation.cpp
+  ${CMP_OPS}/COM_SocketProxyOperation.h
+  ${CMP_OPS}/COM_CurveBaseOperation.cpp
+  ${CMP_OPS}/COM_CurveBaseOperation.h
+  ${CMP_OPS}/COM_SetColorOperation.cpp
+  ${CMP_OPS}/COM_SetColorOperation.h
+  ${CMP_OPS}/COM_SetValueOperation.cpp
+  ${CMP_OPS}/COM_SetValueOperation.h
+  ${CMP_OPS}/COM_SetVectorOperation.cpp
+  ${CMP_OPS}/COM_SetVectorOperation.h
+
+  # input operations
+  ${CMP_OPS}/input/COM_BokehImageOperation.cpp
+  ${CMP_OPS}/input/COM_BokehImageOperation.h
+  ${CMP_OPS}/input/COM_ImageOperation.cpp
+  ${CMP_OPS}/input/COM_ImageOperation.h
+  ${CMP_OPS}/input/COM_MaskOperation.cpp
+  ${CMP_OPS}/input/COM_MaskOperation.h
+  ${CMP_OPS}/input/COM_MemoryCacheOperation.cpp
+  ${CMP_OPS}/input/COM_MemoryCacheOperation.h
+  ${CMP_OPS}/input/COM_MovieClipOperation.cpp
+  ${CMP_OPS}/input/COM_MovieClipOperation.h
+  ${CMP_OPS}/input/COM_MultilayerImageOperation.cpp
+  ${CMP_OPS}/input/COM_MultilayerImageOperation.h
+  ${CMP_OPS}/input/COM_RenderLayersProg.cpp
+  ${CMP_OPS}/input/COM_RenderLayersProg.h
+  ${CMP_OPS}/input/COM_TextureOperation.cpp
+  ${CMP_OPS}/input/COM_TextureOperation.h
+  ${CMP_OPS}/input/COM_TrackPositionOperation.cpp
+  ${CMP_OPS}/input/COM_TrackPositionOperation.h
+
+  # output operations
+  ${CMP_OPS}/output/COM_CalculateMeanOperation.cpp
+  ${CMP_OPS}/output/COM_CalculateMeanOperation.h
+  ${CMP_OPS}/output/COM_CalculateStandardDeviationOperation.cpp
+  ${CMP_OPS}/output/COM_CalculateStandardDeviationOperation.h
+  ${CMP_OPS}/output/COM_CompositorOperation.cpp
+  ${CMP_OPS}/output/COM_CompositorOperation.h
+  ${CMP_OPS}/output/COM_OutputFileMultiViewOperation.cpp
+  ${CMP_OPS}/output/COM_OutputFileMultiViewOperation.h
+  ${CMP_OPS}/output/COM_OutputFileOperation.cpp
+  ${CMP_OPS}/output/COM_OutputFileOperation.h
+  ${CMP_OPS}/output/COM_PreviewOperation.cpp
+  ${CMP_OPS}/output/COM_PreviewOperation.h
+  ${CMP_OPS}/output/COM_SplitOperation.cpp
+  ${CMP_OPS}/output/COM_SplitOperation.h
+  ${CMP_OPS}/output/COM_ViewerOperation.cpp
+  ${CMP_OPS}/output/COM_ViewerOperation.h
+
+  # color operations
+  ${CMP_OPS}/color/COM_AlphaOverKeyOperation.cpp
+  ${CMP_OPS}/color/COM_AlphaOverKeyOperation.h
+  ${CMP_OPS}/color/COM_AlphaOverMixedOperation.cpp
+  ${CMP_OPS}/color/COM_AlphaOverMixedOperation.h
+  ${CMP_OPS}/color/COM_AlphaOverPremultiplyOperation.cpp
+  ${CMP_OPS}/color/COM_AlphaOverPremultiplyOperation.h
+  ${CMP_OPS}/color/COM_AntiAliasOperation.cpp
+  ${CMP_OPS}/color/COM_AntiAliasOperation.h
+  ${CMP_OPS}/color/COM_BrightnessOperation.cpp
+  ${CMP_OPS}/color/COM_BrightnessOperation.h
+  ${CMP_OPS}/color/COM_ChangeHSVOperation.cpp
+  ${CMP_OPS}/color/COM_ChangeHSVOperation.h
+  ${CMP_OPS}/color/COM_ColorBalanceASCCDLOperation.cpp
+  ${CMP_OPS}/color/COM_ColorBalanceASCCDLOperation.h
+  ${CMP_OPS}/color/COM_ColorBalanceLGGOperation.cpp
+  ${CMP_OPS}/color/COM_ColorBalanceLGGOperation.h
+  ${CMP_OPS}/color/COM_ColorCorrectionOperation.cpp
+  ${CMP_OPS}/color/COM_ColorCorrectionOperation.h
+  ${CMP_OPS}/color/COM_ColorCurveOperation.cpp
+  ${CMP_OPS}/color/COM_ColorCurveOperation.h
+  ${CMP_OPS}/color/COM_GammaOperation.cpp
+  ${CMP_OPS}/color/COM_GammaOperation.h
+  ${CMP_OPS}/color/COM_HueSaturationValueCorrectOperation.cpp
+  ${CMP_OPS}/color/COM_HueSaturationValueCorrectOperation.h
+  ${CMP_OPS}/color/COM_InvertOperation.cpp
+  ${CMP_OPS}/color/COM_InvertOperation.h
+  ${CMP_OPS}/color/COM_MixOperation.cpp
+  ${CMP_OPS}/color/COM_MixOperation.h
+  ${CMP_OPS}/color/COM_TonemapOperation.cpp
+  ${CMP_OPS}/color/COM_TonemapOperation.h
+  ${CMP_OPS}/color/COM_ZCombineOperation.cpp
+  ${CMP_OPS}/color/COM_ZCombineOperation.h
+
+  # distort operation
+  ${CMP_OPS}/distort/COM_ScaleOperation.cpp
+  ${CMP_OPS}/distort/COM_ScaleOperation.h
+  ${CMP_OPS}/distort/COM_TranslateOperation.cpp
+  ${CMP_OPS}/distort/COM_TranslateOperation.h
+
+  # converter operations
+  ${CMP_OPS}/converter/COM_ConvertOperation.cpp
+  ${CMP_OPS}/converter/COM_ConvertOperation.h
+  ${CMP_OPS}/converter/COM_MathBaseOperation.cpp
+  ${CMP_OPS}/converter/COM_MathBaseOperation.h
+)
+
+source_group(TREE ${CMP_BASE} FILES ${SRC})
+
+set(LIB
+  bf_defmerger
+  bf_blenkernel
+  bf_blenlib
+  cycles_util
+  extern_clew
+  ${BOOST_LIBRARIES}
+)
+
+add_definitions(-DCL_USE_DEPRECATED_OPENCL_1_1_APIS)
+
+if(WITH_INTERNATIONAL)
+  add_definitions(-DWITH_INTERNATIONAL)
+endif()
+
+if(WITH_OPENIMAGEDENOISE)
+  add_definitions(-DWITH_OPENIMAGEDENOISE)
+  add_definitions(-DOIDN_STATIC_LIB)
+  list(APPEND INC_SYS
+    ${OPENIMAGEDENOISE_INCLUDE_DIRS}
+    ${TBB_INCLUDE_DIRS}
+  )
+  list(APPEND LIB
+    ${OPENIMAGEDENOISE_LIBRARIES}
+    ${TBB_LIBRARIES}
+  )
+endif()
+
+message("${CMAKE_BUILD_TYPE}")
+if(CMAKE_BUILD_TYPE MATCHES "Release")
+  list(APPEND DEFMERGE_PATHS
+  ${CMP_OPS}
+  )
+  defmerger(
+  "OPENCL_CODE"
+  ${CMAKE_CURRENT_SOURCE_DIR}/../computing/COM_OpenCLKernels.cl
+  "#include \"COM_kernel_opencl.h\""
+  DEFMERGE_PATHS
+  )
+  data_to_c(
+  ${CMAKE_CURRENT_SOURCE_DIR}/../computing/COM_OpenCLKernels.cl
+  ${CMAKE_CURRENT_SOURCE_DIR}/../computing/COM_OpenCLKernels.cl.h
+  SRC
+  )
+endif()
+
+blender_add_lib(bf_compositor "${SRC}" "${INC}" "${INC_SYS}" "${LIB}")
+

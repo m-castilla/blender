@@ -20,6 +20,7 @@
 
 #include "COM_Debug.h"
 
+#include "COM_Node.h"
 #include "COM_NodeOperation.h"
 #include "COM_NodeOperationBuilder.h"
 #include "COM_SetColorOperation.h"
@@ -77,9 +78,9 @@ NodeOperation *NodeConverter::setInvalidOutput(NodeOutput *output)
   return operation;
 }
 
-NodeOperationOutput *NodeConverter::addInputProxy(NodeInput *input, bool use_conversion)
+NodeOperationOutput *NodeConverter::addInputProxy(NodeInput *input)
 {
-  SocketProxyOperation *proxy = new SocketProxyOperation(input->getDataType(), use_conversion);
+  SocketProxyOperation *proxy = new SocketProxyOperation();
   m_builder->addOperation(proxy);
 
   m_builder->mapInputSocket(input, proxy->getInputSocket(0));
@@ -87,9 +88,9 @@ NodeOperationOutput *NodeConverter::addInputProxy(NodeInput *input, bool use_con
   return proxy->getOutputSocket();
 }
 
-NodeOperationInput *NodeConverter::addOutputProxy(NodeOutput *output, bool use_conversion)
+NodeOperationInput *NodeConverter::addOutputProxy(NodeOutput *output)
 {
-  SocketProxyOperation *proxy = new SocketProxyOperation(output->getDataType(), use_conversion);
+  SocketProxyOperation *proxy = new SocketProxyOperation();
   m_builder->addOperation(proxy);
 
   m_builder->mapOutputSocket(output, proxy->getOutputSocket());

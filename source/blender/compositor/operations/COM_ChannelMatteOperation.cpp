@@ -27,6 +27,15 @@ ChannelMatteOperation::ChannelMatteOperation() : NodeOperation()
   this->m_inputImageProgram = NULL;
 }
 
+void ChannelMatteOperation::hashParams()
+{
+  NodeOperation::hashParams();
+  hashParam(m_limit_max);
+  hashParam(m_limit_min);
+  hashParam(m_limit_method);
+  hashParam(m_limit_channel);
+  hashParam(m_matte_channel);
+}
 void ChannelMatteOperation::initExecution()
 {
   this->m_inputImageProgram = this->getInputSocketReader(0);

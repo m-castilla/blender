@@ -28,6 +28,13 @@ ColorMatteOperation::ColorMatteOperation() : NodeOperation()
   this->m_inputImageProgram = NULL;
   this->m_inputKeyProgram = NULL;
 }
+void ColorMatteOperation::hashParams()
+{
+  NodeOperation::hashParams();
+  hashParam(m_settings->t1);
+  hashParam(m_settings->t2);
+  hashParam(m_settings->t3);
+}
 
 void ColorMatteOperation::initExecution()
 {

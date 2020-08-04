@@ -40,6 +40,14 @@ BokehBlurOperation::BokehBlurOperation() : NodeOperation()
 
   this->m_extend_bounds = false;
 }
+void BokehBlurOperation::hashParams()
+{
+  NodeOperation::hashParams();
+  if (m_sizeavailable) {
+    hashParam(m_size);
+  }
+  hashParam(m_extend_bounds);
+}
 
 void *BokehBlurOperation::initializeTileData(rcti * /*rect*/)
 {

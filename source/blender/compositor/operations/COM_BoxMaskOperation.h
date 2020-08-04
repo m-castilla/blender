@@ -37,7 +37,7 @@ class BoxMaskOperation : public NodeOperation {
 
  public:
   BoxMaskOperation();
-
+  virtual void hashParams();
   /**
    * the inner loop of this program
    */
