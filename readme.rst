@@ -1,4 +1,4 @@
-This is an experimental and unofficial Blender branch (https://www.blender.org/). Its main goal is to improve the performance of the compositor. It may tackle many if not all of the objectives described in this task: https://developer.blender.org/T74491
+This is an experimental and unofficial Blender branch (https://www.blender.org/). Its main goal is to improve the performance of the compositor. It may tackle some of the objectives described in this task: https://developer.blender.org/T74491 . But probably not in the same way as proposed.
 
 I tried to reuse as much of compositor code as possible but in the end I almost changed everything, it's a very different approach from the previous compositor. So it could be said it's a new compositor system. 
 
