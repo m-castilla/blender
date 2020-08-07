@@ -19,8 +19,7 @@
 #pragma once
 
 #include "COM_Node.h"
-#include "COM_NodeOperation.h"
-#include "DNA_node_types.h"
+
 /**
  * \brief SwitchViewNode
  * \ingroup Node

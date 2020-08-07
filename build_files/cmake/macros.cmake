@@ -945,17 +945,40 @@ function(delayed_do_install
   endif()
 endfunction()
 
-function(defmerger
-  tag file_to header PARSED_PATHS_LIST
+# function(def_merger 
+# )
+
+#   #get_filename_component(_file_to_path ${file_to} PATH)
+#   #message(STATUS "\"$<TARGET_FILE:defmerger>\" ${tag} ${file_to} \"${header}\" ${${PARSED_PATHS_LIST}}")
+
+#   # add_custom_command(
+#   #   OUTPUT ${file_to}
+#   #   COMMAND "$<TARGET_FILE:defmerger>" ${file_to}
+#   #   #COMMAND "$<TARGET_FILE:defmerger>" ${tag} ${file_to} "${header}" ${${PARSED_PATHS_LIST}}
+#   #   DEPENDS defmerger)
+
+# add_custom_command(
+#     OUTPUT F:/compo-git/blender/source/blender/compositor/computing/COM_OpenCLKernels.cl
+#     COMMAND "$<TARGET_FILE:datatoc>" F:/compo-git/blender/source/blender/compositor/computing/COM_OpenCLKernels.cl F:/compo-git/blender/source/blender/compositor/computing/COM_OpenCLKernels.h
+#     DEPENDS F:/compo-git/blender/source/blender/compositor/computing/COM_OpenCLKernels.cl datatoc)
+
+#   # set_source_files_properties(${file_to} PROPERTIES GENERATED TRUE)
+# endfunction()
+
+function(def_merger
+  tag file_to include_file
+  src_list merged_paths
   )
 
-  get_filename_component(_file_to_path ${file_to} PATH)
-  message(STATUS "defmerger \"${tag}\" \"${file_to}\" \"${header}\" ${${PARSED_PATHS_LIST}}")
+  list(APPEND ${src_list} ${file_to})
+  set(${src_list} ${${src_list}} PARENT_SCOPE)
+
   add_custom_command(
     OUTPUT ${file_to}
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${_file_to_path}
-    COMMAND "$<TARGET_FILE:defmerger>" "${tag}" "${file_to}" "${header}" ${${PARSED_PATHS_LIST}}
+    COMMAND "$<TARGET_FILE:defmerger>" ${tag} ${file_to} ${include_file} ${${merged_paths}}
     DEPENDS defmerger)
+
+  set_source_files_properties(${file_to} PROPERTIES GENERATED TRUE)
 endfunction()
 
 function(data_to_c

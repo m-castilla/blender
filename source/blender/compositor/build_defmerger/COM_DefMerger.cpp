@@ -49,12 +49,12 @@ const char *next_line(const char *s1);
 
 std::string defmerge(const char *tag,
                      const char *dst_path,
-                     const char *include_str,
+                     const char *include_file,
                      int n_merge_paths,
-                     const char *merge_paths[])
+                     const char *merge_paths[],
+                     bool save_file)
 {
-  std::string result = std::string(include_str);
-  result.append("\n");
+  std::string result = "#include \"" + std::string(include_file) + "\"\n";
   bool is_empty_include = result.empty();
   for (int i = 0; i < n_merge_paths; i++) {
     const char *merge_path = merge_paths[i];
@@ -75,7 +75,7 @@ result in \r\r\n */
     result.erase(std::remove(result.begin(), result.end(), '\r'), result.end());
 #endif
   }
-  if (!result.empty()) {
+  if (!result.empty() && save_file) {
     FILE *dst_file = fopen(dst_path, "w+");
     fputs(result.c_str(), dst_file);
     fclose(dst_file);

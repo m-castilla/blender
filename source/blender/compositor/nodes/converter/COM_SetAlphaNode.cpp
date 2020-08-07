@@ -26,7 +26,7 @@ void SetAlphaNode::convertToOperations(NodeConverter &converter,
   SetAlphaOperation *operation = new SetAlphaOperation();
 
   if (!this->getInputSocket(0)->isLinked() && this->getInputSocket(1)->isLinked()) {
-    operation->setResolutionInputSocketIndex(1);
+    operation->setMainInputSocketIndex(1);
   }
 
   converter.addOperation(operation);

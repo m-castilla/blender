@@ -66,8 +66,6 @@ static OpReads *newOpReads(NodeOperation *op)
 void ReadsOptimizer::optimize(NodeOperation *op, NodeOperation *reader_op, ExecutionManager &man)
 {
   BLI_assert(man.getOperationMode() == OperationMode::Optimize);
-  auto buffer_type = op->getBufferType();
-
   if (!m_reads) {
     m_reads = newOpReads(op);
   }

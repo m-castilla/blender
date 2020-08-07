@@ -44,16 +44,12 @@ ccl_kernel zCombineOp(
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(color1, dst);
-  READ_COORDS_TO_OFFSET(z1, dst);
-  READ_COORDS_TO_OFFSET(color2, dst);
-  READ_COORDS_TO_OFFSET(z2, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(color1, color1_coords, color1_pix);
-  READ_IMG(z1, z1_coords, z1_pix);
-  READ_IMG(color2, color2_coords, color2_pix);
-  READ_IMG(z2, z2_coords, z2_pix);
+  READ_IMG(color1, dst_coords, color1_pix);
+  READ_IMG(z1, dst_coords, z1_pix);
+  READ_IMG(color2, dst_coords, color2_pix);
+  READ_IMG(z2, dst_coords, z2_pix);
 
   if (z1_pix.x < z2_pix.x) {
     WRITE_IMG(dst, dst_coords, color1_pix);
@@ -95,21 +91,17 @@ ccl_kernel zCombineAlphaOp(
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(color1, dst);
-  READ_COORDS_TO_OFFSET(z1, dst);
-  READ_COORDS_TO_OFFSET(color2, dst);
-  READ_COORDS_TO_OFFSET(z2, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(z1, z1_coords, z1_pix);
-  READ_IMG(z2, z2_coords, z2_pix);
+  READ_IMG(z1, dst_coords, z1_pix);
+  READ_IMG(z2, dst_coords, z2_pix);
   if (z1_pix.x <= z2_pix.x) {
-    READ_IMG(color1, color1_coords, color1_pix);
-    READ_IMG(color2, color2_coords, color2_pix);
+    READ_IMG(color1, dst_coords, color1_pix);
+    READ_IMG(color2, dst_coords, color2_pix);
   }
   else {
-    READ_IMG(color1, color1_coords, color2_pix);
-    READ_IMG(color2, color2_coords, color1_pix);
+    READ_IMG(color1, dst_coords, color2_pix);
+    READ_IMG(color2, dst_coords, color1_pix);
   }
 
   const float alpha1 = color1_pix.w;
@@ -160,14 +152,11 @@ ccl_kernel zCombineMaskOp(CCL_WRITE(dst), CCL_READ(mask), CCL_READ(color1), CCL_
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(color1, dst);
-  READ_COORDS_TO_OFFSET(mask, dst);
-  READ_COORDS_TO_OFFSET(color2, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(mask, mask_coords, mask_pix);
-  READ_IMG(color1, color1_coords, color1_pix);
-  READ_IMG(color2, color2_coords, color2_pix);
+  READ_IMG(mask, dst_coords, mask_pix);
+  READ_IMG(color1, dst_coords, color1_pix);
+  READ_IMG(color2, dst_coords, color2_pix);
 
   color2_pix = interp_f4f4(color1_pix, color2_pix, 1.0f - mask_pix.x);
 
@@ -202,14 +191,11 @@ ccl_kernel zCombineMaskAlphaOp(CCL_WRITE(dst), CCL_READ(mask), CCL_READ(color1),
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(color1, dst);
-  READ_COORDS_TO_OFFSET(mask, dst);
-  READ_COORDS_TO_OFFSET(color2, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(mask, mask_coords, mask_pix);
-  READ_IMG(color1, color1_coords, color1_pix);
-  READ_IMG(color2, color2_coords, color2_pix);
+  READ_IMG(mask, dst_coords, mask_pix);
+  READ_IMG(color1, dst_coords, color1_pix);
+  READ_IMG(color2, dst_coords, color2_pix);
 
   const float alpha1 = color1_pix.w;
   const float alpha2 = color2_pix.w;

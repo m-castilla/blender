@@ -97,14 +97,11 @@ ccl_kernel mixBaseOp(
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(value, dst);
-  READ_COORDS_TO_OFFSET(color1, dst);
-  READ_COORDS_TO_OFFSET(color2, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(value, value_coords, value_pix);
-  READ_IMG(color1, color1_coords, color1_pix);
-  READ_IMG(color2, color2_coords, color2_pix);
+  READ_IMG(value, dst_coords, value_pix);
+  READ_IMG(color1, dst_coords, color1_pix);
+  READ_IMG(color2, dst_coords, color2_pix);
 
   if (alpha_multiply) {
     value_pix.x *= color2_pix.w;
@@ -152,14 +149,11 @@ ccl_kernel mixAddOp(CCL_WRITE(dst),
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(value, dst);
-  READ_COORDS_TO_OFFSET(color1, dst);
-  READ_COORDS_TO_OFFSET(color2, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(value, value_coords, value_pix);
-  READ_IMG(color1, color1_coords, color1_pix);
-  READ_IMG(color2, color2_coords, color2_pix);
+  READ_IMG(value, dst_coords, value_pix);
+  READ_IMG(color1, dst_coords, color1_pix);
+  READ_IMG(color2, dst_coords, color2_pix);
 
   if (alpha_multiply) {
     value_pix.x *= color2_pix.w;
@@ -211,14 +205,11 @@ ccl_kernel mixBlendOp(CCL_WRITE(dst),
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(value, dst);
-  READ_COORDS_TO_OFFSET(color1, dst);
-  READ_COORDS_TO_OFFSET(color2, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(value, value_coords, value_pix);
-  READ_IMG(color1, color1_coords, color1_pix);
-  READ_IMG(color2, color2_coords, color2_pix);
+  READ_IMG(value, dst_coords, value_pix);
+  READ_IMG(color1, dst_coords, color1_pix);
+  READ_IMG(color2, dst_coords, color2_pix);
 
   if (alpha_multiply) {
     value_pix.x *= color2_pix.w;
@@ -266,14 +257,11 @@ ccl_kernel mixColorBurnOp(
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(value, dst);
-  READ_COORDS_TO_OFFSET(color1, dst);
-  READ_COORDS_TO_OFFSET(color2, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(value, value_coords, value_pix);
-  READ_IMG(color1, color1_coords, color1_pix);
-  READ_IMG(color2, color2_coords, color2_pix);
+  READ_IMG(value, dst_coords, value_pix);
+  READ_IMG(color1, dst_coords, color1_pix);
+  READ_IMG(color2, dst_coords, color2_pix);
 
   if (alpha_multiply) {
     value_pix.x *= color2_pix.w;
@@ -327,14 +315,11 @@ ccl_kernel mixColorOp(CCL_WRITE(dst),
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(value, dst);
-  READ_COORDS_TO_OFFSET(color1, dst);
-  READ_COORDS_TO_OFFSET(color2, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(value, value_coords, value_pix);
-  READ_IMG(color1, color1_coords, color1_pix);
-  READ_IMG(color2, color2_coords, color2_pix);
+  READ_IMG(value, dst_coords, value_pix);
+  READ_IMG(color1, dst_coords, color1_pix);
+  READ_IMG(color2, dst_coords, color2_pix);
 
   if (alpha_multiply) {
     value_pix.x *= color2_pix.w;
@@ -396,14 +381,11 @@ ccl_kernel mixDarkenOp(CCL_WRITE(dst),
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(value, dst);
-  READ_COORDS_TO_OFFSET(color1, dst);
-  READ_COORDS_TO_OFFSET(color2, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(value, value_coords, value_pix);
-  READ_IMG(color1, color1_coords, color1_pix);
-  READ_IMG(color2, color2_coords, color2_pix);
+  READ_IMG(value, dst_coords, value_pix);
+  READ_IMG(color1, dst_coords, color1_pix);
+  READ_IMG(color2, dst_coords, color2_pix);
 
   if (alpha_multiply) {
     value_pix.x *= color2_pix.w;
@@ -454,14 +436,11 @@ ccl_kernel mixDifferenceOp(CCL_WRITE(dst),
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(value, dst);
-  READ_COORDS_TO_OFFSET(color1, dst);
-  READ_COORDS_TO_OFFSET(color2, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(value, value_coords, value_pix);
-  READ_IMG(color1, color1_coords, color1_pix);
-  READ_IMG(color2, color2_coords, color2_pix);
+  READ_IMG(value, dst_coords, value_pix);
+  READ_IMG(color1, dst_coords, color1_pix);
+  READ_IMG(color2, dst_coords, color2_pix);
 
   if (alpha_multiply) {
     value_pix.x *= color2_pix.w;
@@ -512,14 +491,11 @@ ccl_kernel mixDivideOp(CCL_WRITE(dst),
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(value, dst);
-  READ_COORDS_TO_OFFSET(color1, dst);
-  READ_COORDS_TO_OFFSET(color2, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(value, value_coords, value_pix);
-  READ_IMG(color1, color1_coords, color1_pix);
-  READ_IMG(color2, color2_coords, color2_pix);
+  READ_IMG(value, dst_coords, value_pix);
+  READ_IMG(color1, dst_coords, color1_pix);
+  READ_IMG(color2, dst_coords, color2_pix);
 
   if (alpha_multiply) {
     value_pix.x *= color2_pix.w;
@@ -573,14 +549,11 @@ ccl_kernel mixDodgeOp(CCL_WRITE(dst),
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(value, dst);
-  READ_COORDS_TO_OFFSET(color1, dst);
-  READ_COORDS_TO_OFFSET(color2, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(value, value_coords, value_pix);
-  READ_IMG(color1, color1_coords, color1_pix);
-  READ_IMG(color2, color2_coords, color2_pix);
+  READ_IMG(value, dst_coords, value_pix);
+  READ_IMG(color1, dst_coords, color1_pix);
+  READ_IMG(color2, dst_coords, color2_pix);
 
   if (alpha_multiply) {
     value_pix.x *= color2_pix.w;
@@ -674,14 +647,11 @@ ccl_kernel mixGlareOp(
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(value, dst);
-  READ_COORDS_TO_OFFSET(color1, dst);
-  READ_COORDS_TO_OFFSET(color2, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(value, value_coords, value_pix);
-  READ_IMG(color1, color1_coords, color1_pix);
-  READ_IMG(color2, color2_coords, color2_pix);
+  READ_IMG(value, dst_coords, value_pix);
+  READ_IMG(color1, dst_coords, color1_pix);
+  READ_IMG(color2, dst_coords, color2_pix);
 
   float mf = 2.0f - 2.0f * fabsf(value_pix.x - 0.5f);
   float4 zero4 = make_float4_1(0.0f);
@@ -731,14 +701,11 @@ ccl_kernel mixHueOp(CCL_WRITE(dst),
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(value, dst);
-  READ_COORDS_TO_OFFSET(color1, dst);
-  READ_COORDS_TO_OFFSET(color2, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(value, value_coords, value_pix);
-  READ_IMG(color1, color1_coords, color1_pix);
-  READ_IMG(color2, color2_coords, color2_pix);
+  READ_IMG(value, dst_coords, value_pix);
+  READ_IMG(color1, dst_coords, color1_pix);
+  READ_IMG(color2, dst_coords, color2_pix);
 
   if (alpha_multiply) {
     value_pix.x *= color2_pix.w;
@@ -800,14 +767,11 @@ ccl_kernel mixLightenOp(CCL_WRITE(dst),
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(value, dst);
-  READ_COORDS_TO_OFFSET(color1, dst);
-  READ_COORDS_TO_OFFSET(color2, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(value, value_coords, value_pix);
-  READ_IMG(color1, color1_coords, color1_pix);
-  READ_IMG(color2, color2_coords, color2_pix);
+  READ_IMG(value, dst_coords, value_pix);
+  READ_IMG(color1, dst_coords, color1_pix);
+  READ_IMG(color2, dst_coords, color2_pix);
 
   if (alpha_multiply) {
     value_pix.x *= color2_pix.w;
@@ -859,14 +823,11 @@ ccl_kernel mixLinearLightOp(CCL_WRITE(dst),
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(value, dst);
-  READ_COORDS_TO_OFFSET(color1, dst);
-  READ_COORDS_TO_OFFSET(color2, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(value, value_coords, value_pix);
-  READ_IMG(color1, color1_coords, color1_pix);
-  READ_IMG(color2, color2_coords, color2_pix);
+  READ_IMG(value, dst_coords, value_pix);
+  READ_IMG(color1, dst_coords, color1_pix);
+  READ_IMG(color2, dst_coords, color2_pix);
 
   if (alpha_multiply) {
     value_pix.x *= color2_pix.w;
@@ -940,14 +901,11 @@ ccl_kernel mixMultiplyOp(CCL_WRITE(dst),
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(value, dst);
-  READ_COORDS_TO_OFFSET(color1, dst);
-  READ_COORDS_TO_OFFSET(color2, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(value, value_coords, value_pix);
-  READ_IMG(color1, color1_coords, color1_pix);
-  READ_IMG(color2, color2_coords, color2_pix);
+  READ_IMG(value, dst_coords, value_pix);
+  READ_IMG(color1, dst_coords, color1_pix);
+  READ_IMG(color2, dst_coords, color2_pix);
 
   if (alpha_multiply) {
     value_pix.x *= color2_pix.w;
@@ -998,14 +956,11 @@ ccl_kernel mixOverlayOp(CCL_WRITE(dst),
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(value, dst);
-  READ_COORDS_TO_OFFSET(color1, dst);
-  READ_COORDS_TO_OFFSET(color2, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(value, value_coords, value_pix);
-  READ_IMG(color1, color1_coords, color1_pix);
-  READ_IMG(color2, color2_coords, color2_pix);
+  READ_IMG(value, dst_coords, value_pix);
+  READ_IMG(color1, dst_coords, color1_pix);
+  READ_IMG(color2, dst_coords, color2_pix);
 
   if (alpha_multiply) {
     value_pix.x *= color2_pix.w;
@@ -1076,14 +1031,11 @@ ccl_kernel mixSaturationOp(CCL_WRITE(dst),
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(value, dst);
-  READ_COORDS_TO_OFFSET(color1, dst);
-  READ_COORDS_TO_OFFSET(color2, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(value, value_coords, value_pix);
-  READ_IMG(color1, color1_coords, color1_pix);
-  READ_IMG(color2, color2_coords, color2_pix);
+  READ_IMG(value, dst_coords, value_pix);
+  READ_IMG(color1, dst_coords, color1_pix);
+  READ_IMG(color2, dst_coords, color2_pix);
 
   if (alpha_multiply) {
     value_pix.x *= color2_pix.w;
@@ -1142,14 +1094,11 @@ ccl_kernel mixScreenOp(CCL_WRITE(dst),
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(value, dst);
-  READ_COORDS_TO_OFFSET(color1, dst);
-  READ_COORDS_TO_OFFSET(color2, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(value, value_coords, value_pix);
-  READ_IMG(color1, color1_coords, color1_pix);
-  READ_IMG(color2, color2_coords, color2_pix);
+  READ_IMG(value, dst_coords, value_pix);
+  READ_IMG(color1, dst_coords, color1_pix);
+  READ_IMG(color2, dst_coords, color2_pix);
 
   if (alpha_multiply) {
     value_pix.x *= color2_pix.w;
@@ -1202,14 +1151,11 @@ ccl_kernel mixSoftLightOp(CCL_WRITE(dst),
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(value, dst);
-  READ_COORDS_TO_OFFSET(color1, dst);
-  READ_COORDS_TO_OFFSET(color2, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(value, value_coords, value_pix);
-  READ_IMG(color1, color1_coords, color1_pix);
-  READ_IMG(color2, color2_coords, color2_pix);
+  READ_IMG(value, dst_coords, value_pix);
+  READ_IMG(color1, dst_coords, color1_pix);
+  READ_IMG(color2, dst_coords, color2_pix);
 
   if (alpha_multiply) {
     value_pix.x *= color2_pix.w;
@@ -1265,14 +1211,11 @@ ccl_kernel mixSubstractOp(CCL_WRITE(dst),
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(value, dst);
-  READ_COORDS_TO_OFFSET(color1, dst);
-  READ_COORDS_TO_OFFSET(color2, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(value, value_coords, value_pix);
-  READ_IMG(color1, color1_coords, color1_pix);
-  READ_IMG(color2, color2_coords, color2_pix);
+  READ_IMG(value, dst_coords, value_pix);
+  READ_IMG(color1, dst_coords, color1_pix);
+  READ_IMG(color2, dst_coords, color2_pix);
 
   if (alpha_multiply) {
     value_pix.x *= color2_pix.w;
@@ -1324,14 +1267,11 @@ ccl_kernel mixValueOp(CCL_WRITE(dst),
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(value, dst);
-  READ_COORDS_TO_OFFSET(color1, dst);
-  READ_COORDS_TO_OFFSET(color2, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(value, value_coords, value_pix);
-  READ_IMG(color1, color1_coords, color1_pix);
-  READ_IMG(color2, color2_coords, color2_pix);
+  READ_IMG(value, dst_coords, value_pix);
+  READ_IMG(color1, dst_coords, color1_pix);
+  READ_IMG(color2, dst_coords, color2_pix);
 
   if (alpha_multiply) {
     value_pix.x *= color2_pix.w;

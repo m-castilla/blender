@@ -100,6 +100,10 @@ class OpenCLDevice : public ComputeDevice {
   }
 
   cl_mem getEmptyImg();
+  cl_command_queue getQueue()
+  {
+    return m_queue;
+  }
 
  private:
   void enqueueSplit(cl_command_queue cl_queue,

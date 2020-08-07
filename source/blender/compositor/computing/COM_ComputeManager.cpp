@@ -119,7 +119,6 @@ std::pair<std::string, std::string> ComputeManager::loadKernelsSource()
   source_dst.append(kernels_filename);
 
   /* get src paths */
-  auto include_headers = "#include \"" + include_filename + "\"";
   std::vector<char *> defmerged_paths;
   for (auto relpath : compo_defmerged_paths) {
     defmerged_paths.push_back(strdup((compo_path + relpath).c_str()));
@@ -128,9 +127,10 @@ std::pair<std::string, std::string> ComputeManager::loadKernelsSource()
   /* merge all kernel source code from determined paths */
   auto result = DefMerger::defmerge(code_tag.c_str(),
                                     source_dst.c_str(),
-                                    include_headers.c_str(),
+                                    include_filename.c_str(),
                                     defmerged_paths.size(),
-                                    (const char **)&defmerged_paths[0]);
+                                    (const char **)&defmerged_paths[0],
+                                    false);
   for (auto path : defmerged_paths) {
     free(path);
   }
