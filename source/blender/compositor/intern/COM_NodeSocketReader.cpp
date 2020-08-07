@@ -101,6 +101,7 @@ void NodeSocketReader::determineResolution(int resolution[2],
                                            int preferredResolution[2],
                                            bool setResolution)
 {
+
   /* Look for a valid resolution of any input. First looking at the main input socket. This doesn't
    * set resolution on inputs yet */
   bool is_local_preferred_set = false;

@@ -208,12 +208,12 @@ ccl_device_inline float2 safe_normalize(const float2 &a)
 
 ccl_device_inline float2 min(const float2 &a, const float2 &b)
 {
-  return make_float2(min(a.x, b.x), min(a.y, b.y));
+  return make_float2(fminf(a.x, b.x), fminf(a.y, b.y));
 }
 
 ccl_device_inline float2 max(const float2 &a, const float2 &b)
 {
-  return make_float2(max(a.x, b.x), max(a.y, b.y));
+  return make_float2(fmaxf(a.x, b.x), fmaxf(a.y, b.y));
 }
 
 ccl_device_inline float2 clamp(const float2 &a, const float2 &mn, const float2 &mx)

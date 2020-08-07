@@ -130,11 +130,14 @@ void NodeOperationBuilder::addOperation(NodeOperation *operation)
 }
 
 void NodeOperationBuilder::mapInputSocket(NodeInput *node_socket,
-                                          NodeOperationInput *operation_socket)
+                                          NodeOperationInput *operation_socket,
+                                          bool check_equal_types)
 {
   BLI_assert(m_current_node);
   BLI_assert(node_socket->getNode() == m_current_node);
-  BLI_assert(node_socket->getSocketType() == operation_socket->getSocketType());
+  if (check_equal_types) {
+    BLI_assert(node_socket->getSocketType() == operation_socket->getSocketType());
+  }
   /* note: this maps operation sockets to node sockets.
    * for resolving links the map will be inverted first in convertToOperations,
    * to get a list of links for each node input socket.
@@ -143,11 +146,14 @@ void NodeOperationBuilder::mapInputSocket(NodeInput *node_socket,
 }
 
 void NodeOperationBuilder::mapOutputSocket(NodeOutput *node_socket,
-                                           NodeOperationOutput *operation_socket)
+                                           NodeOperationOutput *operation_socket,
+                                           bool check_equal_types)
 {
   BLI_assert(m_current_node);
   BLI_assert(node_socket->getNode() == m_current_node);
-  BLI_assert(node_socket->getSocketType() == operation_socket->getSocketType());
+  if (check_equal_types) {
+    BLI_assert(node_socket->getSocketType() == operation_socket->getSocketType());
+  }
 
   m_output_map[node_socket] = operation_socket;
   operation_socket->setAsNodeOutput(node_socket);

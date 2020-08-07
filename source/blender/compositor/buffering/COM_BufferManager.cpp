@@ -90,7 +90,7 @@ void BufferManager::deinitialize(bool isBreaked)
     m_recycler->deleteAllBuffers();
 #endif
 
-#if defined(DEBUG) || defined(COM_DEBUG)
+#if defined(DEBUG)
     if (!isBreaked) {
       // assert all reads counted during optimization are completed on exec
       for (auto &entry : m_readers_reads) {
@@ -203,7 +203,10 @@ BufferManager::ReadResult BufferManager::readSeek(NodeOperation *op,
     CacheBuffer *cache = getCache(op);
     BLI_assert(cache);
     if (cache->host.state == HostMemoryState::FILLED) {
-      reads->is_write_complete = true;
+      if (!reads->is_write_complete) {
+        reads->is_write_complete = true;
+        reportWriteCompleted(op, man);
+      }
       reads->tmp_buffer = m_recycler->createTmpBuffer(op->getOutputNChannels(), false);
       reads->tmp_buffer->host = cache->host;
     }
@@ -213,7 +216,10 @@ BufferManager::ReadResult BufferManager::readSeek(NodeOperation *op,
     }
   }
   else if (op->getBufferType() == BufferType::NO_BUFFER_NO_WRITE) {
-    reads->is_write_complete = true;
+    if (!reads->is_write_complete) {
+      reads->is_write_complete = true;
+      reportWriteCompleted(op, man);
+    }
   }
 
   if (reads->is_write_complete) {
@@ -477,6 +483,12 @@ CacheBuffer *BufferManager::getCache(NodeOperation *op)
   BLI_assert(op->getHeight() == cache->host.height);
   BLI_assert(op->getWidth() == cache->host.width);
   return cache;
+}
+
+bool BufferManager::hasBufferCache(NodeOperation *op)
+{
+  return op->getBufferType() == BufferType::CACHED &&
+         m_cached_buffers.find(op->getKey()) != m_cached_buffers.end();
 }
 
 TmpBuffer *BufferManager::getCustomBuffer(NodeOperation *op)

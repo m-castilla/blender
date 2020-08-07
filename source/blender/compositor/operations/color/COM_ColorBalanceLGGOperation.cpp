@@ -49,12 +49,10 @@ ccl_kernel colorBalanceLGGOp(
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(value, dst);
-  READ_COORDS_TO_OFFSET(color, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(value, value_coords, value_pix);
-  READ_IMG(color, color_coords, color_pix);
+  READ_IMG(value, dst_coords, value_pix);
+  READ_IMG(color, dst_coords, color_pix);
 
   const float fac = fminf(1.0f, value_pix.x);
   const float mfac = 1.0f - fac;

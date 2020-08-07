@@ -1,6 +1,7 @@
 #ifndef __COM_KERNEL_ALGO_H__
 #define __COM_KERNEL_ALGO_H__
 
+#include "kernel_util/COM_kernel_color.h"
 #include "kernel_util/COM_kernel_geom.h"
 #include "kernel_util/COM_kernel_math.h"
 

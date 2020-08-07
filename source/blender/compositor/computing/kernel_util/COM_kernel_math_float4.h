@@ -135,7 +135,7 @@ ccl_device_inline float4 operator*(const float4 &a, const float f)
 #  endif
 }
 
-ccl_device_inline float4 operator*(float f, const float4 &a)
+ccl_device_inline float4 operator*(const float f, const float4 &a)
 {
   return a * f;
 }
@@ -379,7 +379,7 @@ ccl_device_inline float4 min(const float4 &a, const float b)
 #  ifdef __KERNEL_SSE__
   return float4(_mm_min_ps(a.m128, _mm_set1_ps(b)));
 #  else
-  return make_float4(min(a.x, b), min(a.y, b), min(a.z, b), min(a.w, b));
+  return make_float4(fminf(a.x, b), fminf(a.y, b), fminf(a.z, b), fminf(a.w, b));
 #  endif
 }
 
@@ -388,7 +388,7 @@ ccl_device_inline float4 max(const float4 &a, const float4 &b)
 #  ifdef __KERNEL_SSE__
   return float4(_mm_max_ps(a.m128, b.m128));
 #  else
-  return make_float4(max(a.x, b.x), max(a.y, b.y), max(a.z, b.z), max(a.w, b.w));
+  return make_float4(fmaxf(a.x, b.x), fmaxf(a.y, b.y), fmaxf(a.z, b.z), fmaxf(a.w, b.w));
 #  endif
 }
 
@@ -397,7 +397,7 @@ ccl_device_inline float4 max(const float4 &a, const float b)
 #  ifdef __KERNEL_SSE__
   return float4(_mm_max_ps(a.m128, _mm_set1_ps(b)));
 #  else
-  return make_float4(max(a.x, b), max(a.y, b), max(a.z, b), max(a.w, b));
+  return make_float4(fminf(a.x, b), fminf(a.y, b), fminf(a.z, b), fminf(a.w, b));
 #  endif
 }
 

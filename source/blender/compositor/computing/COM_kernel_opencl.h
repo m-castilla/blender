@@ -160,26 +160,18 @@
   __read_only image2d_t image, const BOOL image##_single, const float4 image##_single_elem
 #define CCL_WRITE(image) \
   __write_only image2d_t image, const int image##_start_x, const int image##_start_y
-#define CCL_SAMPLER(sampler) sampler_t sampler
+#define CCL_SAMPLER(sampler) const sampler_t sampler
 /* END of OpenCL kernel function signature macros*/
 
-#define READ_DECL(src) \
-  int2 src##_coords; \
-  float4 src##_pix;
-#define SAMPLE_DECL(src) \
-  float2 src##_coords; \
-  float4 src##_pix;
+#define READ_DECL(src) float4 src##_pix;
+#define SAMPLE_DECL(src) float4 src##_pix;
 #define WRITE_DECL(dst) \
   int2 dst##_coords; \
   int write_offset_x = get_global_id(0), write_offset_y = get_global_id(1);
 
-#define READ_COORDS_TO_OFFSET(src, dst) \
-  src##_coords.x = dst##_start_x + write_offset_x; \
-  src##_coords.y = dst##_start_y + write_offset_y;
-
-#define WRITE_COORDS_TO_OFFSET(dst) \
-  dst##_coords.x = dst##_start_x + write_offset_x; \
-  dst##_coords.y = dst##_start_y + write_offset_y;
+#define COORDS_TO_OFFSET(coords) \
+  coords.x = dst##_start_x + write_offset_x; \
+  coords.y = dst##_start_y + write_offset_y;
 
 /*src_img must be a image2d_t , coords must be int2*/
 #define READ_IMG(src, coords, result) \

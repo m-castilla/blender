@@ -79,13 +79,11 @@ CCL_NAMESPACE_BEGIN
 
 #define READ_DECL(src) \
   PixelsImg src##_img = src->pixelsImg(); \
-  int2 src##_coords; \
   float4 src##_pix; \
   bool src##_single = src->is_single_elem;
 
 #define SAMPLE_DECL(src) \
   PixelsImg src##_img = src->pixelsImg(); \
-  float2 src##_coords; \
   float4 src##_pix; \
   bool src##_single = src->is_single_elem;
 
@@ -96,13 +94,9 @@ CCL_NAMESPACE_BEGIN
   int2 dst##_coords; \
   int write_offset_x, write_offset_y;
 
-#define READ_COORDS_TO_OFFSET(src, dst) \
-  src##_coords.x = dst##_start_x + write_offset_x; \
-  src##_coords.y = dst##_start_y + write_offset_y;
-
-#define WRITE_COORDS_TO_OFFSET(dst) \
-  dst##_coords.x = dst##_start_x + write_offset_x; \
-  dst##_coords.y = dst##_start_y + write_offset_y;
+#define COORDS_TO_OFFSET(coords) \
+  coords.x = dst##_start_x + write_offset_x; \
+  coords.y = dst##_start_y + write_offset_y;
 
 /*CPU op loop*/
 #define CPU_LOOP_START(dst) \

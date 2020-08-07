@@ -27,11 +27,12 @@ class IDMaskOperation : public NodeOperation {
  public:
   IDMaskOperation();
 
-  void *initializeTileData(rcti *rect);
-  void executePixel(float output[4], int x, int y, void *data);
-
   void setObjectIndex(float objectIndex)
   {
     this->m_objectIndex = objectIndex;
   }
+
+ protected:
+  virtual void hashParams() override;
+  virtual void execPixels(ExecutionManager &man) override;
 };
