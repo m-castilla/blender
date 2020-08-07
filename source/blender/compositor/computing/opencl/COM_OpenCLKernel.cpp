@@ -34,10 +34,11 @@ OpenCLKernel::OpenCLKernel(OpenCLManager &man,
                            std::string kernel_name,
                            cl_kernel cl_kernel)
     : ComputeKernel(kernel_name),
-      m_man(man),
+      m_work_enqueued(false),
       m_platform(platform),
-      m_cl_kernel(cl_kernel),
+      m_man(man),
       m_device(device),
+      m_cl_kernel(cl_kernel),
       m_max_group_size(0),
       m_group_size_multiple(0),
       m_initialized(false),
@@ -58,6 +59,7 @@ OpenCLKernel::~OpenCLKernel()
 void OpenCLKernel::initialize()
 {
   if (!m_initialized) {
+    m_work_enqueued = false;
     auto device_id = m_device->getDeviceId();
     m_man.printIfError(clGetKernelWorkGroupInfo(m_cl_kernel,
                                                 device_id,
@@ -103,6 +105,15 @@ void OpenCLKernel::reset(ComputeDevice *new_device)
   initialize();
 }
 
+void OpenCLKernel::clearArgs()
+{
+  m_work_enqueued = false;
+  for (cl_mem buffer : m_args_buffers) {
+    clReleaseMemObject(buffer);
+  }
+  m_args_buffers.clear();
+}
+
 void OpenCLKernel::addReadImgArgs(PixelsRect &pixels)
 {
   auto img = pixels.pixelsImg();
@@ -121,17 +132,26 @@ void OpenCLKernel::addReadImgArgs(PixelsRect &pixels)
   addFloat4Arg(float4_elem);
 }
 
-cl_mem OpenCLKernel::addWriteImgArgs(PixelsRect &pixels)
+std::function<void(int, int)> OpenCLKernel::addWriteImgArgs(PixelsRect &pixels)
 {
-  auto img = pixels.pixelsImg();
   cl_mem cl_img = (cl_mem)pixels.tmp_buffer->device.buffer;
   m_man.printIfError(clSetKernelArg(m_cl_kernel, m_args_count, sizeof(cl_mem), &cl_img));
   m_args_count++;
 
-  addIntArg(pixels.xmin);
-  addIntArg(pixels.ymin);
+  int first_offset_arg_idx = m_args_count;
+  std::function<void(int, int)> set_offset_func = [&, first_offset_arg_idx](int offset_x,
+                                                                            int offset_y) {
+    cl_int cl_offset_x = (cl_int)offset_x;
+    cl_int cl_offset_y = (cl_int)offset_y;
+    m_man.printIfError(
+        clSetKernelArg(m_cl_kernel, first_offset_arg_idx, sizeof(cl_int), &cl_offset_x));
+    m_man.printIfError(
+        clSetKernelArg(m_cl_kernel, first_offset_arg_idx + 1, sizeof(cl_int), &cl_offset_y));
+  };
 
-  return cl_img;
+  m_args_count += 2;
+
+  return set_offset_func;
 }
 
 void OpenCLKernel::addSamplerArg(PixelsSampler &pix_sampler)
@@ -177,4 +197,37 @@ void OpenCLKernel::addFloat4Arg(float *value)
   cl_float4 *cfloat4 = (cl_float4 *)value;
   m_man.printIfError(clSetKernelArg(m_cl_kernel, m_args_count, sizeof(cl_float4), cfloat4));
   m_args_count++;
+}
+
+cl_mem OpenCLKernel::addReadOnlyBufferArg(void *data, size_t data_size)
+{
+  cl_int error;
+  cl_mem buffer = clCreateBuffer(
+      m_platform.getContext(), CL_MEM_READ_ONLY, data_size, data, &error);
+  m_args_buffers.push_back(buffer);
+
+  m_man.printIfError(error);
+  m_man.printIfError(clEnqueueWriteBuffer(
+      m_device->getQueue(), buffer, CL_FALSE, 0, data_size, &data, 0, NULL, NULL));
+  m_work_enqueued = true;
+
+  m_man.printIfError(clSetKernelArg(m_cl_kernel, m_args_count, sizeof(cl_mem), &buffer));
+  m_args_count++;
+
+  return buffer;
+}
+
+void OpenCLKernel::addFloat4CArrayArg(float *f4_array, int n_elems)
+{
+  addReadOnlyBufferArg(f4_array, sizeof(cl_float4) * n_elems);
+}
+
+void OpenCLKernel::addIntCArrayArg(int *int_array, int n_elems)
+{
+  addReadOnlyBufferArg(int_array, sizeof(cl_int) * n_elems);
+}
+
+void OpenCLKernel::addFloatCArrayArg(float *float_array, int n_elems)
+{
+  addReadOnlyBufferArg(float_array, sizeof(cl_float) * n_elems);
 }

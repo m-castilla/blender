@@ -18,6 +18,7 @@
 
 #include "COM_SwitchViewNode.h"
 #include "BLI_listbase.h"
+#include <algorithm>
 
 SwitchViewNode::SwitchViewNode(bNode *editorNode) : Node(editorNode)
 {
@@ -33,8 +34,8 @@ void SwitchViewNode::convertToOperations(NodeConverter &converter,
 
   /* get the internal index of the socket with a matching name */
   int nr = BLI_findstringindex(&bnode->inputs, viewName, offsetof(bNodeSocket, name));
-  nr = max(nr, 0);
+  nr = std::max(nr, 0);
 
-  result = converter.addInputProxy(getInputSocket(nr), false);
-  converter.mapOutputSocket(getOutputSocket(0), result);
+  result = converter.addInputProxy(getInputSocket(nr));
+  converter.mapOutputSocket(getOutputSocket(0), result, false);
 }

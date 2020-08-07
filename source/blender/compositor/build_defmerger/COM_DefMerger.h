@@ -27,9 +27,10 @@ namespace DefMerger {
  * using the "defmerger" executable in your CMakeLists.txt*/
 std::string defmerge(const char *tag,
                      const char *dst_path,
-                     const char *include_str,
+                     const char *include_file,
                      int n_merge_files,
-                     const char *merge_paths[]);
+                     const char *merge_paths[],
+                     bool save_file = true);
 
 }  // namespace DefMerger
 

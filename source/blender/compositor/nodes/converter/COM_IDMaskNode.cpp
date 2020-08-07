@@ -18,7 +18,6 @@
 
 #include "COM_IDMaskNode.h"
 #include "COM_AntiAliasOperation.h"
-#include "COM_ExecutionSystem.h"
 #include "COM_IDMaskOperation.h"
 
 IDMaskNode::IDMaskNode(bNode *editorNode) : Node(editorNode)

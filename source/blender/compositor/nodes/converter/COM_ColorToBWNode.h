@@ -19,7 +19,6 @@
 #pragma once
 
 #include "COM_Node.h"
-#include "DNA_node_types.h"
 /**
  * \brief ColorToBWNode
  * \ingroup Node

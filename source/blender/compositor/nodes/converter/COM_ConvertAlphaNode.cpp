@@ -18,7 +18,6 @@
 
 #include "COM_ConvertAlphaNode.h"
 #include "COM_ConvertOperation.h"
-#include "COM_ExecutionSystem.h"
 
 void ConvertAlphaNode::convertToOperations(NodeConverter &converter,
                                            const CompositorContext & /*context*/) const

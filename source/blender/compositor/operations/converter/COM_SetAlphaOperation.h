@@ -25,21 +25,9 @@
  * it assumes we are in sRGB color space.
  */
 class SetAlphaOperation : public NodeOperation {
- private:
-  SocketReader *m_inputColor;
-  SocketReader *m_inputAlpha;
-
  public:
-  /**
-   * Default constructor
-   */
   SetAlphaOperation();
 
-  /**
-   * the inner loop of this program
-   */
-  void executePixelSampled(float output[4], float x, float y, PixelSampler sampler);
-
-  void initExecution();
-  void deinitExecution();
+ protected:
+  virtual void execPixels(ExecutionManager &man) override;
 };

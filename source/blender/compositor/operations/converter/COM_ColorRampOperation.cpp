@@ -17,51 +17,94 @@
  */
 
 #include "COM_ColorRampOperation.h"
+#include "COM_ComputeKernel.h"
+#include "COM_kernel_cpu.h"
 
-#include "BKE_colorband.h"
-
+using namespace std::placeholders;
 ColorRampOperation::ColorRampOperation() : NodeOperation()
 {
-  this->addInputSocket(COM_DT_VALUE);
-  this->addOutputSocket(COM_DT_COLOR);
+  this->addInputSocket(SocketType::VALUE);
+  this->addOutputSocket(SocketType::COLOR);
 
-  this->m_inputProgram = NULL;
   this->m_colorBand = NULL;
 }
 void ColorRampOperation::hashParams()
 {
   NodeOperation::hashParams();
+
+  /*No need to hash m_colorBand->cur and m_colorBand->data->cur variables, they are used as cursor
+   * not parameters*/
   hashParam(m_colorBand->color_mode);
   hashParam(m_colorBand->ipotype);
   hashParam(m_colorBand->ipotype_hue);
   hashParam(m_colorBand->tot);
-
-  hashParam(m_colorBand->data->a);
-  hashParam(m_colorBand->data->b);
-  hashParam(m_colorBand->data->g);
-  hashParam(m_colorBand->data->pos);
-  hashParam(m_colorBand->data->r);
-  /*No need to hash m_colorBand->cur and m_colorBand->data->cur variables, they are used as cursor
-   * not parameters*/
+  for (int i = 0; i < m_colorBand->tot; i++) {
+    CBData data = m_colorBand->data[i];
+    hashDataAsParam(&data.r, 5);
+  }
 }
 
-void ColorRampOperation::initExecution()
+#define OPENCL_CODE
+CCL_NAMESPACE_BEGIN
+ccl_kernel colorRampOp(CCL_WRITE(dst),
+                       CCL_READ(factor),
+                       const int n_bands,
+                       const int interp_type,
+                       const int hue_interp_type,
+                       const int color_mode,
+                       const float4 *bands_colors,
+                       const float *bands_pos)
 {
-  this->m_inputProgram = this->getInputSocketReader(0);
+  READ_DECL(factor);
+  WRITE_DECL(dst);
+
+  CPU_LOOP_START(dst);
+
+  COORDS_TO_OFFSET(dst_coords);
+
+  READ_IMG(factor, dst_coords, factor_pix);
+  float4 result = colorband_evaluate(
+      factor_pix.x, n_bands, interp_type, hue_interp_type, color_mode, bands_colors, bands_pos);
+  WRITE_IMG(dst, dst_coords, result);
+
+  CPU_LOOP_END
 }
+CCL_NAMESPACE_END
+#undef OPENCL_CODE
 
-void ColorRampOperation::executePixelSampled(float output[4],
-                                             float x,
-                                             float y,
-                                             PixelSampler sampler)
+void ColorRampOperation::execPixels(ExecutionManager &man)
 {
-  float values[4];
+  auto factor = getInputOperation(0)->getPixels(this, man);
 
-  this->m_inputProgram->readSampled(values, x, y, sampler);
-  BKE_colorband_evaluate(this->m_colorBand, values[0], output);
-}
+  int n_bands = m_colorBand->tot;
+  CCL_NAMESPACE::float4 *colors = new CCL_NAMESPACE::float4[n_bands];
+  float *positions = new float[n_bands];
+  for (int i = 0; i < n_bands; i++) {
+    CBData band = m_colorBand->data[i];
+    colors[i] = CCL_NAMESPACE::make_float4(band.r, band.g, band.b, band.a);
+    positions[i] = band.pos;
+  }
 
-void ColorRampOperation::deinitExecution()
-{
-  this->m_inputProgram = NULL;
+  std::function<void(PixelsRect &, const WriteRectContext &)> cpu_write = std::bind(
+      CCL_NAMESPACE::colorRampOp,
+      _1,
+      factor,
+      n_bands,
+      m_colorBand->ipotype,
+      m_colorBand->ipotype_hue,
+      m_colorBand->color_mode,
+      colors,
+      positions);
+  computeWriteSeek(man, cpu_write, "colorRampOp", [&](ComputeKernel *kernel) {
+    kernel->addReadImgArgs(*factor);
+    kernel->addIntArg(n_bands);
+    kernel->addIntArg(m_colorBand->ipotype);
+    kernel->addIntArg(m_colorBand->ipotype_hue);
+    kernel->addIntArg(m_colorBand->color_mode);
+    kernel->addFloat4CArrayArg((float *)colors, n_bands);
+    kernel->addFloatCArrayArg(positions, n_bands);
+  });
+
+  delete[] colors;
+  delete[] positions;
 }

@@ -34,6 +34,11 @@ inline bool hasBuffer(BufferType buf_type)
          buf_type != BufferType::NO_BUFFER_NO_WRITE;
 }
 
+inline bool hasWrite(BufferType buf_type)
+{
+  return buf_type != BufferType::NO_BUFFER_NO_WRITE && buf_type != BufferType::CUSTOM;
+}
+
 std::unique_ptr<TmpBuffer> createUnmanagedTmpBuffer(int n_channels,
                                                     float *host_buffer,
                                                     int host_width,

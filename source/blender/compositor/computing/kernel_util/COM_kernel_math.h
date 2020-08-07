@@ -95,40 +95,50 @@ using std::isfinite;
 using std::isnan;
 using std::sqrt;
 
-ccl_device_inline int abs(int x)
+ccl_device_inline int abs(const int x)
 {
   return (x > 0) ? x : -x;
 }
 
-ccl_device_inline int max(int a, int b)
+ccl_device_inline int max(const int a, const int b)
 {
   return (a > b) ? a : b;
 }
 
-ccl_device_inline int min(int a, int b)
+ccl_device_inline int min(const int a, const int b)
+{
+  return (a < b) ? a : b;
+}
+
+ccl_device_inline float max(const float a, const float b)
+{
+  return (a > b) ? a : b;
+}
+
+ccl_device_inline float min(const float a, const float b)
 {
   return (a < b) ? a : b;
 }
 #endif /* __KERNEL_COMPUTE__ */
 
-ccl_device_inline float fminf3(float a, float b, float c)
+ccl_device_inline float fminf3(const float a, const float b, const float c)
 {
   return fminf(fminf(a, b), c);
 }
 
-ccl_device_inline float fmaxf3(float a, float b, float c)
+ccl_device_inline float fmaxf3(const float a, const float b, const float c)
 {
-  return fminf(fminf(a, b), c);
+  return fmaxf(fmaxf(a, b), c);
 }
 
-ccl_device_inline float fminf4(float a, float b, float c, float d)
+ccl_device_inline float fminf4(const float a, const float b, const float c, const float d)
 {
   return fminf(fminf(a, b), fminf(c, d));
 }
 
-ccl_device_inline float fmaxf4(float a, float b, float c, float d)
+ccl_device_inline float fmaxf4(const float a, const float b, const float c, const float d)
 {
-  return fminf(fminf(a, b), fminf(c, d));
+  return fmaxf(fmaxf(a, b), fmaxf(c, d));
 }
 
 #ifndef __KERNEL_OPENCL__
@@ -226,20 +236,20 @@ ccl_device_inline float4 __int4_as_float4(int4 i)
 #endif /* __KERNEL_OPENCL__ */
 
 /* Versions of functions which are safe for fast math. */
-ccl_device_inline bool isnan_safe(float f)
+ccl_device_inline bool isnan_safe(const float f)
 {
   unsigned int x = __float_as_uint(f);
   return (x << 1) > 0xff000000u;
 }
 
-ccl_device_inline bool isfinite_safe(float f)
+ccl_device_inline bool isfinite_safe(const float f)
 {
   /* By IEEE 754 rule, 2*Inf equals Inf */
   unsigned int x = __float_as_uint(f);
   return (f == f) && (x == 0 || x == (1u << 31) || (f != 2.0f * f)) && !((x << 1) > 0xff000000u);
 }
 
-ccl_device_inline float ensure_finite(float v)
+ccl_device_inline float ensure_finite(const float v)
 {
   return isfinite_safe(v) ? v : 0.0f;
 }
@@ -252,7 +262,7 @@ ccl_device_inline int clamp(const int a, const int mn, const int mx)
 
 ccl_device_inline float clamp(const float a, const float mn, const float mx)
 {
-  return min(max(a, mn), mx);
+  return fminf(fmaxf(a, mn), mx);
 }
 
 ccl_device_inline float mix(const float a, const float b, const float t)
@@ -283,50 +293,50 @@ ccl_device_inline float saturate(const float a)
 }
 #endif /* __KERNEL_CUDA__ */
 
-ccl_device_inline int float_to_int(float f)
+ccl_device_inline int float_to_int(const float f)
 {
   return (int)f;
 }
 
-ccl_device_inline int floor_to_int(float f)
+ccl_device_inline int floor_to_int(const float f)
 {
   return float_to_int(floorf(f));
 }
 
-ccl_device_inline int quick_floor_to_int(float x)
+ccl_device_inline int quick_floor_to_int(const float x)
 {
   return float_to_int(x) - ((x < 0) ? 1 : 0);
 }
 
-ccl_device_inline float floorfrac(float x, int *i)
+ccl_device_inline float floorfrac(const float x, int *i)
 {
   *i = quick_floor_to_int(x);
   return x - *i;
 }
 
-ccl_device_inline int ceil_to_int(float f)
+ccl_device_inline int ceil_to_int(const float f)
 {
   return float_to_int(ceilf(f));
 }
 
-ccl_device_inline float fractf(float x)
+ccl_device_inline float fractf(const float x)
 {
   return x - floorf(x);
 }
 
 /* Adapted from godotengine math_funcs.h. */
-ccl_device_inline float wrapf(float value, float max, float min)
+ccl_device_inline float wrapf(const float value, const float max, const float min)
 {
   float range = max - min;
   return (range != 0.0f) ? value - (range * floorf((value - min) / range)) : min;
 }
 
-ccl_device_inline float pingpongf(float a, float b)
+ccl_device_inline float pingpongf(const float a, const float b)
 {
   return (b != 0.0f) ? fabsf(fractf((a - b) / (b * 2.0f)) * b * 2.0f - b) : 0.0f;
 }
 
-ccl_device_inline float smoothminf(float a, float b, float k)
+ccl_device_inline float smoothminf(const float a, const float b, const float k)
 {
   if (k != 0.0f) {
     float h = fmaxf(k - fabsf(a - b), 0.0f) / k;
@@ -337,12 +347,12 @@ ccl_device_inline float smoothminf(float a, float b, float k)
   }
 }
 
-ccl_device_inline float signf(float f)
+ccl_device_inline float signf(const float f)
 {
   return (f < 0.0f) ? -1.0f : 1.0f;
 }
 
-ccl_device_inline float nonzerof(float f, float eps)
+ccl_device_inline float nonzerof(const float f, const float eps)
 {
   if (fabsf(f) < eps)
     return signf(f) * eps;
@@ -351,7 +361,7 @@ ccl_device_inline float nonzerof(float f, float eps)
 }
 
 /* Signum function testing for zero. Matches GLSL and OSL functions. */
-ccl_device_inline float compatible_signf(float f)
+ccl_device_inline float compatible_signf(const float f)
 {
   if (f == 0.0f) {
     return 0.0f;
@@ -361,13 +371,13 @@ ccl_device_inline float compatible_signf(float f)
   }
 }
 
-ccl_device_inline float smoothstepf(float f)
+ccl_device_inline float smoothstepf(const float f)
 {
   float ff = f * f;
   return (3.0f * ff - 2.0f * ff * f);
 }
 
-ccl_device_inline int mod(int x, int m)
+ccl_device_inline int mod(const int x, const int m)
 {
   return (x % m + m) % m;
 }
@@ -387,13 +397,14 @@ ccl_device_inline float4 float3_to_float4(const float3 a)
   return make_float4(a.x, a.y, a.z, 1.0f);
 }
 
-ccl_device_inline float inverse_lerp(float a, float b, float x)
+ccl_device_inline float inverse_lerp(const float a, const float b, const float x)
 {
   return (x - a) / (b - a);
 }
 
 /* Cubic interpolation between b and c, a and d are the previous and next point. */
-ccl_device_inline float cubic_interp(float a, float b, float c, float d, float x)
+ccl_device_inline float cubic_interp(
+    const float a, const float b, const float c, const float d, const float x)
 {
   return 0.5f *
              (((d + 3.0f * (b - c) - a) * x + (2.0f * a - 5.0f * b + 4.0f * c - d)) * x +
@@ -464,7 +475,7 @@ ccl_device_inline void make_orthonormals(const float3 N, float3 *a, float3 *b)
 
 /* Color division */
 
-ccl_device_inline float3 safe_invert_color(float3 a)
+ccl_device_inline float3 safe_invert_color(const float3 a)
 {
   float x, y, z;
 
@@ -475,7 +486,7 @@ ccl_device_inline float3 safe_invert_color(float3 a)
   return make_float3(x, y, z);
 }
 
-ccl_device_inline float3 safe_divide_color(float3 a, float3 b)
+ccl_device_inline float3 safe_divide_color(const float3 a, const float3 b)
 {
   float x, y, z;
 
@@ -486,7 +497,7 @@ ccl_device_inline float3 safe_divide_color(float3 a, float3 b)
   return make_float3(x, y, z);
 }
 
-ccl_device_inline float3 safe_divide_even_color(float3 a, float3 b)
+ccl_device_inline float3 safe_divide_even_color(const float3 a, const float3 b)
 {
   float x, y, z;
 
@@ -524,7 +535,7 @@ ccl_device_inline float3 safe_divide_even_color(float3 a, float3 b)
 
 /* Rotation of point around axis and angle */
 
-ccl_device_inline float3 rotate_around_axis(float3 p, float3 axis, float angle)
+ccl_device_inline float3 rotate_around_axis(const float3 p, const float3 axis, const float angle)
 {
   float costheta = cosf(angle);
   float sintheta = sinf(angle);
@@ -547,27 +558,27 @@ ccl_device_inline float3 rotate_around_axis(float3 p, float3 axis, float angle)
 
 /* NaN-safe math ops */
 
-ccl_device_inline float safe_sqrtf(float f)
+ccl_device_inline float safe_sqrtf(const float f)
 {
   return sqrtf(max(f, 0.0f));
 }
 
-ccl_device_inline float inversesqrtf(float f)
+ccl_device_inline float inversesqrtf(const float f)
 {
   return (f > 0.0f) ? 1.0f / sqrtf(f) : 0.0f;
 }
 
-ccl_device float safe_asinf(float a)
+ccl_device float safe_asinf(const float a)
 {
   return asinf(clamp(a, -1.0f, 1.0f));
 }
 
-ccl_device float safe_acosf(float a)
+ccl_device float safe_acosf(const float a)
 {
   return acosf(clamp(a, -1.0f, 1.0f));
 }
 
-ccl_device float compatible_powf(float x, float y)
+ccl_device float compatible_powf(const float x, const float y)
 {
 #ifdef __KERNEL_COMPUTE__
   if (y == 0.0f) /* x^0 -> 1, including 0^0 */
@@ -586,7 +597,7 @@ ccl_device float compatible_powf(float x, float y)
   return powf(x, y);
 }
 
-ccl_device float safe_powf(float a, float b)
+ccl_device float safe_powf(const float a, const float b)
 {
   if (UNLIKELY(a < 0.0f && b != float_to_int(b)))
     return 0.0f;
@@ -594,12 +605,12 @@ ccl_device float safe_powf(float a, float b)
   return compatible_powf(a, b);
 }
 
-ccl_device float safe_divide(float a, float b)
+ccl_device float safe_divide(const float a, const float b)
 {
   return (b != 0.0f) ? a / b : 0.0f;
 }
 
-ccl_device float safe_logf(float a, float b)
+ccl_device float safe_logf(const float a, const float b)
 {
   if (UNLIKELY(a <= 0.0f || b <= 0.0f))
     return 0.0f;
@@ -607,17 +618,17 @@ ccl_device float safe_logf(float a, float b)
   return safe_divide(logf(a), logf(b));
 }
 
-ccl_device float safe_modulo(float a, float b)
+ccl_device float safe_modulo(const float a, const float b)
 {
   return (b != 0.0f) ? fmodf(a, b) : 0.0f;
 }
 
-ccl_device_inline float sqr(float a)
+ccl_device_inline float sqr(const float a)
 {
   return a * a;
 }
 
-ccl_device_inline float pow20(float a)
+ccl_device_inline float pow20(const float a)
 {
   return sqr(sqr(sqr(sqr(a)) * a));
 }
@@ -636,17 +647,17 @@ ccl_device_inline float beta(float x, float y)
 #endif
 }
 
-ccl_device_inline float xor_signmask(float x, int y)
+ccl_device_inline float xor_signmask(const float x, const int y)
 {
   return __int_as_float(__float_as_int(x) ^ y);
 }
 
-ccl_device float bits_to_01(uint bits)
+ccl_device float bits_to_01(const uint bits)
 {
   return bits * (1.0f / (float)0xFFFFFFFF);
 }
 
-ccl_device_inline uint count_leading_zeros(uint x)
+ccl_device_inline uint count_leading_zeros(const uint x)
 {
 #if defined(__KERNEL_CUDA__) || defined(__KERNEL_OPTIX__)
   return __clz(x);
@@ -664,7 +675,7 @@ ccl_device_inline uint count_leading_zeros(uint x)
 #endif
 }
 
-ccl_device_inline uint count_trailing_zeros(uint x)
+ccl_device_inline uint count_trailing_zeros(const uint x)
 {
 #if defined(__KERNEL_CUDA__) || defined(__KERNEL_OPTIX__)
   return (__ffs(x) - 1);
@@ -682,7 +693,7 @@ ccl_device_inline uint count_trailing_zeros(uint x)
 #endif
 }
 
-ccl_device_inline uint find_first_set(uint x)
+ccl_device_inline uint find_first_set(const uint x)
 {
 #if defined(__KERNEL_CUDA__) || defined(__KERNEL_OPTIX__)
   return __ffs(x);
@@ -738,7 +749,10 @@ ccl_device_inline float2 map_to_sphere(const float3 co)
  * https://randomascii.wordpress.com/2012/02/25/comparing-floating-point-numbers-2012-edition/
  */
 
-ccl_device_inline float compare_floats(float a, float b, float abs_diff, int ulp_diff)
+ccl_device_inline float compare_floats(const float a,
+                                       const float b,
+                                       const float abs_diff,
+                                       const int ulp_diff)
 {
   if (fabsf(a - b) < abs_diff) {
     return true;

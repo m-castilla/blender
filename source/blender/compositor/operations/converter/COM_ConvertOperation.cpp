@@ -57,10 +57,9 @@ ccl_kernel convertValueToColorOp(CCL_WRITE(dst), CCL_READ(value))
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(value, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(value, value_coords, value_pix);
+  READ_IMG(value, dst_coords, value_pix);
   value_pix.y = value_pix.x;
   value_pix.z = value_pix.x;
   value_pix.w = 1.0f;
@@ -98,10 +97,9 @@ ccl_kernel convertColorToValueOp(CCL_WRITE(dst), CCL_READ(color))
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(color, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(color, color_coords, color_pix);
+  READ_IMG(color, dst_coords, color_pix);
   color_pix.x = (color_pix.x + color_pix.y + color_pix.z) / 3.0f;
   WRITE_IMG(dst, dst_coords, color_pix);
 
@@ -162,10 +160,9 @@ ccl_kernel convertColorToVectorOp(CCL_WRITE(dst), CCL_READ(color))
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(color, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(color, color_coords, color_pix);
+  READ_IMG(color, dst_coords, color_pix);
   WRITE_IMG(dst, dst_coords, color_pix);
 
   CPU_LOOP_END
@@ -200,10 +197,9 @@ ccl_kernel convertValueToVectorOp(CCL_WRITE(dst), CCL_READ(value))
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(value, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(value, value_coords, value_pix);
+  READ_IMG(value, dst_coords, value_pix);
   value_pix.y = value_pix.x;
   value_pix.z = value_pix.x;
   WRITE_IMG(dst, dst_coords, value_pix);
@@ -241,10 +237,9 @@ ccl_kernel convertVectorToColorOp(CCL_WRITE(dst), CCL_READ(vector))
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(vector, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(vector, vector_coords, vector_pix);
+  READ_IMG(vector, dst_coords, vector_pix);
   vector_pix.w = 1.0f;
   WRITE_IMG(dst, dst_coords, vector_pix);
 
@@ -281,10 +276,9 @@ ccl_kernel convertVectorToValueOp(CCL_WRITE(dst), CCL_READ(vector))
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(vector, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(vector, vector_coords, vector_pix);
+  READ_IMG(vector, dst_coords, vector_pix);
   vector_pix.x = (vector_pix.x + vector_pix.y + vector_pix.z) / 3.0f;
   WRITE_IMG(dst, dst_coords, vector_pix);
 
@@ -337,10 +331,9 @@ ccl_kernel convertRgbToYccOp(CCL_WRITE(dst), CCL_READ(color), int mode)
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(color, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(color, color_coords, color_pix);
+  READ_IMG(color, dst_coords, color_pix);
   color_pix = rgb_to_ycc(color_pix, mode);
   WRITE_IMG(dst, dst_coords, color_pix);
 
@@ -400,10 +393,9 @@ ccl_kernel convertYccToRgbOp(CCL_WRITE(dst), CCL_READ(ycc), int mode)
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(ycc, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(ycc, ycc_coords, ycc_pix);
+  READ_IMG(ycc, dst_coords, ycc_pix);
   ycc_pix = ycc_to_rgb(ycc_pix, mode);
   WRITE_IMG(dst, dst_coords, ycc_pix);
 
@@ -447,10 +439,9 @@ ccl_kernel convertRgbToYuvOp(CCL_WRITE(dst), CCL_READ(rgb))
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(rgb, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(rgb, rgb_coords, rgb_pix);
+  READ_IMG(rgb, dst_coords, rgb_pix);
   rgb_pix = rgb_to_yuv(rgb_pix);
   WRITE_IMG(dst, dst_coords, rgb_pix);
 
@@ -487,10 +478,9 @@ ccl_kernel convertYuvToRgbOp(CCL_WRITE(dst), CCL_READ(yuv))
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(yuv, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(yuv, yuv_coords, yuv_pix);
+  READ_IMG(yuv, dst_coords, yuv_pix);
   yuv_pix = yuv_to_rgb(yuv_pix);
   WRITE_IMG(dst, dst_coords, yuv_pix);
 
@@ -504,8 +494,8 @@ void ConvertYUVToRGBOperation::execPixels(ExecutionManager &man)
   auto src = m_inputOperation->getPixels(this, man);
 
   std::function<void(PixelsRect &, const WriteRectContext &)> cpu_write = std::bind(
-      CCL_NAMESPACE::convertRgbToYuvOp, _1, src);
-  return computeWriteSeek(man, cpu_write, "convertRgbToYuvOp", [&](ComputeKernel *kernel) {
+      CCL_NAMESPACE::convertYuvToRgbOp, _1, src);
+  return computeWriteSeek(man, cpu_write, "convertYuvToRgbOp", [&](ComputeKernel *kernel) {
     kernel->addReadImgArgs(*src);
   });
 }
@@ -527,10 +517,9 @@ ccl_kernel convertRgbToHsvOp(CCL_WRITE(dst), CCL_READ(rgb))
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(rgb, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(rgb, rgb_coords, rgb_pix);
+  READ_IMG(rgb, dst_coords, rgb_pix);
   rgb_pix = rgb_to_hsv(rgb_pix);
   WRITE_IMG(dst, dst_coords, rgb_pix);
 
@@ -567,10 +556,9 @@ ccl_kernel convertHsvToRgbOp(CCL_WRITE(dst), CCL_READ(hsv))
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(hsv, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(hsv, hsv_coords, hsv_pix);
+  READ_IMG(hsv, dst_coords, hsv_pix);
   hsv_pix = hsv_to_rgb(hsv_pix);
   WRITE_IMG(dst, dst_coords, hsv_pix);
 
@@ -607,10 +595,9 @@ ccl_kernel convertPremulToStraightOp(CCL_WRITE(dst), CCL_READ(color))
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(color, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(color, color_coords, color_pix);
+  READ_IMG(color, dst_coords, color_pix);
   color_pix = premul_to_straight(color_pix);
   WRITE_IMG(dst, dst_coords, color_pix);
 
@@ -647,10 +634,9 @@ ccl_kernel convertStraightToPremulOp(CCL_WRITE(dst), CCL_READ(color))
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(color, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(color, color_coords, color_pix);
+  READ_IMG(color, dst_coords, color_pix);
   color_pix = straight_to_premul(color_pix);
   WRITE_IMG(dst, dst_coords, color_pix);
 
@@ -694,9 +680,8 @@ ccl_kernel separateChannel0Op(CCL_WRITE(dst), CCL_READ(color))
   READ_DECL(color);
   WRITE_DECL(dst);
   CPU_LOOP_START(dst);
-  READ_COORDS_TO_OFFSET(color, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
-  READ_IMG(color, color_coords, color_pix);
+  COORDS_TO_OFFSET(dst_coords);
+  READ_IMG(color, dst_coords, color_pix);
   WRITE_IMG(dst, dst_coords, color_pix);
   CPU_LOOP_END
 }
@@ -706,9 +691,8 @@ ccl_kernel separateChannel1Op(CCL_WRITE(dst), CCL_READ(color))
   READ_DECL(color);
   WRITE_DECL(dst);
   CPU_LOOP_START(dst);
-  READ_COORDS_TO_OFFSET(color, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
-  READ_IMG(color, color_coords, color_pix);
+  COORDS_TO_OFFSET(dst_coords);
+  READ_IMG(color, dst_coords, color_pix);
   color_pix.x = color_pix.y;
   WRITE_IMG(dst, dst_coords, color_pix);
   CPU_LOOP_END
@@ -719,9 +703,8 @@ ccl_kernel separateChannel2Op(CCL_WRITE(dst), CCL_READ(color))
   READ_DECL(color);
   WRITE_DECL(dst);
   CPU_LOOP_START(dst);
-  READ_COORDS_TO_OFFSET(color, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
-  READ_IMG(color, color_coords, color_pix);
+  COORDS_TO_OFFSET(dst_coords);
+  READ_IMG(color, dst_coords, color_pix);
   color_pix.x = color_pix.z;
   WRITE_IMG(dst, dst_coords, color_pix);
   CPU_LOOP_END
@@ -732,9 +715,8 @@ ccl_kernel separateChannel3Op(CCL_WRITE(dst), CCL_READ(color))
   READ_DECL(color);
   WRITE_DECL(dst);
   CPU_LOOP_START(dst);
-  READ_COORDS_TO_OFFSET(color, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
-  READ_IMG(color, color_coords, color_pix);
+  COORDS_TO_OFFSET(dst_coords);
+  READ_IMG(color, dst_coords, color_pix);
   color_pix.x = color_pix.w;
   WRITE_IMG(dst, dst_coords, color_pix);
   CPU_LOOP_END
@@ -827,16 +809,12 @@ ccl_kernel combineChannelsOp(
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(ch0, dst);
-  READ_COORDS_TO_OFFSET(ch1, dst);
-  READ_COORDS_TO_OFFSET(ch2, dst);
-  READ_COORDS_TO_OFFSET(ch3, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(ch0, ch0_coords, ch0_pix);
-  READ_IMG(ch1, ch1_coords, ch1_pix);
-  READ_IMG(ch2, ch2_coords, ch2_pix);
-  READ_IMG(ch3, ch3_coords, ch3_pix);
+  READ_IMG(ch0, dst_coords, ch0_pix);
+  READ_IMG(ch1, dst_coords, ch1_pix);
+  READ_IMG(ch2, dst_coords, ch2_pix);
+  READ_IMG(ch3, dst_coords, ch3_pix);
   ch0_pix.y = ch1_pix.x;
   ch0_pix.z = ch2_pix.x;
   ch0_pix.w = ch3_pix.x;

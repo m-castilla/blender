@@ -44,16 +44,12 @@ ccl_kernel changeHsvOp(
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(value, dst);
-  READ_COORDS_TO_OFFSET(color, dst);
-  READ_COORDS_TO_OFFSET(hue, dst);
-  READ_COORDS_TO_OFFSET(sat, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(value, value_coords, value_pix);
-  READ_IMG(color, color_coords, color_pix);
-  READ_IMG(hue, hue_coords, hue_pix);
-  READ_IMG(sat, sat_coords, sat_pix);
+  READ_IMG(value, dst_coords, value_pix);
+  READ_IMG(color, dst_coords, color_pix);
+  READ_IMG(hue, dst_coords, hue_pix);
+  READ_IMG(sat, dst_coords, sat_pix);
 
   color_pix.x += (hue_pix.x - 0.5f);
   if (color_pix.x > 1.0f) {
