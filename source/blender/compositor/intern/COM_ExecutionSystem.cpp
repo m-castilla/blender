@@ -144,8 +144,3 @@ void ExecutionSystem::execGroups(OperationMode op_mode)
     }
   }
 }
-
-bool ExecutionSystem::isBreaked() const
-{
-  return m_bNodeTree->test_break && m_bNodeTree->test_break(m_bNodeTree->tbh);
-}

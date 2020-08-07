@@ -62,7 +62,7 @@ ViewerOperation::ViewerOperation() : NodeOperation()
 
 void ViewerOperation::initExecution()
 {
-  m_needs_write = GlobalMan->ViewCacheMan->viewerNeedsUpdate(this, m_image);
+  m_needs_write = GlobalMan->ViewCacheMan->viewerNeedsUpdate(this);
   m_doDepthBuffer = getInputSocket(2)->hasUserLink();
   if (isActiveViewerOutput()) {
     initImage();
@@ -74,7 +74,7 @@ void ViewerOperation::deinitExecution()
   this->m_outputBuffer = NULL;
   this->m_depthBuffer = NULL;
   if (!isBreaked() && m_needs_write) {
-    GlobalMan->ViewCacheMan->reportViewerWrite(this, m_image);
+    GlobalMan->ViewCacheMan->reportViewerWrite(this);
   }
 }
 

@@ -17,38 +17,47 @@
  */
 
 #include "COM_SetAlphaOperation.h"
+#include "COM_ComputeKernel.h"
+#include "COM_kernel_cpu.h"
 
+using namespace std::placeholders;
 SetAlphaOperation::SetAlphaOperation() : NodeOperation()
 {
-  this->addInputSocket(COM_DT_COLOR);
-  this->addInputSocket(COM_DT_VALUE);
-  this->addOutputSocket(COM_DT_COLOR);
-
-  this->m_inputColor = NULL;
-  this->m_inputAlpha = NULL;
+  this->addInputSocket(SocketType::COLOR);
+  this->addInputSocket(SocketType::VALUE);
+  this->addOutputSocket(SocketType::COLOR);
 }
 
-void SetAlphaOperation::initExecution()
+#define OPENCL_CODE
+CCL_NAMESPACE_BEGIN
+ccl_kernel setAlphaOp(CCL_WRITE(dst), CCL_READ(color), CCL_READ(alpha))
 {
-  this->m_inputColor = getInputSocketReader(0);
-  this->m_inputAlpha = getInputSocketReader(1);
+  READ_DECL(color);
+  READ_DECL(alpha);
+  WRITE_DECL(dst);
+
+  CPU_LOOP_START(dst);
+
+  COORDS_TO_OFFSET(dst_coords);
+
+  READ_IMG(color, dst_coords, color_pix);
+  READ_IMG(alpha, dst_coords, alpha_pix);
+  color_pix.w = alpha_pix.x;
+  WRITE_IMG(dst, dst_coords, color_pix);
+
+  CPU_LOOP_END
 }
+CCL_NAMESPACE_END
+#undef OPENCL_CODE
 
-void SetAlphaOperation::executePixelSampled(float output[4],
-                                            float x,
-                                            float y,
-                                            PixelSampler sampler)
+void SetAlphaOperation::execPixels(ExecutionManager &man)
 {
-  float alphaInput[4];
-
-  this->m_inputColor->readSampled(output, x, y, sampler);
-  this->m_inputAlpha->readSampled(alphaInput, x, y, sampler);
-
-  output[3] = alphaInput[0];
-}
-
-void SetAlphaOperation::deinitExecution()
-{
-  this->m_inputColor = NULL;
-  this->m_inputAlpha = NULL;
+  auto color = getInputOperation(0)->getPixels(this, man);
+  auto alpha = getInputOperation(1)->getPixels(this, man);
+  std::function<void(PixelsRect &, const WriteRectContext &)> cpu_write = std::bind(
+      CCL_NAMESPACE::setAlphaOp, _1, color, alpha);
+  computeWriteSeek(man, cpu_write, "setAlphaOp", [&](ComputeKernel *kernel) {
+    kernel->addReadImgArgs(*color);
+    kernel->addReadImgArgs(*alpha);
+  });
 }

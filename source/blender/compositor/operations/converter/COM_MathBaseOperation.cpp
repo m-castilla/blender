@@ -80,12 +80,10 @@ ccl_kernel mathAddOp(CCL_WRITE(dst), CCL_READ(input1), CCL_READ(input2), BOOL us
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(input1, dst);
-  READ_COORDS_TO_OFFSET(input2, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(input1, input1_coords, input1_pix);
-  READ_IMG(input2, input2_coords, input2_pix);
+  READ_IMG(input1, dst_coords, input1_pix);
+  READ_IMG(input2, dst_coords, input2_pix);
   input1_pix.x = use_clamp ? clamp_to_normal(input1_pix.x + input2_pix.x) :
                              input1_pix.x + input2_pix.x;
   WRITE_IMG(dst, dst_coords, input1_pix);
@@ -117,12 +115,10 @@ ccl_kernel mathSubtractOp(CCL_WRITE(dst), CCL_READ(input1), CCL_READ(input2), BO
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(input1, dst);
-  READ_COORDS_TO_OFFSET(input2, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(input1, input1_coords, input1_pix);
-  READ_IMG(input2, input2_coords, input2_pix);
+  READ_IMG(input1, dst_coords, input1_pix);
+  READ_IMG(input2, dst_coords, input2_pix);
   input1_pix.x = use_clamp ? clamp_to_normal(input1_pix.x - input2_pix.x) :
                              input1_pix.x - input2_pix.x;
   WRITE_IMG(dst, dst_coords, input1_pix);
@@ -154,12 +150,10 @@ ccl_kernel mathMultiplyOp(CCL_WRITE(dst), CCL_READ(input1), CCL_READ(input2), BO
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(input1, dst);
-  READ_COORDS_TO_OFFSET(input2, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(input1, input1_coords, input1_pix);
-  READ_IMG(input2, input2_coords, input2_pix);
+  READ_IMG(input1, dst_coords, input1_pix);
+  READ_IMG(input2, dst_coords, input2_pix);
   input1_pix.x = use_clamp ? clamp_to_normal(input1_pix.x * input2_pix.x) :
                              input1_pix.x * input2_pix.x;
   WRITE_IMG(dst, dst_coords, input1_pix);
@@ -191,12 +185,10 @@ ccl_kernel mathDivideOp(CCL_WRITE(dst), CCL_READ(input1), CCL_READ(input2), BOOL
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(input1, dst);
-  READ_COORDS_TO_OFFSET(input2, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(input1, input1_coords, input1_pix);
-  READ_IMG(input2, input2_coords, input2_pix);
+  READ_IMG(input1, dst_coords, input1_pix);
+  READ_IMG(input2, dst_coords, input2_pix);
   input1_pix.x = use_clamp ? clamp_to_normal(input1_pix.x / input2_pix.x) :
                              input1_pix.x / input2_pix.x;
   WRITE_IMG(dst, dst_coords, input1_pix);
@@ -227,10 +219,9 @@ ccl_kernel mathSineOp(CCL_WRITE(dst), CCL_READ(input1), BOOL use_clamp)
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(input1, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(input1, input1_coords, input1_pix);
+  READ_IMG(input1, dst_coords, input1_pix);
   input1_pix.x = use_clamp ? clamp_to_normal(sinf(input1_pix.x)) : sinf(input1_pix.x);
   WRITE_IMG(dst, dst_coords, input1_pix);
 
@@ -258,10 +249,9 @@ ccl_kernel mathCosineOp(CCL_WRITE(dst), CCL_READ(input1), BOOL use_clamp)
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(input1, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(input1, input1_coords, input1_pix);
+  READ_IMG(input1, dst_coords, input1_pix);
   input1_pix.x = use_clamp ? clamp_to_normal(cosf(input1_pix.x)) : cosf(input1_pix.x);
   WRITE_IMG(dst, dst_coords, input1_pix);
 
@@ -289,10 +279,9 @@ ccl_kernel mathTangentOp(CCL_WRITE(dst), CCL_READ(input1), BOOL use_clamp)
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(input1, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(input1, input1_coords, input1_pix);
+  READ_IMG(input1, dst_coords, input1_pix);
   input1_pix.x = use_clamp ? clamp_to_normal(tanf(input1_pix.x)) : tanf(input1_pix.x);
   WRITE_IMG(dst, dst_coords, input1_pix);
 
@@ -320,10 +309,9 @@ ccl_kernel mathHiperbolicSineOp(CCL_WRITE(dst), CCL_READ(input1), BOOL use_clamp
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(input1, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(input1, input1_coords, input1_pix);
+  READ_IMG(input1, dst_coords, input1_pix);
   input1_pix.x = use_clamp ? clamp_to_normal(sinhf(input1_pix.x)) : sinhf(input1_pix.x);
   WRITE_IMG(dst, dst_coords, input1_pix);
 
@@ -351,10 +339,9 @@ ccl_kernel mathHiperbolicCosineOp(CCL_WRITE(dst), CCL_READ(input1), BOOL use_cla
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(input1, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(input1, input1_coords, input1_pix);
+  READ_IMG(input1, dst_coords, input1_pix);
   input1_pix.x = use_clamp ? clamp_to_normal(coshf(input1_pix.x)) : coshf(input1_pix.x);
   WRITE_IMG(dst, dst_coords, input1_pix);
 
@@ -382,10 +369,9 @@ ccl_kernel mathHiperbolicTangentOp(CCL_WRITE(dst), CCL_READ(input1), BOOL use_cl
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(input1, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(input1, input1_coords, input1_pix);
+  READ_IMG(input1, dst_coords, input1_pix);
   input1_pix.x = use_clamp ? clamp_to_normal(tanhf(input1_pix.x)) : tanhf(input1_pix.x);
   WRITE_IMG(dst, dst_coords, input1_pix);
 
@@ -413,10 +399,9 @@ ccl_kernel mathArcSineOp(CCL_WRITE(dst), CCL_READ(input1), BOOL use_clamp)
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(input1, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(input1, input1_coords, input1_pix);
+  READ_IMG(input1, dst_coords, input1_pix);
   if (input1_pix.x <= 1 && input1_pix.x >= -1) {
     input1_pix.x = use_clamp ? clamp_to_normal(asinf(input1_pix.x)) : asinf(input1_pix.x);
   }
@@ -449,10 +434,9 @@ ccl_kernel mathArcCosineOp(CCL_WRITE(dst), CCL_READ(input1), BOOL use_clamp)
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(input1, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(input1, input1_coords, input1_pix);
+  READ_IMG(input1, dst_coords, input1_pix);
   if (input1_pix.x <= 1 && input1_pix.x >= -1) {
     input1_pix.x = use_clamp ? clamp_to_normal(acosf(input1_pix.x)) : acosf(input1_pix.x);
   }
@@ -485,10 +469,9 @@ ccl_kernel mathArcTangentOp(CCL_WRITE(dst), CCL_READ(input1), BOOL use_clamp)
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(input1, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(input1, input1_coords, input1_pix);
+  READ_IMG(input1, dst_coords, input1_pix);
   input1_pix.x = use_clamp ? clamp_to_normal(atan(input1_pix.x)) : atan(input1_pix.x);
   WRITE_IMG(dst, dst_coords, input1_pix);
 
@@ -517,12 +500,10 @@ ccl_kernel mathPowerOp(CCL_WRITE(dst), CCL_READ(input1), CCL_READ(input2), BOOL 
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(input1, dst);
-  READ_COORDS_TO_OFFSET(input2, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(input1, input1_coords, input1_pix);
-  READ_IMG(input2, input2_coords, input2_pix);
+  READ_IMG(input1, dst_coords, input1_pix);
+  READ_IMG(input2, dst_coords, input2_pix);
   if (input1_pix.x >= 0) {
     input1_pix.x = powf(input1_pix.x, input2_pix.x);
   }
@@ -568,12 +549,10 @@ ccl_kernel mathLogarithmOp(CCL_WRITE(dst), CCL_READ(input1), CCL_READ(input2), B
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(input1, dst);
-  READ_COORDS_TO_OFFSET(input2, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(input1, input1_coords, input1_pix);
-  READ_IMG(input2, input2_coords, input2_pix);
+  READ_IMG(input1, dst_coords, input1_pix);
+  READ_IMG(input2, dst_coords, input2_pix);
   if (input1_pix.x > 0 && input2_pix.x > 0) {
     input1_pix.x = logf(input1_pix.x) / logf(input2_pix.x);
     if (use_clamp) {
@@ -613,12 +592,10 @@ ccl_kernel mathMinimumOp(CCL_WRITE(dst), CCL_READ(input1), CCL_READ(input2), BOO
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(input1, dst);
-  READ_COORDS_TO_OFFSET(input2, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(input1, input1_coords, input1_pix);
-  READ_IMG(input2, input2_coords, input2_pix);
+  READ_IMG(input1, dst_coords, input1_pix);
+  READ_IMG(input2, dst_coords, input2_pix);
   input1_pix.x = use_clamp ? clamp_to_normal(fminf(input1_pix.x, input2_pix.x)) :
                              fminf(input1_pix.x, input2_pix.x);
   WRITE_IMG(dst, dst_coords, input1_pix);
@@ -650,12 +627,10 @@ ccl_kernel mathMaximumOp(CCL_WRITE(dst), CCL_READ(input1), CCL_READ(input2), BOO
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(input1, dst);
-  READ_COORDS_TO_OFFSET(input2, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(input1, input1_coords, input1_pix);
-  READ_IMG(input2, input2_coords, input2_pix);
+  READ_IMG(input1, dst_coords, input1_pix);
+  READ_IMG(input2, dst_coords, input2_pix);
   input1_pix.x = use_clamp ? clamp_to_normal(fmaxf(input1_pix.x, input2_pix.x)) :
                              fmaxf(input1_pix.x, input2_pix.x);
   WRITE_IMG(dst, dst_coords, input1_pix);
@@ -686,10 +661,9 @@ ccl_kernel mathRoundOp(CCL_WRITE(dst), CCL_READ(input1), BOOL use_clamp)
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(input1, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(input1, input1_coords, input1_pix);
+  READ_IMG(input1, dst_coords, input1_pix);
   input1_pix.x = use_clamp ? clamp_to_normal(roundf(input1_pix.x)) : roundf(input1_pix.x);
   WRITE_IMG(dst, dst_coords, input1_pix);
 
@@ -718,12 +692,10 @@ ccl_kernel mathLessThanOp(CCL_WRITE(dst), CCL_READ(input1), CCL_READ(input2))
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(input1, dst);
-  READ_COORDS_TO_OFFSET(input2, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(input1, input1_coords, input1_pix);
-  READ_IMG(input2, input2_coords, input2_pix);
+  READ_IMG(input1, dst_coords, input1_pix);
+  READ_IMG(input2, dst_coords, input2_pix);
   input1_pix.x = input1_pix.x < input2_pix.x ? 1.0f : 0.0f;
   WRITE_IMG(dst, dst_coords, input1_pix);
 
@@ -753,12 +725,10 @@ ccl_kernel mathGreaterThanOp(CCL_WRITE(dst), CCL_READ(input1), CCL_READ(input2))
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(input1, dst);
-  READ_COORDS_TO_OFFSET(input2, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(input1, input1_coords, input1_pix);
-  READ_IMG(input2, input2_coords, input2_pix);
+  READ_IMG(input1, dst_coords, input1_pix);
+  READ_IMG(input2, dst_coords, input2_pix);
   input1_pix.x = input1_pix.x > input2_pix.x ? 1.0f : 0.0f;
   WRITE_IMG(dst, dst_coords, input1_pix);
 
@@ -788,12 +758,10 @@ ccl_kernel mathModuloOp(CCL_WRITE(dst), CCL_READ(input1), CCL_READ(input2), BOOL
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(input1, dst);
-  READ_COORDS_TO_OFFSET(input2, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(input1, input1_coords, input1_pix);
-  READ_IMG(input2, input2_coords, input2_pix);
+  READ_IMG(input1, dst_coords, input1_pix);
+  READ_IMG(input2, dst_coords, input2_pix);
   if (input1_pix.x == 0.0f) {
     input1_pix.x = 0.0f;
   }
@@ -829,10 +797,9 @@ ccl_kernel mathAbsoluteOp(CCL_WRITE(dst), CCL_READ(input1), BOOL use_clamp)
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(input1, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(input1, input1_coords, input1_pix);
+  READ_IMG(input1, dst_coords, input1_pix);
   input1_pix.x = use_clamp ? clamp_to_normal(fabsf(input1_pix.x)) : fabsf(input1_pix.x);
   WRITE_IMG(dst, dst_coords, input1_pix);
 
@@ -860,10 +827,9 @@ ccl_kernel mathRadiansOp(CCL_WRITE(dst), CCL_READ(input1), BOOL use_clamp)
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(input1, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(input1, input1_coords, input1_pix);
+  READ_IMG(input1, dst_coords, input1_pix);
   input1_pix.x = use_clamp ? clamp_to_normal(DEG2RADF(input1_pix.x)) : DEG2RADF(input1_pix.x);
   WRITE_IMG(dst, dst_coords, input1_pix);
 
@@ -891,10 +857,9 @@ ccl_kernel mathDegreesOp(CCL_WRITE(dst), CCL_READ(input1), BOOL use_clamp)
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(input1, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(input1, input1_coords, input1_pix);
+  READ_IMG(input1, dst_coords, input1_pix);
   input1_pix.x = use_clamp ? clamp_to_normal(RAD2DEGF(input1_pix.x)) : RAD2DEGF(input1_pix.x);
   WRITE_IMG(dst, dst_coords, input1_pix);
 
@@ -923,12 +888,10 @@ ccl_kernel mathArcTan2Op(CCL_WRITE(dst), CCL_READ(input1), CCL_READ(input2), BOO
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(input1, dst);
-  READ_COORDS_TO_OFFSET(input2, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(input1, input1_coords, input1_pix);
-  READ_IMG(input2, input2_coords, input2_pix);
+  READ_IMG(input1, dst_coords, input1_pix);
+  READ_IMG(input2, dst_coords, input2_pix);
   input1_pix.x = use_clamp ? clamp_to_normal(atan2f(input1_pix.x, input2_pix.x)) :
                              atan2f(input1_pix.x, input2_pix.x);
   WRITE_IMG(dst, dst_coords, input1_pix);
@@ -959,10 +922,9 @@ ccl_kernel mathFloorOp(CCL_WRITE(dst), CCL_READ(input1), BOOL use_clamp)
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(input1, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(input1, input1_coords, input1_pix);
+  READ_IMG(input1, dst_coords, input1_pix);
   input1_pix.x = use_clamp ? clamp_to_normal(floorf(input1_pix.x)) : floorf(input1_pix.x);
   WRITE_IMG(dst, dst_coords, input1_pix);
 
@@ -990,10 +952,9 @@ ccl_kernel mathCeilOp(CCL_WRITE(dst), CCL_READ(input1), BOOL use_clamp)
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(input1, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(input1, input1_coords, input1_pix);
+  READ_IMG(input1, dst_coords, input1_pix);
   input1_pix.x = use_clamp ? clamp_to_normal(floorf(input1_pix.x)) : floorf(input1_pix.x);
   WRITE_IMG(dst, dst_coords, input1_pix);
 
@@ -1021,10 +982,9 @@ ccl_kernel mathFractOp(CCL_WRITE(dst), CCL_READ(input1), BOOL use_clamp)
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(input1, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(input1, input1_coords, input1_pix);
+  READ_IMG(input1, dst_coords, input1_pix);
   input1_pix.x = use_clamp ? clamp_to_normal(input1_pix.x - floorf(input1_pix.x)) :
                              input1_pix.x - floorf(input1_pix.x);
   WRITE_IMG(dst, dst_coords, input1_pix);
@@ -1053,10 +1013,9 @@ ccl_kernel mathSqrtOp(CCL_WRITE(dst), CCL_READ(input1), BOOL use_clamp)
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(input1, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(input1, input1_coords, input1_pix);
+  READ_IMG(input1, dst_coords, input1_pix);
   if (input1_pix.x > 0.0f) {
     input1_pix.x = use_clamp ? clamp_to_normal(sqrtf(input1_pix.x)) : sqrtf(input1_pix.x);
   }
@@ -1090,10 +1049,9 @@ ccl_kernel mathInverseSqrtOp(CCL_WRITE(dst), CCL_READ(input1), BOOL use_clamp)
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(input1, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(input1, input1_coords, input1_pix);
+  READ_IMG(input1, dst_coords, input1_pix);
   if (input1_pix.x > 0.0f) {
     input1_pix.x = use_clamp ? clamp_to_normal(1.0f / sqrtf(input1_pix.x)) :
                                1.0f / sqrtf(input1_pix.x);
@@ -1127,10 +1085,9 @@ ccl_kernel mathSignOp(CCL_WRITE(dst), CCL_READ(input1))
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(input1, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(input1, input1_coords, input1_pix);
+  READ_IMG(input1, dst_coords, input1_pix);
   input1_pix.x = compatible_signf(input1_pix.x);
   WRITE_IMG(dst, dst_coords, input1_pix);
 
@@ -1157,10 +1114,9 @@ ccl_kernel mathExponentOp(CCL_WRITE(dst), CCL_READ(input1), BOOL use_clamp)
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(input1, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(input1, input1_coords, input1_pix);
+  READ_IMG(input1, dst_coords, input1_pix);
   input1_pix.x = use_clamp ? clamp_to_normal(expf(input1_pix.x)) : expf(input1_pix.x);
   WRITE_IMG(dst, dst_coords, input1_pix);
 
@@ -1188,10 +1144,9 @@ ccl_kernel mathTruncOp(CCL_WRITE(dst), CCL_READ(input1), BOOL use_clamp)
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(input1, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(input1, input1_coords, input1_pix);
+  READ_IMG(input1, dst_coords, input1_pix);
   input1_pix.x = (input1_pix.x >= 0.0f) ? floorf(input1_pix.x) : ceilf(input1_pix.x);
   if (use_clamp) {
     input1_pix.x = clamp_to_normal(input1_pix.x);
@@ -1223,12 +1178,10 @@ ccl_kernel mathSnapOp(CCL_WRITE(dst), CCL_READ(input1), CCL_READ(input2), BOOL u
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(input1, dst);
-  READ_COORDS_TO_OFFSET(input2, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(input1, input1_coords, input1_pix);
-  READ_IMG(input2, input2_coords, input2_pix);
+  READ_IMG(input1, dst_coords, input1_pix);
+  READ_IMG(input2, dst_coords, input2_pix);
   if (input1_pix.x == 0.0f || input2_pix.x == 0.0f) {
     input1_pix.x = 0.0f;
   }
@@ -1269,14 +1222,11 @@ ccl_kernel mathWrapOp(
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(input1, dst);
-  READ_COORDS_TO_OFFSET(input2, dst);
-  READ_COORDS_TO_OFFSET(input3, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(input1, input1_coords, input1_pix);
-  READ_IMG(input2, input2_coords, input2_pix);
-  READ_IMG(input3, input3_coords, input3_pix);
+  READ_IMG(input1, dst_coords, input1_pix);
+  READ_IMG(input2, dst_coords, input2_pix);
+  READ_IMG(input3, dst_coords, input3_pix);
   input1_pix.x = wrapf(input1_pix.x, input2_pix.x, input3_pix.x);
   if (use_clamp) {
     input1_pix.x = clamp_to_normal(input1_pix.x);
@@ -1312,12 +1262,10 @@ ccl_kernel mathPingPongOp(CCL_WRITE(dst), CCL_READ(input1), CCL_READ(input2), BO
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(input1, dst);
-  READ_COORDS_TO_OFFSET(input2, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(input1, input1_coords, input1_pix);
-  READ_IMG(input2, input2_coords, input2_pix);
+  READ_IMG(input1, dst_coords, input1_pix);
+  READ_IMG(input2, dst_coords, input2_pix);
   input1_pix.x = fabsf(fractf((input1_pix.x - input2_pix.x) / (input2_pix.x * 2.0f)) *
                            input2_pix.x * 2.0f -
                        input2_pix.x);
@@ -1354,14 +1302,11 @@ ccl_kernel mathCompareOp(CCL_WRITE(dst), CCL_READ(input1), CCL_READ(input2), CCL
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(input1, dst);
-  READ_COORDS_TO_OFFSET(input2, dst);
-  READ_COORDS_TO_OFFSET(input3, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(input1, input1_coords, input1_pix);
-  READ_IMG(input2, input2_coords, input2_pix);
-  READ_IMG(input3, input3_coords, input3_pix);
+  READ_IMG(input1, dst_coords, input1_pix);
+  READ_IMG(input2, dst_coords, input2_pix);
+  READ_IMG(input3, dst_coords, input3_pix);
   input1_pix.x = (fabsf(input1_pix.x - input2_pix.x) <= fmaxf(input3_pix.x, 1e-5f)) ? 1.0f : 0.0f;
   WRITE_IMG(dst, dst_coords, input1_pix);
 
@@ -1395,14 +1340,11 @@ ccl_kernel mathMultiplyAddOp(
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(input1, dst);
-  READ_COORDS_TO_OFFSET(input2, dst);
-  READ_COORDS_TO_OFFSET(input3, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(input1, input1_coords, input1_pix);
-  READ_IMG(input2, input2_coords, input2_pix);
-  READ_IMG(input3, input3_coords, input3_pix);
+  READ_IMG(input1, dst_coords, input1_pix);
+  READ_IMG(input2, dst_coords, input2_pix);
+  READ_IMG(input3, dst_coords, input3_pix);
   input1_pix.x = input1_pix.x * input2_pix.x + input3_pix.x;
   if (use_clamp) {
     input1_pix.x = clamp_to_normal(input1_pix.x);
@@ -1441,14 +1383,11 @@ ccl_kernel mathSmoothMinOp(
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(input1, dst);
-  READ_COORDS_TO_OFFSET(input2, dst);
-  READ_COORDS_TO_OFFSET(input3, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(input1, input1_coords, input1_pix);
-  READ_IMG(input2, input2_coords, input2_pix);
-  READ_IMG(input3, input3_coords, input3_pix);
+  READ_IMG(input1, dst_coords, input1_pix);
+  READ_IMG(input2, dst_coords, input2_pix);
+  READ_IMG(input3, dst_coords, input3_pix);
   input1_pix.x = smoothminf(input1_pix.x, input2_pix.x, input3_pix.x);
   if (use_clamp) {
     input1_pix.x = clamp_to_normal(input1_pix.x);
@@ -1487,14 +1426,11 @@ ccl_kernel mathSmoothMaxOp(
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(input1, dst);
-  READ_COORDS_TO_OFFSET(input2, dst);
-  READ_COORDS_TO_OFFSET(input3, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(input1, input1_coords, input1_pix);
-  READ_IMG(input2, input2_coords, input2_pix);
-  READ_IMG(input3, input3_coords, input3_pix);
+  READ_IMG(input1, dst_coords, input1_pix);
+  READ_IMG(input2, dst_coords, input2_pix);
+  READ_IMG(input3, dst_coords, input3_pix);
   input1_pix.x = -smoothminf(-input1_pix.x, -input2_pix.x, input3_pix.x);
   if (use_clamp) {
     input1_pix.x = clamp_to_normal(input1_pix.x);

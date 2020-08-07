@@ -38,14 +38,11 @@ ccl_kernel brightnessOp(
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(color, dst);
-  READ_COORDS_TO_OFFSET(bright, dst);
-  READ_COORDS_TO_OFFSET(contrast, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(color, color_coords, color_pix);
-  READ_IMG(bright, bright_coords, bright_pix);
-  READ_IMG(contrast, contrast_coords, contrast_pix);
+  READ_IMG(color, dst_coords, color_pix);
+  READ_IMG(bright, dst_coords, bright_pix);
+  READ_IMG(contrast, dst_coords, contrast_pix);
 
   bright_value = bright_pix.x / 100.0f;
   contrast_value = contrast_pix.x;

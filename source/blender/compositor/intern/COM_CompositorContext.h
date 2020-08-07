@@ -158,9 +158,6 @@ class CompositorContext {
     this->m_rd = rd;
   }
 
-  /**
-   * \brief set the bnodetree of the context
-   */
   void setbNodeTree(bNodeTree *bnodetree)
   {
     this->m_bnodetree = bnodetree;

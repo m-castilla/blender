@@ -25,6 +25,7 @@
 #include <memory>
 
 class GlobalManager;
+class NodeOperation;
 extern std::unique_ptr<GlobalManager> GlobalMan;
 class GlobalManager {
  public:
@@ -34,6 +35,7 @@ class GlobalManager {
 
   void initialize(const CompositorContext &ctx);
   void deinitialize(const CompositorContext &ctx);
+  bool hasAnyKindOfCache(NodeOperation *op);
 
   GlobalManager();
   ~GlobalManager();

@@ -43,13 +43,12 @@ ccl_kernel translateOp(CCL_WRITE(dst),
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(x_input, dst);
-  READ_COORDS_TO_OFFSET(y_input, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(x_input, x_input_coords, x_input_pix);
-  READ_IMG(y_input, y_input_coords, y_input_pix);
+  READ_IMG(x_input, dst_coords, x_input_pix);
+  READ_IMG(y_input, dst_coords, y_input_pix);
 
+  int2 color_coords;
   if (relative) {
     color_coords.x = dst_coords.x - x_input_pix.x * color_width;
     color_coords.y = dst_coords.y - y_input_pix.x * color_height;

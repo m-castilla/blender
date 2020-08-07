@@ -111,9 +111,13 @@ class NodeOperationBuilder {
   void addOperation(NodeOperation *operation);
 
   /** Map input socket of the current node to an operation socket */
-  void mapInputSocket(NodeInput *node_socket, NodeOperationInput *operation_socket);
+  void mapInputSocket(NodeInput *node_socket,
+                      NodeOperationInput *operation_socket,
+                      bool check_equal_types=true);
   /** Map output socket of the current node to an operation socket */
-  void mapOutputSocket(NodeOutput *node_socket, NodeOperationOutput *operation_socket);
+  void mapOutputSocket(NodeOutput *node_socket,
+                       NodeOperationOutput *operation_socket,
+                       bool check_equal_types=true);
 
   void addLink(NodeOperationOutput *from, NodeOperationInput *to);
   void removeInputLink(NodeOperationInput *to);

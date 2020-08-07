@@ -71,8 +71,9 @@ void ViewCacheManager::reportPreviewWrite(PreviewOperation *op, unsigned char *b
   m_previews.insert({preview_key, new PreviewCache{op_key, buffer_to_cache}});
 }
 
-bool ViewCacheManager::viewerNeedsUpdate(ViewerOperation *op, Image *image)
+bool ViewCacheManager::viewerNeedsUpdate(ViewerOperation *op)
 {
+  auto image = op->getImage();
   auto op_key = op->getKey();
   unsigned int img_id = image->id.session_uuid;
   auto found_it = m_viewers.find(img_id);
@@ -85,9 +86,24 @@ bool ViewCacheManager::viewerNeedsUpdate(ViewerOperation *op, Image *image)
   }
   return true;
 }
-// must be called after finishing writing a viewer
-void ViewCacheManager::reportViewerWrite(ViewerOperation *op, Image *image)
+
+bool ViewCacheManager::hasViewCache(NodeOperation *op)
 {
+  if (typeid(*op) == typeid(PreviewOperation)) {
+    return getPreviewCache((PreviewOperation *)op) != nullptr;
+  }
+  else if (typeid(*op) == typeid(ViewerOperation)) {
+    return !viewerNeedsUpdate((ViewerOperation *)op);
+  }
+  else {
+    return false;
+  }
+}
+
+// must be called after finishing writing a viewer
+void ViewCacheManager::reportViewerWrite(ViewerOperation *op)
+{
+  auto image = op->getImage();
   m_viewers.insert_or_assign(image->id.session_uuid, op->getKey());
 }
 

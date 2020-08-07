@@ -17,25 +17,49 @@
  */
 
 #include "COM_IDMaskOperation.h"
+#include "COM_ComputeKernel.h"
+#include "COM_kernel_cpu.h"
 
+using namespace std::placeholders;
 IDMaskOperation::IDMaskOperation() : NodeOperation()
 {
-  this->addInputSocket(COM_DT_VALUE);
-  this->addOutputSocket(COM_DT_VALUE);
-  this->setComplex(true);
+  this->addInputSocket(SocketType::VALUE);
+  this->addOutputSocket(SocketType::VALUE);
 }
 
-void *IDMaskOperation::initializeTileData(rcti *rect)
+void IDMaskOperation::hashParams()
 {
-  void *buffer = getInputOperation(0)->initializeTileData(rect);
-  return buffer;
+  NodeOperation::hashParams();
+  hashParam(m_objectIndex);
 }
 
-void IDMaskOperation::executePixel(float output[4], int x, int y, void *data)
+#define OPENCL_CODE
+CCL_NAMESPACE_BEGIN
+ccl_kernel idMaskOp(CCL_WRITE(dst), CCL_READ(input), const int obj_index)
 {
-  MemoryBuffer *input_buffer = (MemoryBuffer *)data;
-  const int buffer_width = input_buffer->getWidth();
-  float *buffer = input_buffer->getBuffer();
-  int buffer_index = (y * buffer_width + x);
-  output[0] = (roundf(buffer[buffer_index]) == this->m_objectIndex) ? 1.0f : 0.0f;
+  READ_DECL(input);
+  WRITE_DECL(dst);
+
+  CPU_LOOP_START(dst);
+
+  COORDS_TO_OFFSET(dst_coords);
+
+  READ_IMG(input, dst_coords, input_pix);
+  input_pix.x = (roundf(input_pix.x) == obj_index) ? 1.0f : 0.0f;
+  WRITE_IMG(dst, dst_coords, input_pix);
+
+  CPU_LOOP_END
+}
+CCL_NAMESPACE_END
+#undef OPENCL_CODE
+
+void IDMaskOperation::execPixels(ExecutionManager &man)
+{
+  auto input = getInputOperation(0)->getPixels(this, man);
+  std::function<void(PixelsRect &, const WriteRectContext &)> cpu_write = std::bind(
+      CCL_NAMESPACE::idMaskOp, _1, input, m_objectIndex);
+  computeWriteSeek(man, cpu_write, "idMaskOp", [&](ComputeKernel *kernel) {
+    kernel->addReadImgArgs(*input);
+    kernel->addIntArg(m_objectIndex);
+  });
 }

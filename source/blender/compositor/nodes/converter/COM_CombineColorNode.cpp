@@ -34,18 +34,6 @@ void CombineColorNode::convertToOperations(NodeConverter &converter,
   NodeOutput *outputSocket = this->getOutputSocket(0);
 
   CombineChannelsOperation *operation = new CombineChannelsOperation();
-  if (inputRSocket->isLinked()) {
-    operation->setResolutionInputSocketIndex(0);
-  }
-  else if (inputGSocket->isLinked()) {
-    operation->setResolutionInputSocketIndex(1);
-  }
-  else if (inputBSocket->isLinked()) {
-    operation->setResolutionInputSocketIndex(2);
-  }
-  else {
-    operation->setResolutionInputSocketIndex(3);
-  }
   converter.addOperation(operation);
 
   converter.mapInputSocket(inputRSocket, operation->getInputSocket(0));

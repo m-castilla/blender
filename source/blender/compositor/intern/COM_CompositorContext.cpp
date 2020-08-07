@@ -45,11 +45,11 @@ CompositorContext CompositorContext::build(const std::string &execution_id,
   const int DEFAULT_BUFFER_CACHE_BYTES = 256 * 1024 * 1024;
 
   CompositorContext context;
+  context.setbNodeTree(editingtree);
   context.setExecutionId(execution_id);
   context.setBufferCacheSize(DEFAULT_BUFFER_CACHE_BYTES);
   context.setViewName(viewName);
   context.setScene(scene);
-  context.setbNodeTree(editingtree);
   context.setPreviewHash(editingtree->previews);
   /* initialize the CompositorContext */
   if (rendering) {
@@ -72,7 +72,7 @@ CompositorContext CompositorContext::build(const std::string &execution_id,
 
 bool CompositorContext::isBreaked() const
 {
-  return m_bnodetree->test_break(m_bnodetree->tbh);
+  return m_bnodetree->test_break && m_bnodetree->test_break(m_bnodetree->tbh);
 }
 
 int CompositorContext::getFramenumber() const

@@ -93,7 +93,7 @@ ccl_kernel bokehImageOp(CCL_WRITE(dst),
   WRITE_DECL(dst);
 
   CPU_LOOP_START(dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
   float2 dst_coordsf = make_float2(dst_coords.x, dst_coords.y);
 
   float insideBokehMax = bokehIsInside(

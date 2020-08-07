@@ -56,7 +56,9 @@ class NodeConverter {
    *
    * \note A \a Node input can be mapped to multiple \a NodeOperation inputs.
    */
-  void mapInputSocket(NodeInput *node_socket, NodeOperationInput *operation_socket);
+  void mapInputSocket(NodeInput *node_socket,
+                      NodeOperationInput *operation_socket,
+                      bool check_equal_types = true);
   /**
    * Map output socket of the node to an operation socket.
    * Links between nodes will then generate equivalent links between
@@ -65,7 +67,9 @@ class NodeConverter {
    * \note A \a Node output can only be mapped to one \a NodeOperation output.
    * Any existing operation output mapping will be replaced.
    */
-  void mapOutputSocket(NodeOutput *node_socket, NodeOperationOutput *operation_socket);
+  void mapOutputSocket(NodeOutput *node_socket,
+                       NodeOperationOutput *operation_socket,
+                       bool check_equal_types = true);
 
   /**
    * Create a proxy operation for a node input.

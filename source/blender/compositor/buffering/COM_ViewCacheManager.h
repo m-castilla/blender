@@ -25,6 +25,7 @@
 
 class PreviewOperation;
 class ViewerOperation;
+class NodeOperation;
 struct Image;
 class ViewCacheManager {
  private:
@@ -45,10 +46,12 @@ class ViewCacheManager {
   // must be called after finishing writing a preview
   void reportPreviewWrite(PreviewOperation *op, unsigned char *buffer_to_cache);
 
+  bool hasViewCache(NodeOperation *op);
+
   // check if viewer needs to update the image
-  bool viewerNeedsUpdate(ViewerOperation *op, Image *image);
+  bool viewerNeedsUpdate(ViewerOperation *op);
   // must be called after finishing writing a viewer
-  void reportViewerWrite(ViewerOperation *op, Image *image);
+  void reportViewerWrite(ViewerOperation *op);
 
  private:
   void deletePreviewCache(PreviewCache *cache);

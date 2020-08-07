@@ -36,14 +36,11 @@ ccl_kernel alphaOverPremultiplyOp(CCL_WRITE(dst),
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(value, dst);
-  READ_COORDS_TO_OFFSET(color, dst);
-  READ_COORDS_TO_OFFSET(over_color, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(value, value_coords, value_pix);
-  READ_IMG(color, color_coords, color_pix);
-  READ_IMG(over_color, over_color_coords, over_color_pix);
+  READ_IMG(value, dst_coords, value_pix);
+  READ_IMG(color, dst_coords, color_pix);
+  READ_IMG(over_color, dst_coords, over_color_pix);
 
   if (over_color_pix.w <= 0.0f) {
     WRITE_IMG(dst, dst_coords, color_pix);

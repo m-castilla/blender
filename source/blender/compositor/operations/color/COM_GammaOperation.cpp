@@ -38,12 +38,10 @@ ccl_kernel gammaOp(CCL_WRITE(dst), CCL_READ(color), CCL_READ(gamma))
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(gamma, dst);
-  READ_COORDS_TO_OFFSET(color, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(gamma, gamma_coords, gamma_pix);
-  READ_IMG(color, color_coords, color_pix);
+  READ_IMG(gamma, dst_coords, gamma_pix);
+  READ_IMG(color, dst_coords, color_pix);
 
   /* check for negative to avoid nan's */
   color_pix.x = color_pix.x > 0.0f ? powf(color_pix.x, gamma_pix.x) : color_pix.x;

@@ -18,9 +18,12 @@
 # All rights reserved.
 # ***** END GPL LICENSE BLOCK *****
 
-set(CMP_BASE ${CMAKE_CURRENT_SOURCE_DIR}/..)
+get_filename_component(CMP_BASE ${CMAKE_CURRENT_SOURCE_DIR}/.. ABSOLUTE)
+#set(CMP_BASE ${CMAKE_CURRENT_SOURCE_DIR}/..)
 set(CMP_NODES ${CMP_BASE}/nodes)
 set(CMP_OPS ${CMP_BASE}/operations)
+
+
 
 set(INC
   ${CMP_BASE}
@@ -152,6 +155,7 @@ set(SRC
   ${CMP_BASE}/computing/kernel_util/COM_kernel_algo.h
   ${CMP_BASE}/computing/kernel_util/COM_kernel_defines.h
   ${CMP_BASE}/computing/kernel_util/COM_kernel_color.h
+  ${CMP_BASE}/computing/kernel_util/COM_kernel_geom.h
   ${CMP_BASE}/computing/kernel_util/COM_kernel_math.h
   ${CMP_BASE}/computing/kernel_util/COM_kernel_math_float2.h
   ${CMP_BASE}/computing/kernel_util/COM_kernel_math_float3.h
@@ -259,8 +263,24 @@ set(SRC
   ${CMP_NODES}/color/COM_ZCombineNode.h
 
   # converter nodes
+  ${CMP_NODES}/converter/COM_ColorRampNode.cpp
+  ${CMP_NODES}/converter/COM_ColorRampNode.h
+  ${CMP_NODES}/converter/COM_ColorToBWNode.cpp
+  ${CMP_NODES}/converter/COM_ColorToBWNode.h
+  ${CMP_NODES}/converter/COM_CombineColorNode.cpp
+  ${CMP_NODES}/converter/COM_CombineColorNode.h
+  ${CMP_NODES}/converter/COM_ConvertAlphaNode.cpp
+  ${CMP_NODES}/converter/COM_ConvertAlphaNode.h
+  ${CMP_NODES}/converter/COM_IDMaskNode.cpp
+  ${CMP_NODES}/converter/COM_IDMaskNode.h
   ${CMP_NODES}/converter/COM_MathNode.cpp
   ${CMP_NODES}/converter/COM_MathNode.h
+  ${CMP_NODES}/converter/COM_SeparateColorNode.cpp
+  ${CMP_NODES}/converter/COM_SeparateColorNode.h
+  ${CMP_NODES}/converter/COM_SetAlphaNode.cpp
+  ${CMP_NODES}/converter/COM_SetAlphaNode.h
+  ${CMP_NODES}/converter/COM_SwitchViewNode.cpp
+  ${CMP_NODES}/converter/COM_SwitchViewNode.h
 
   # layout nodes
   ${CMP_NODES}/layout/COM_SwitchNode.cpp
@@ -357,10 +377,16 @@ set(SRC
   ${CMP_OPS}/distort/COM_TranslateOperation.h
 
   # converter operations
+  ${CMP_OPS}/converter/COM_ColorRampOperation.cpp
+  ${CMP_OPS}/converter/COM_ColorRampOperation.h
   ${CMP_OPS}/converter/COM_ConvertOperation.cpp
   ${CMP_OPS}/converter/COM_ConvertOperation.h
+  ${CMP_OPS}/converter/COM_IDMaskOperation.cpp
+  ${CMP_OPS}/converter/COM_IDMaskOperation.h
   ${CMP_OPS}/converter/COM_MathBaseOperation.cpp
   ${CMP_OPS}/converter/COM_MathBaseOperation.h
+  ${CMP_OPS}/converter/COM_SetAlphaOperation.cpp
+  ${CMP_OPS}/converter/COM_SetAlphaOperation.h
 )
 
 source_group(TREE ${CMP_BASE} FILES ${SRC})
@@ -394,23 +420,22 @@ if(WITH_OPENIMAGEDENOISE)
   )
 endif()
 
-message("${CMAKE_BUILD_TYPE}")
-if(CMAKE_BUILD_TYPE MATCHES "Release")
-  list(APPEND DEFMERGE_PATHS
+# Merge OpenCL code
+set(OPENCL_CODE_PATHS 
   ${CMP_OPS}
-  )
-  defmerger(
-  "OPENCL_CODE"
-  ${CMAKE_CURRENT_SOURCE_DIR}/../computing/COM_OpenCLKernels.cl
-  "#include \"COM_kernel_opencl.h\""
-  DEFMERGE_PATHS
-  )
-  data_to_c(
-  ${CMAKE_CURRENT_SOURCE_DIR}/../computing/COM_OpenCLKernels.cl
-  ${CMAKE_CURRENT_SOURCE_DIR}/../computing/COM_OpenCLKernels.cl.h
+)
+def_merger(
+  OPENCL_CODE
+  ${CMP_BASE}/computing/COM_OpenCLKernels.cl
+  COM_kernel_opencl.h
   SRC
-  )
-endif()
+  OPENCL_CODE_PATHS
+)
+data_to_c(
+  ${CMP_BASE}/computing/COM_OpenCLKernels.cl
+  ${CMP_BASE}/computing/COM_OpenCLKernels.cl.h
+  SRC
+)
 
 blender_add_lib(bf_compositor "${SRC}" "${INC}" "${INC_SYS}" "${LIB}")
 

@@ -64,6 +64,10 @@ class ViewerOperation : public NodeOperation {
   }
 
   bool isOutputOperation(bool /*rendering*/) const override;
+  Image *getImage()
+  {
+    return m_image;
+  }
   void setImage(Image *image)
   {
     this->m_image = image;

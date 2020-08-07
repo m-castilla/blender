@@ -87,6 +87,7 @@ ComputeKernel *ComputePlatform::getKernel(std::string kernel_name, ComputeDevice
 
 void ComputePlatform::recycleKernel(ComputeKernel *kernel)
 {
+  kernel->clearArgs();
   auto kernel_name = kernel->getKernelName();
 
   if (m_kernels_count >= MAX_KERNELS_IN_CACHE) {

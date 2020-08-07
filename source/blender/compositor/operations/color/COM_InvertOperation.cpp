@@ -40,22 +40,21 @@ void InvertOperation::hashParams()
 
 #define OPENCL_CODE
 CCL_NAMESPACE_BEGIN
-ccl_kernel invertOp(CCL_WRITE(dst), CCL_READ(value), CCL_READ(color), BOOL do_color, BOOL do_alpha)
+ccl_kernel invertOp(
+    CCL_WRITE(dst), CCL_READ(factor), CCL_READ(color), BOOL do_color, BOOL do_alpha)
 {
-  READ_DECL(value);
+  READ_DECL(factor);
   READ_DECL(color);
   WRITE_DECL(dst);
 
   CPU_LOOP_START(dst);
 
-  READ_COORDS_TO_OFFSET(value, dst);
-  READ_COORDS_TO_OFFSET(color, dst);
-  WRITE_COORDS_TO_OFFSET(dst);
+  COORDS_TO_OFFSET(dst_coords);
 
-  READ_IMG(value, value_coords, value_pix);
-  READ_IMG(color, color_coords, color_pix);
+  READ_IMG(factor, dst_coords, factor_pix);
+  READ_IMG(color, dst_coords, color_pix);
 
-  const float value = value_pix.x;
+  const float value = factor_pix.x;
   const float inv_value = 1.0f - value;
   const float alpha = color_pix.w;
   if (do_color) {

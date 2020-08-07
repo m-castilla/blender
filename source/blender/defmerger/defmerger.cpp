@@ -22,17 +22,24 @@
 
 int main(int argc, const char **argv)
 {
+
   if (argc < 5) {
     printf(
         "Usage: defmerger <macro blocks with TAG to merge> <destination file> <string "
         "with includes to resolve at the start of dst file> <any source dir or "
         "file to merge> ...\n");
-    return EXIT_FAILURE;
+    exit(1);
   }
 
   const char *tag = argv[1];
   const char *dst_path = argv[2];
   const char *include_str = argv[3];
-  DefMerger::defmerge(tag, dst_path, include_str, argc - 4, &argv[4]);
-  return EXIT_SUCCESS;
+  try {
+    DefMerger::defmerge(tag, dst_path, include_str, argc - 4, &argv[4]);
+  }
+  catch (...) {
+    exit(1);
+  }
+
+  return 0;
 }

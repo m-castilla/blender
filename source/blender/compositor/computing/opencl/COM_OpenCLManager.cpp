@@ -2,6 +2,7 @@
 #include "BLI_assert.h"
 #include "COM_OpenCLDevice.h"
 #include "COM_OpenCLPlatform.h"
+#include "COM_defines.h"
 #include "MEM_guardedalloc.h"
 #include "clew.h"
 
@@ -62,10 +63,11 @@ void OpenCLManager::initialize()
     const char *program_source[2] = {source_code.c_str(), NULL};
 
     cl_program program = clCreateProgramWithSource(context, 1, program_source, 0, &error);
-#if defined(DEBUG)
+
+#if defined(DEBUG) && ENABLE_OPENCL_DEBUG
     auto build_options_debug = ("-g -s \"" + source_path + "\"");
     const char *build_options = build_options_debug.c_str();
-#elif defined(COM_DEBUG)
+#elif defined(COM_DEBUG) && ENABLE_OPENCL_DEBUG
     auto build_options_debug = ("-s \"" + source_path + "\"");
     const char *build_options = build_options_debug.c_str();
 #else
@@ -120,7 +122,7 @@ std::vector<ComputeDevice *> OpenCLManager::getDevices()
 void OpenCLManager::printIfError(int result_code)
 {
   if (result_code != CL_SUCCESS) {
-    printf("CLERROR[%d]: %s\n\n", result_code, clewErrorString(result_code));
+    printf("Compositor -> CLERROR[%d]: %s\n\n", result_code, clewErrorString(result_code));
   }
 }
 

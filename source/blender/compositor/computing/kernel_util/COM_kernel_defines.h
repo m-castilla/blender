@@ -124,6 +124,4 @@ template<typename T> static inline T decltype_helper(T x)
   } \
   (void)0
 
-
-
 #endif /* __COM_KERNEL_DEFINES_H__ */

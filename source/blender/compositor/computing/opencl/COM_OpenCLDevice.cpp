@@ -10,6 +10,8 @@
 #include <algorithm>
 
 typedef enum COM_VendorID { NVIDIA = 0x10DE, AMD = 0x1002 } COM_VendorID;
+// const int DEFAULT_NVIDIA_GLOBAL_DIM = 64;
+// const int DEFAULT_OTHER_GLOBAL_DIM = 1024;
 
 OpenCLDevice::OpenCLDevice(OpenCLManager &man, OpenCLPlatform &platform, cl_device_id device_id)
     : ComputeDevice(),
@@ -90,13 +92,14 @@ void OpenCLDevice::queueJob(PixelsRect &dst,
 {
   OpenCLKernel *kernel = (OpenCLKernel *)m_platform.getKernel(kernel_name, this);
 
-  kernel->addWriteImgArgs(dst);
+  auto setOffsetArgsFunc = kernel->addWriteImgArgs(dst);
   add_kernel_args_func((ComputeKernel *)kernel);
 
   size_t img_width = (size_t)dst.getWidth();
   size_t img_height = (size_t)dst.getHeight();
-  size_t img_size = img_width * img_height;
 
+#if 0
+  size_t img_size = img_width * img_height;
   int group_size_multiple = kernel->getGroupSizeMultiple();
   int group_max_size = kernel->getMaxGroupSize();
 
@@ -115,7 +118,6 @@ void OpenCLDevice::queueJob(PixelsRect &dst,
                                     group_max_size,
                                     m_max_group_dims[0],
                                     m_max_group_dims[1]);
-
   enqueueSplit(m_queue, splits.desired_split, 0, 0, kernel);
   enqueueSplit(m_queue,
                splits.right_split,
@@ -127,6 +129,25 @@ void OpenCLDevice::queueJob(PixelsRect &dst,
                0,
                splits.desired_split.col_length * splits.desired_split.rects_h,
                kernel);
+#else
+  int max_global_w = m_max_group_dims[0] / 2;
+  int max_global_h = m_max_group_dims[1] / 2;
+  int width_step = max_global_w > img_width ? img_width : max_global_w;
+  int height_step = max_global_h > img_height ? img_height : max_global_h;
+  for (int work_y = 0; work_y < img_height; work_y += height_step) {
+    for (int work_x = 0; work_x < img_width; work_x += width_step) {
+      int x_size = (img_width - work_x) > width_step ? width_step : (img_width - work_x);
+      int y_size = (img_height - work_y) > height_step ? height_step : (img_height - work_y);
+
+      setOffsetArgsFunc(work_x, work_y);
+      size_t global_work_size[2] = {(size_t)x_size, (size_t)y_size};
+      m_man.printIfError(clEnqueueNDRangeKernel(
+          m_queue, kernel->getClKernel(), 2, NULL, global_work_size, NULL, 0, NULL, NULL));
+      clFlush(m_queue);
+    }
+  }
+
+#endif
 
   m_platform.recycleKernel((ComputeKernel *)kernel);
 }
@@ -300,17 +321,11 @@ void OpenCLDevice::enqueueWork(cl_command_queue cl_queue,
 {
   if (row_length > 0 && col_length > 0 && rect_w > 0 && rect_h > 0) {
     size_t global_work_offset[2] = {offset_x, offset_y};
-    size_t global_work_size[2] = {row_length * rect_w, col_length * rect_h};
+    size_t global_work_size[2] = {950, 950};
     size_t local_work_size[2] = {rect_w, rect_h};
-    m_man.printIfError(clEnqueueNDRangeKernel(cl_queue,
-                                              kernel->getClKernel(),
-                                              2,
-                                              global_work_offset,
-                                              global_work_size,
-                                              local_work_size,
-                                              0,
-                                              NULL,
-                                              NULL));
+    m_man.printIfError(clEnqueueNDRangeKernel(
+        cl_queue, kernel->getClKernel(), 2, NULL, global_work_size, NULL, 0, NULL, NULL));
+    clFlush(cl_queue);
   }
 }
 

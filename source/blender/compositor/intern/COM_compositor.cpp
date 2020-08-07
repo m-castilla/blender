@@ -60,7 +60,7 @@ void COM_execute(RenderData *rd,
 
   BLI_mutex_lock(&s_compositorMutex);
 
-  if (editingtree->test_break(editingtree->tbh)) {
+  if (editingtree->test_break && editingtree->test_break(editingtree->tbh)) {
     // during editing multiple calls to this method can be triggered.
     // make sure one the last one will be doing the work.
     BLI_mutex_unlock(&s_compositorMutex);
@@ -106,12 +106,12 @@ void COM_execute(RenderData *rd,
 
   ExecutionSystem *system = new ExecutionSystem(context);
   system->execute();
-  delete system;
 
   WorkScheduler::stop();
   WorkScheduler::deinitialize();
 
   GlobalMan->deinitialize(context);
+  delete system;
 
   DebugInfo::end_benchmark();
 

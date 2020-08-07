@@ -75,6 +75,7 @@ class BufferManager {
   void writeSeek(NodeOperation *op,
                  ExecutionManager &man,
                  std::function<void(TmpRectBuilder &)> write_func);
+  bool hasBufferCache(NodeOperation *op);
 
   ~BufferManager();
 

@@ -27,19 +27,11 @@
 //#include "COM_BokehBlurNode.h"
 
 //#include "COM_BoxMaskNode.h"
-//#include "COM_BrightnessNode.h"
 //#include "COM_ChannelMatteNode.h"
 //#include "COM_ChromaMatteNode.h"
 //#include "COM_ColorMatteNode.h"
 
-//#include "COM_ColorRampNode.h"
 //#include "COM_ColorSpillNode.h"
-//#include "COM_ColorToBWNode.h"
-//#include "COM_CombineColorNode.h"
-//#include "COM_CompositorNode.h"
-//#include "COM_ConvertAlphaNode.h"
-//#include "COM_ConvertOperation.h"
-//#include "COM_Converter.h"
 //#include "COM_CornerPinNode.h"
 //#include "COM_CropNode.h"
 //#include "COM_CryptomatteNode.h"
@@ -59,7 +51,6 @@
 //#include "COM_GammaNode.h"
 //#include "COM_GlareNode.h"
 
-//#include "COM_IDMaskNode.h"
 //#include "COM_InpaintNode.h"
 
 //#include "COM_KeyingNode.h"
@@ -77,14 +68,11 @@
 //#include "COM_PlaneTrackDeformNode.h"
 //#include "COM_RenderLayersNode.h"
 //#include "COM_RotateNode.h"
-//#include "COM_SeparateColorNode.h"
-//#include "COM_SetAlphaNode.h"
 //#include "COM_SetValueOperation.h"
 //#include "COM_SplitViewerNode.h"
 //#include "COM_Stabilize2dNode.h"
 //#include "COM_SunBeamsNode.h"
 
-//#include "COM_SwitchViewNode.h"
 //#include "COM_TransformNode.h"
 //#include "COM_VectorBlurNode.h"
 //#include "COM_VectorCurveNode.h"
@@ -96,12 +84,17 @@
 #include "COM_ColorCorrectionNode.h"
 #include "COM_ColorCurveNode.h"
 #include "COM_ColorNode.h"
+#include "COM_ColorRampNode.h"
+#include "COM_ColorToBWNode.h"
+#include "COM_CombineColorNode.h"
 #include "COM_CompositorNode.h"
+#include "COM_ConvertAlphaNode.h"
 #include "COM_ConvertOperation.h"
 #include "COM_Converter.h"
 #include "COM_GammaNode.h"
 #include "COM_HueSaturationValueCorrectNode.h"
 #include "COM_HueSaturationValueNode.h"
+#include "COM_IDMaskNode.h"
 #include "COM_ImageNode.h"
 #include "COM_InvertNode.h"
 #include "COM_MaskNode.h"
@@ -115,10 +108,13 @@
 #include "COM_RenderLayersNode.h"
 #include "COM_ScaleNode.h"
 #include "COM_ScaleOperation.h"
+#include "COM_SeparateColorNode.h"
+#include "COM_SetAlphaNode.h"
 #include "COM_SetValueOperation.h"
 #include "COM_SocketProxyNode.h"
 #include "COM_SplitViewerNode.h"
 #include "COM_SwitchNode.h"
+#include "COM_SwitchViewNode.h"
 #include "COM_TextureNode.h"
 #include "COM_TimeNode.h"
 #include "COM_TonemapNode.h"
@@ -237,6 +233,48 @@ Node *Converter::convert(bNode *b_node)
     case CMP_NODE_MATH:
       node = new MathNode(b_node);
       break;
+    case CMP_NODE_VALTORGB:
+      node = new ColorRampNode(b_node);
+      break;
+    case CMP_NODE_RGBTOBW:
+      node = new ColorToBWNode(b_node);
+      break;
+    case CMP_NODE_ID_MASK:
+      node = new IDMaskNode(b_node);
+      break;
+    case CMP_NODE_SEPRGBA:
+      node = new SeparateRGBANode(b_node);
+      break;
+    case CMP_NODE_COMBRGBA:
+      node = new CombineRGBANode(b_node);
+      break;
+    case CMP_NODE_SEPHSVA:
+      node = new SeparateHSVANode(b_node);
+      break;
+    case CMP_NODE_COMBHSVA:
+      node = new CombineHSVANode(b_node);
+      break;
+    case CMP_NODE_SEPYUVA:
+      node = new SeparateYUVANode(b_node);
+      break;
+    case CMP_NODE_COMBYUVA:
+      node = new CombineYUVANode(b_node);
+      break;
+    case CMP_NODE_SEPYCCA:
+      node = new SeparateYCCANode(b_node);
+      break;
+    case CMP_NODE_COMBYCCA:
+      node = new CombineYCCANode(b_node);
+      break;
+    case CMP_NODE_SETALPHA:
+      node = new SetAlphaNode(b_node);
+      break;
+    case CMP_NODE_PREMULKEY:
+      node = new ConvertAlphaNode(b_node);
+      break;
+    case CMP_NODE_SWITCH_VIEW:
+      node = new SwitchViewNode(b_node);
+      break;
       /* */
 
       /*Distort nodes*/
@@ -262,9 +300,7 @@ Node *Converter::convert(bNode *b_node)
       /* */
 
       /*
-    case CMP_NODE_RGBTOBW:
-      node = new ColorToBWNode(b_node);
-      break;
+
     case CMP_NODE_ROTATE:
       node = new RotateNode(b_node);
       break;
@@ -274,45 +310,12 @@ Node *Converter::convert(bNode *b_node)
     case CMP_NODE_FILTER:
       node = new FilterNode(b_node);
       break;
-    case CMP_NODE_ID_MASK:
-      node = new IDMaskNode(b_node);
-      break;
-    case CMP_NODE_SEPRGBA:
-         node = new SeparateRGBANode(b_node);
-         break;
-       case CMP_NODE_COMBRGBA:
-         node = new CombineRGBANode(b_node);
-         break;
-       case CMP_NODE_SEPHSVA:
-         node = new SeparateHSVANode(b_node);
-         break;
-       case CMP_NODE_COMBHSVA:
-         node = new CombineHSVANode(b_node);
-         break;
-       case CMP_NODE_SEPYUVA:
-         node = new SeparateYUVANode(b_node);
-         break;
-       case CMP_NODE_COMBYUVA:
-         node = new CombineYUVANode(b_node);
-         break;
-       case CMP_NODE_SEPYCCA:
-         node = new SeparateYCCANode(b_node);
-         break;
-       case CMP_NODE_COMBYCCA:
-         node = new CombineYCCANode(b_node);
-         break;*/
 
       // case CMP_NODE_NORMAL:
       //  node = new NormalNode(b_node);
       //  break;
       // case CMP_NODE_NORMALIZE:
       //  node = new NormalizeNode(b_node);
-      //  break;
-      // case CMP_NODE_SETALPHA:
-      //  node = new SetAlphaNode(b_node);
-      //  break;
-      // case CMP_NODE_PREMULKEY:
-      //  node = new ConvertAlphaNode(b_node);
       //  break;
       // case CMP_NODE_MASK_BOX:
       //  node = new BoxMaskNode(b_node);
@@ -329,9 +332,7 @@ Node *Converter::convert(bNode *b_node)
       // case CMP_NODE_DISPLACE:
       //  node = new DisplaceNode(b_node);
       //  break;
-      // case CMP_NODE_VALTORGB:
-      //  node = new ColorRampNode(b_node);
-      //  break;
+
       // case CMP_NODE_DIFF_MATTE:
       //  node = new DifferenceMatteNode(b_node);
       //  break;
@@ -370,9 +371,6 @@ Node *Converter::convert(bNode *b_node)
       //  break;
       // case CMP_NODE_DBLUR:
       //  node = new DirectionalBlurNode(b_node);
-      //  break;
-      // case CMP_NODE_SWITCH_VIEW:
-      //  node = new SwitchViewNode(b_node);
       //  break;
       // case CMP_NODE_GLARE:
       //  node = new GlareNode(b_node);

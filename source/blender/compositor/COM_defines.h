@@ -117,13 +117,9 @@ enum class OperationMode { Optimize, Exec };
 #define COM_NUM_CHANNELS_VECTOR 3
 #define COM_NUM_CHANNELS_COLOR 4
 
-#define COM_BLUR_BOKEH_PIXELS 512
-
 // configurable items
-
-// chunk size determination
+#define COM_BLUR_BOKEH_PIXELS 512
 #define COM_PREVIEW_SIZE 140.0f
-#define COM_OPENCL_ENABLED
 
 // workscheduler threading models
 /**
@@ -144,12 +140,13 @@ enum class OperationMode { Optimize, Exec };
  */
 #if defined(COM_DEBUG) || defined(DEBUG)
 #  define COM_CURRENT_THREADING_MODEL COM_TM_NOTHREAD
-#  define ALLOW_COMPUTE 0
 #else
 #  define COM_CURRENT_THREADING_MODEL COM_TM_QUEUE
-#  define ALLOW_COMPUTE 1
 #endif
 
+// This option might not work for all opencl drivers. If you see in console output "comand line
+// argument "-g" or "-s" not supported" disable this option.
+#define ENABLE_OPENCL_DEBUG 0
 enum class ComDebugLevel {
   NORMAL,  // without graphviz output
   FULL     // with graphviz output
@@ -160,6 +157,8 @@ const ComDebugLevel COM_DEBUG_LEVEL = ComDebugLevel::NORMAL;
 #define COM_ORDER_OF_CHUNKS_DEFAULT OrderOfChunks::CENTER_OUT
 
 #define COM_RULE_OF_THIRDS_DIVIDER 100.0f
+
+#define DETERMINE_RESOLUTION_BY_OUTPUT 0
 //
 //#if COM_CURRENT_THREADING_MODEL == COM_TM_NOTHREAD
 //#  if !(defined(DEBUG) || \

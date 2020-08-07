@@ -25,7 +25,7 @@
 
 std::unique_ptr<GlobalManager> GlobalMan;
 
-GlobalManager::GlobalManager() : ComputeMan(nullptr), BufferMan(nullptr), ViewCacheMan(nullptr)
+GlobalManager::GlobalManager() : BufferMan(nullptr), ComputeMan(nullptr), ViewCacheMan(nullptr)
 {
 }
 
@@ -39,11 +39,7 @@ GlobalManager::~GlobalManager()
 void GlobalManager::initialize(const CompositorContext &ctx)
 {
   /* initialize compute manager */
-#if defined(COM_DEBUG) || defined(DEBUG)
-  bool use_opencl = ALLOW_COMPUTE;
-#else
   bool use_opencl = (ctx.getbNodeTree()->flag & NTREE_COM_OPENCL) != 0;
-#endif
   ComputeType compute_type = use_opencl ? ComputeType::OPENCL : ComputeType::NONE;
   if (!ComputeMan || ComputeMan->getComputeType() != compute_type) {
     ComputeManager *new_compute_man = nullptr;
@@ -86,4 +82,9 @@ void GlobalManager::deinitialize(const CompositorContext &ctx)
 {
   BufferMan->deinitialize(ctx.isBreaked());
   ViewCacheMan->deinitialize(ctx.isBreaked());
+}
+
+bool GlobalManager::hasAnyKindOfCache(NodeOperation *op)
+{
+  return ViewCacheMan->hasViewCache(op) || BufferMan->hasBufferCache(op);
 }

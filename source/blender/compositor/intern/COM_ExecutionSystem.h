@@ -163,7 +163,10 @@ class ExecutionSystem {
    */
   void execute();
 
-  bool isBreaked() const;
+  inline bool isBreaked() const
+  {
+    return m_context.isBreaked();
+  }
 
   /**
    * \brief get the reference to the compositor context
