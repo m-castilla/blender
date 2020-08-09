@@ -48,10 +48,9 @@ class MaskOperation : public NodeOperation {
   struct MaskRasterHandle *m_rasterMaskHandles[CMP_NODE_MASK_MBLUR_SAMPLES_MAX];
   unsigned int m_rasterMaskHandleTot;
 
-  void determineResolution(int resolution[2],
-                           int preferredResolution[2],
-                           DetermineResolutionMode mode,
-                           bool setResolution) override;
+  ResolutionType determineResolution(int resolution[2],
+                                     int preferredResolution[2],
+                                     bool setResolution) override;
 
  public:
   MaskOperation();

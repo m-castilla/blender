@@ -55,11 +55,15 @@ class PreviewOperation : public NodeOperation {
   void deinitExecution() override;
   void hashParams() override;
 
+  int getOutputNChannels() const override
+  {
+    return COM_NUM_CHANNELS_COLOR;
+  }
+
   /*void executeRegion(rcti *rect, unsigned int tileNumber);*/
-  void determineResolution(int resolution[2],
-                           int preferredResolution[2],
-                           DetermineResolutionMode mode,
-                           bool setResolution) override;
+  ResolutionType determineResolution(int resolution[2],
+                                     int preferredResolution[2],
+                                     bool setResolution) override;
   // bool determineDependingAreaOfInterest(rcti *input,
   //                                      ReadBufferOperation *readOperation,
   //                                      rcti *output);
@@ -70,7 +74,7 @@ class PreviewOperation : public NodeOperation {
 
   BufferType getBufferType() const override
   {
-    return m_needs_write ? BufferType::NO_BUFFER_WITH_WRITE : BufferType::NO_BUFFER_NO_WRITE;
+    return m_needs_write ? BufferType::TEMPORAL : BufferType::NO_BUFFER_NO_WRITE;
   }
 
   inline unsigned int getPreviewKey()

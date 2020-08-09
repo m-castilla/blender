@@ -97,10 +97,9 @@ class BokehImageOperation : public NodeOperation {
    * \brief determine the resolution of this operation. currently fixed at [COM_BLUR_BOKEH_PIXELS,
    * COM_BLUR_BOKEH_PIXELS] \param resolution: \param preferredResolution:
    */
-  void determineResolution(int resolution[2],
-                           int preferredResolution[2],
-                           DetermineResolutionMode mode,
-                           bool setResolution) override;
+  ResolutionType determineResolution(int resolution[2],
+                                     int preferredResolution[2],
+                                     bool setResolution) override;
 
   /**
    * \brief set the node data
