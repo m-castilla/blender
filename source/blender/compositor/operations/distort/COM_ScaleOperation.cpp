@@ -17,7 +17,9 @@
  */
 
 #include "COM_ScaleOperation.h"
+#include "COM_CompositorContext.h"
 #include "COM_ComputeKernel.h"
+#include "COM_GlobalManager.h"
 #include "COM_kernel_cpu.h"
 
 #define OPENCL_CODE
@@ -109,7 +111,7 @@ ScaleOperation::ScaleOperation() : NodeOperation()
   this->m_inputXOperation = NULL;
   this->m_inputYOperation = NULL;
   m_relative = false;
-  m_sampler = PixelsSampler{PixelInterpolation::BILINEAR, PixelExtend::CLIP};
+  m_sampler = GlobalMan->getContext()->getDefaultSampler();
 }
 
 void ScaleOperation::hashParams()
@@ -175,11 +177,10 @@ ScaleFixedSizeOperation::ScaleFixedSizeOperation() : NodeOperation()
   this->addInputSocket(SocketType::DYNAMIC, InputResizeMode::NO_RESIZE);
   this->addOutputSocket(SocketType::DYNAMIC);
   this->setMainInputSocketIndex(0);
-  m_sampler = PixelsSampler{PixelInterpolation::BILINEAR, PixelExtend::CLIP};
+
+  m_sampler = GlobalMan->getContext()->getDefaultSampler();
   m_inputOperation = NULL;
 
-  m_newWidth = 0;
-  m_newHeight = 0;
   m_relX = 0;
   m_relY = 0;
 
@@ -192,8 +193,7 @@ ScaleFixedSizeOperation::ScaleFixedSizeOperation() : NodeOperation()
 
 void ScaleFixedSizeOperation::hashParams()
 {
-  hashParam(m_newWidth);
-  hashParam(m_newHeight);
+  NodeOperation::hashParams();
   hashParam(m_offsetX);
   hashParam(m_offsetY);
   hashParam(m_is_aspect);
@@ -204,20 +204,20 @@ void ScaleFixedSizeOperation::hashParams()
 void ScaleFixedSizeOperation::initExecution()
 {
   this->m_inputOperation = this->getInputSocket(0)->getLinkedOp();
-  this->m_relX = this->m_inputOperation->getWidth() / (float)this->m_newWidth;
-  this->m_relY = this->m_inputOperation->getHeight() / (float)this->m_newHeight;
+  this->m_relX = this->m_inputOperation->getWidth() / (float)m_width;
+  this->m_relY = this->m_inputOperation->getHeight() / (float)m_height;
 
   /* *** all the options below are for a fairly special case - camera framing *** */
   if (this->m_offsetX != 0.0f || this->m_offsetY != 0.0f) {
     this->m_is_offset = true;
 
-    if (this->m_newWidth > this->m_newHeight) {
-      this->m_offsetX *= this->m_newWidth;
-      this->m_offsetY *= this->m_newWidth;
+    if (m_width > m_height) {
+      this->m_offsetX *= m_width;
+      this->m_offsetY *= m_width;
     }
     else {
-      this->m_offsetX *= this->m_newHeight;
-      this->m_offsetY *= this->m_newHeight;
+      this->m_offsetX *= m_height;
+      this->m_offsetY *= m_height;
     }
   }
 
@@ -227,8 +227,8 @@ void ScaleFixedSizeOperation::initExecution()
     const float h_src = this->m_inputOperation->getHeight();
 
     /* destination aspect is already applied from the camera frame */
-    const float w_dst = this->m_newWidth;
-    const float h_dst = this->m_newHeight;
+    const float w_dst = m_width;
+    const float h_dst = m_height;
 
     const float asp_src = w_src / h_src;
     const float asp_dst = w_dst / h_dst;
@@ -285,17 +285,18 @@ void ScaleFixedSizeOperation::execPixels(ExecutionManager &man)
     kernel->addFloatArg(m_relY);
   });
 }
-
-void ScaleFixedSizeOperation::determineResolution(int resolution[2],
-                                                  int /*preferredResolution*/[2],
-                                                  bool setResolution)
-{
-  int nr[2];
-  nr[0] = this->m_newWidth;
-  nr[1] = this->m_newHeight;
-  if (setResolution) {
-    NodeOperation::determineResolution(resolution, nr, setResolution);
-  }
-  resolution[0] = this->m_newWidth;
-  resolution[1] = this->m_newHeight;
-}
+//
+// void ScaleFixedSizeOperation::determineResolution(int resolution[2],
+//                                                  int /*preferredResolution*/[2],
+//                                                  DetermineResolutionMode mode,
+//                                                  bool setResolution)
+//{
+//  int nr[2];
+//  nr[0] = this->m_newWidth;
+//  nr[1] = this->m_newHeight;
+//  if (setResolution) {
+//    NodeOperation::determineResolution(resolution, nr, mode, setResolution);
+//  }
+//  resolution[0] = this->m_newWidth;
+//  resolution[1] = this->m_newHeight;
+//}

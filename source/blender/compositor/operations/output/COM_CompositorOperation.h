@@ -106,6 +106,7 @@ class CompositorOperation : public NodeOperation {
   void deinitExecution();
   void determineResolution(int resolution[2],
                            int preferredResolution[2],
+                           DetermineResolutionMode mode,
                            bool setResolution) override;
   void setUseAlphaInput(bool value)
   {

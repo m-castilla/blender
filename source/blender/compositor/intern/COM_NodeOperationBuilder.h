@@ -113,11 +113,11 @@ class NodeOperationBuilder {
   /** Map input socket of the current node to an operation socket */
   void mapInputSocket(NodeInput *node_socket,
                       NodeOperationInput *operation_socket,
-                      bool check_equal_types=true);
+                      bool check_equal_types = true);
   /** Map output socket of the current node to an operation socket */
   void mapOutputSocket(NodeOutput *node_socket,
                        NodeOperationOutput *operation_socket,
-                       bool check_equal_types=true);
+                       bool check_equal_types = true);
 
   void addLink(NodeOperationOutput *from, NodeOperationInput *to);
   void removeInputLink(NodeOperationInput *to);
@@ -177,6 +177,8 @@ class NodeOperationBuilder {
   ExecutionGroup *make_group(NodeOperation *op);
 
  private:
+  NodeOperation *getCompositorOutput();
+  std::vector<NodeOperation *> getNonViewNonCompositorOutputs();
   PreviewOperation *make_preview_operation() const;
 
 #ifdef WITH_CXX_GUARDEDALLOC
