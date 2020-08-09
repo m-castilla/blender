@@ -68,14 +68,14 @@ void ScaleNode::convertToOperations(NodeConverter &converter,
     }
     case CMP_SCALE_RENDERPERCENT: {
       const RenderData *rd = context.getRenderData();
-      ScaleFixedSizeOperation *operation = new ScaleFixedSizeOperation();
+      int scale_w = rd->xsch * rd->size / 100.0f;
+      int scale_h = rd->ysch * rd->size / 100.0f;
+      ScaleFixedSizeOperation *operation = new ScaleFixedSizeOperation(scale_w, scale_h);
+
       /* framing options */
       operation->setIsAspect((bnode->custom2 & CMP_SCALE_RENDERSIZE_FRAME_ASPECT) != 0);
       operation->setIsCrop((bnode->custom2 & CMP_SCALE_RENDERSIZE_FRAME_CROP) != 0);
       operation->setOffset(bnode->custom3, bnode->custom4);
-      int scale_w = rd->xsch * rd->size / 100.0f;
-      int scale_h = rd->ysch * rd->size / 100.0f;
-      operation->setResolution(scale_w, scale_h);
       operation->getInputSocket(0)->setResizeMode(InputResizeMode::NO_RESIZE);
       converter.addOperation(operation);
 

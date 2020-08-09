@@ -130,15 +130,10 @@ void PreviewOperation::execPixels(ExecutionManager &man)
     int rect_w = dst.getWidth();
     int rect_h = dst.getHeight();
     auto src_img = src_pixels->pixelsImg();
-    auto out_float_buffer = (float *)MEM_mallocN(
-        (size_t)rect_w * rect_h * COM_NUM_CHANNELS_COLOR * sizeof(float), "PreviewOperation");
 
-    auto dst_float_buf = BufferUtil::createUnmanagedTmpBuffer(
-        COM_NUM_CHANNELS_COLOR, out_float_buffer, rect_w, rect_h, false);
-    PixelsRect dst_rect(dst_float_buf.get(), 0, rect_w, 0, rect_h);
-    auto dst_img = dst_rect.pixelsImg();
+    auto dst_img = dst.pixelsImg();
     PixelsRect src_rect = src_pixels->toRect(dst);
-    PixelsUtil::copyEqualRects(dst_rect, src_rect);
+    PixelsUtil::copyEqualRects(dst, src_rect);
 
     // IMB_colormanagement_processor_apply function don't support row pitch
     BLI_assert(dst_img.row_jump == 0);
@@ -159,8 +154,6 @@ void PreviewOperation::execPixels(ExecutionManager &man)
       uchar_pixel += COM_NUM_CHANNELS_COLOR;
     }
 
-    MEM_freeN(out_float_buffer);
-
     // PixelsSampler sampler = PixelsSampler{PixelInterpolation::NEAREST, PixelExtend::CLIP};
     // size_t dst_offset;
     // for (int y = 0; y < height; y++) {
@@ -176,13 +169,11 @@ void PreviewOperation::execPixels(ExecutionManager &man)
   return cpuWriteSeek(man, cpuWrite);
 }
 
-void PreviewOperation::determineResolution(int resolution[2],
-                                           int preferredResolution[2],
-                                           DetermineResolutionMode mode,
-                                           bool setResolution)
+ResolutionType PreviewOperation::determineResolution(int resolution[2],
+                                                     int preferredResolution[2],
+                                                     bool setResolution)
 {
-  NodeOperation::determineResolution(
-      resolution, preferredResolution, DetermineResolutionMode::FromInput, false);
+  NodeOperation::determineResolution(resolution, preferredResolution, false);
   int width = resolution[0];
   int height = resolution[1];
   float divider = 0.0f;
@@ -206,7 +197,11 @@ void PreviewOperation::determineResolution(int resolution[2],
 
     int temp_res[2] = {0, 0};
     int local_preferred[2] = {width, height};
-    NodeOperation::determineResolution(
-        temp_res, local_preferred, DetermineResolutionMode::FromOutput, true);
+    NodeOperation::determineResolution(temp_res, local_preferred, true);
   }
+
+  // It's been partially determined by inputs but still need to consider it fixed so that any
+  // input is automatically resized on DetermineResolutionMode::FromOutput in case we set a
+  // socket with InputResizeMode::DEFAULT
+  return ResolutionType::Fixed;
 }

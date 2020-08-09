@@ -50,10 +50,10 @@ class BaseImageOperation : public NodeOperation {
   /**
    * Determine the output resolution. The resolution is retrieved from the Renderer
    */
-  virtual void determineResolution(int resolution[2],
-                                   int preferredResolution[2],
-                                   DetermineResolutionMode mode,
-                                   bool setResolution) override;
+  virtual ResolutionType determineResolution(int resolution[2],
+                                             int preferredResolution[2],
+
+                                             bool setResolution) override;
 
   virtual ImBuf *getImBuf();
 

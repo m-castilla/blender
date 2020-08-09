@@ -172,7 +172,8 @@ void ScaleOperation::execPixels(ExecutionManager &man)
 }
 
 // Absolute fixed size
-ScaleFixedSizeOperation::ScaleFixedSizeOperation() : NodeOperation()
+ScaleFixedSizeOperation::ScaleFixedSizeOperation(int final_width, int final_height)
+    : NodeOperation()
 {
   this->addInputSocket(SocketType::DYNAMIC, InputResizeMode::NO_RESIZE);
   this->addOutputSocket(SocketType::DYNAMIC);
@@ -189,6 +190,9 @@ ScaleFixedSizeOperation::ScaleFixedSizeOperation() : NodeOperation()
   m_is_aspect = false;
   m_is_crop = false;
   m_is_offset = false;
+
+  m_scale_width = final_width;
+  m_scale_height = final_height;
 }
 
 void ScaleFixedSizeOperation::hashParams()
@@ -257,8 +261,8 @@ void ScaleFixedSizeOperation::initExecution()
 
 void ScaleFixedSizeOperation::deinitExecution()
 {
-  this->m_inputOperation = NULL;
   NodeOperation::deinitExecution();
+  this->m_inputOperation = NULL;
 }
 
 void ScaleFixedSizeOperation::execPixels(ExecutionManager &man)
@@ -285,18 +289,19 @@ void ScaleFixedSizeOperation::execPixels(ExecutionManager &man)
     kernel->addFloatArg(m_relY);
   });
 }
-//
-// void ScaleFixedSizeOperation::determineResolution(int resolution[2],
-//                                                  int /*preferredResolution*/[2],
-//                                                  DetermineResolutionMode mode,
-//                                                  bool setResolution)
-//{
-//  int nr[2];
-//  nr[0] = this->m_newWidth;
-//  nr[1] = this->m_newHeight;
-//  if (setResolution) {
-//    NodeOperation::determineResolution(resolution, nr, mode, setResolution);
-//  }
-//  resolution[0] = this->m_newWidth;
-//  resolution[1] = this->m_newHeight;
-//}
+
+ResolutionType ScaleFixedSizeOperation::determineResolution(int resolution[2],
+                                                            int /*preferredResolution*/[2],
+                                                            bool setResolution)
+{
+  int nr[2];
+  nr[0] = m_scale_width;
+  nr[1] = m_scale_height;
+  if (setResolution) {
+    NodeOperation::determineResolution(resolution, nr, setResolution);
+  }
+  resolution[0] = m_scale_width;
+  resolution[1] = m_scale_height;
+
+  return ResolutionType::Fixed;
+}
