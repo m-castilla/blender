@@ -93,7 +93,12 @@ enum class InputResizeMode {
   FIT,
   /** \brief Fit the width and the height of the input image to the width and height of the working
      area of the node, image will be equally larger than the working area */
-  STRETCH
+  STRETCH,
+  /** \brief This is to indicate that you want to use the default one which depends on
+     DetermineREsolutionMode. This is the one applied when using
+     NodeSocketReader::addInputSocket(socketType) function and you don't pass InputResizeMode
+     argument */
+  DEFAULT
 };
 
 /**
@@ -112,7 +117,13 @@ enum class OrderOfChunks {
 };
 
 enum class OperationMode { Optimize, Exec };
-enum class DetermineResolutionMode { FromInput, FromOutput };
+enum class ResolutionType {
+  /** \brief determined taking into account operation inputs and outputs*/
+  Determined,
+  /** \brief a fixed resolution which doesn't depend on inputs or outputs */
+  Fixed
+};
+enum class DetermineResolutionMode { FromInput, FitOutput };
 
 #define COM_NUM_CHANNELS_VALUE 1
 #define COM_NUM_CHANNELS_VECTOR 3

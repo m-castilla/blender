@@ -22,7 +22,9 @@
 #  include "MEM_guardedalloc.h"
 #endif
 
+#include "COM_defines.h"
 #include "DNA_node_types.h"
+#include <vector>
 
 class Node;
 class NodeOperation;
@@ -48,13 +50,6 @@ class Converter {
   static Node *convert(bNode *b_node);
 
   /**
-   * \brief True if the node is considered 'fast'.
-   *
-   * Slow nodes will be skipped if fast execution is required.
-   */
-  static bool is_fast_node(bNode *b_node);
-
-  /**
    * \brief This method will add a datetype conversion rule when the to-socket does not support the
    * from-socket actual data type.
    *
@@ -65,6 +60,9 @@ class Converter {
    * \see NodeLink - a link between two sockets
    */
   static NodeOperation *convertDataType(NodeOperationOutput *from, NodeOperationInput *to);
+
+  static bool setBestResolution(NodeOperation *op,
+                                const std::vector<const NodeOperation *> &output_ops);
 
   /**
    * \brief This method will add a resolution rule based on the settings of the NodeInput.
@@ -78,7 +76,8 @@ class Converter {
    */
   static void convertResolution(NodeOperationBuilder &builder,
                                 NodeOperationOutput *fromSocket,
-                                NodeOperationInput *toSocket);
+                                NodeOperationInput *toSocket,
+                                DetermineResolutionMode res_mode);
 
 #ifdef WITH_CXX_GUARDEDALLOC
   MEM_CXX_CLASS_ALLOC_FUNCS("COM:Converter")

@@ -72,10 +72,10 @@ void MovieClipBaseOperation::deinitExecution()
   }
 }
 
-void MovieClipBaseOperation::determineResolution(int resolution[2],
-                                                 int /*preferredResolution*/[2],
-                                                 DetermineResolutionMode mode,
-                                                 bool setResolution)
+ResolutionType MovieClipBaseOperation::determineResolution(int resolution[2],
+                                                           int /*preferredResolution*/[2],
+
+                                                           bool setResolution)
 {
   resolution[0] = 0;
   resolution[1] = 0;
@@ -88,6 +88,7 @@ void MovieClipBaseOperation::determineResolution(int resolution[2],
     resolution[0] = width;
     resolution[1] = height;
   }
+  return ResolutionType::Fixed;
 }
 
 void MovieClipBaseOperation::hashParams()

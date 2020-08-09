@@ -57,17 +57,20 @@ class ScaleFixedSizeOperation : public NodeOperation {
   float m_offsetY;
   bool m_is_aspect;
   bool m_is_crop;
+
   /* set from other properties on initialization,
    * check if we need to apply offset */
   bool m_is_offset;
 
- public:
-  ScaleFixedSizeOperation();
+  int m_scale_width;
+  int m_scale_height;
 
-  // void determineResolution(int resolution[2],
-  //                         int preferredResolution[2],
-  //                         DetermineResolutionMode mode,
-  //                         bool setResolution) override;
+ public:
+  ScaleFixedSizeOperation(int final_width, int final_height);
+
+  ResolutionType determineResolution(int resolution[2],
+                                     int preferredResolution[2],
+                                     bool setResolution) override;
 
   void initExecution() override;
   void deinitExecution() override;

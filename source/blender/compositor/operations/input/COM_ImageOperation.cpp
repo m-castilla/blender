@@ -104,10 +104,9 @@ void BaseImageOperation::deinitExecution()
   BKE_image_release_ibuf(this->m_image, this->m_buffer, NULL);
 }
 
-void BaseImageOperation::determineResolution(int resolution[2],
-                                             int preferredResolution[2],
-                                             DetermineResolutionMode mode,
-                                             bool setResolution)
+ResolutionType BaseImageOperation::determineResolution(int resolution[2],
+                                                       int preferredResolution[2],
+                                                       bool setResolution)
 {
   ImBuf *stackbuf = getImBuf();
 
@@ -120,6 +119,7 @@ void BaseImageOperation::determineResolution(int resolution[2],
   }
 
   BKE_image_release_ibuf(this->m_image, stackbuf, NULL);
+  return ResolutionType::Fixed;
 }
 
 void BaseImageOperation::hashParams()

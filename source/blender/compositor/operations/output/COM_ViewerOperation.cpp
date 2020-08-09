@@ -199,7 +199,7 @@ void ViewerOperation::updateImage(const rcti *rect)
 //
 // void ViewerOperation::determineResolution(int resolution[2],
 //                                          int preferredResolution[2],
-//                                          DetermineResolutionMode mode,
+//
 //                                          bool setResolution)
 //{
 //  NodeOperation::determineResolution(

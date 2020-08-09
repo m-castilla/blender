@@ -35,6 +35,7 @@
 #include "COM_ViewerOperation.h"
 
 #include "COM_NodeOperationBuilder.h" /* own include */
+#include <unordered_map>
 
 NodeOperationBuilder::NodeOperationBuilder(ExecutionSystem &sys, bNodeTree *b_nodetree)
     : m_context(&sys.getContext()), m_current_node(NULL), m_active_viewer(NULL), m_sys(sys)
@@ -95,8 +96,6 @@ void NodeOperationBuilder::convertToOperations()
   }
 
   resolve_proxies();
-
-  add_datatype_conversions();
 
   add_operation_input_constants();
 
@@ -455,13 +454,12 @@ void NodeOperationBuilder::determineResolutions()
   auto nonview_noncompo = getNonViewNonCompositorOutputs();
   nonview_outputs.insert(nonview_outputs.end(), nonview_noncompo.begin(), nonview_noncompo.end());
 
-  auto res_mode = m_context->getDetermineResolutionMode();
   for (Operations::const_iterator it = nonview_outputs.begin(); it != nonview_outputs.end();
        ++it) {
     auto op = *it;
     int resolution[2] = {0, 0};
     int preferredResolution[2] = {0, 0};
-    op->determineResolution(resolution, preferredResolution, res_mode, true);
+    op->determineResolution(resolution, preferredResolution, true);
     op->setResolution(resolution[0], resolution[1]);
   }
 
@@ -471,16 +469,51 @@ void NodeOperationBuilder::determineResolutions()
     if (!op->isResolutionSet() && op->isOutputOperation(m_context->isRendering())) {
       int resolution[2] = {0, 0};
       int preferredResolution[2] = {0, 0};
-      op->determineResolution(resolution, preferredResolution, res_mode, true);
+      op->determineResolution(resolution, preferredResolution, true);
       op->setResolution(resolution[0], resolution[1]);
     }
   }
 
-  /* Set the others operations resolutions if not set*/
-  for (Operations::const_iterator it = m_operations.begin(); it != m_operations.end(); ++it) {
-    NodeOperation *op = *it;
-    if (!op->isResolutionSet()) {
-      op->setBestDeterminedResolution();
+  auto res_mode = m_context->getDetermineResolutionMode();
+  if (res_mode == DetermineResolutionMode::FitOutput) {
+    std::unordered_map<NodeOperation *, std::vector<const NodeOperation *>> op_output_ops;
+    for (Links::const_iterator it = m_links.begin(); it != m_links.end(); ++it) {
+      const Link &link = *it;
+      auto op = link.from()->getOperation();
+      auto output_op = link.to()->getOperation();
+
+      auto found_it = op_output_ops.find(op);
+      if (found_it != op_output_ops.end()) {
+        auto &output_ops = (*found_it).second;
+        output_ops.push_back(output_op);
+      }
+      else {
+        std::vector<const NodeOperation *> output_ops;
+        output_ops.push_back(output_op);
+        op_output_ops.insert({op, std::move(output_ops)});
+      }
+    }
+
+    /* try set the best (efficient while keeping quality) resolution possible */
+    bool any_change = true;
+    while (any_change) {
+      any_change = false;
+      for (auto it = m_operations.rbegin(); it != m_operations.rend(); it++) {
+        auto op = *it;
+        auto found_it = op_output_ops.find(op);
+        if (found_it != op_output_ops.end()) {
+          auto &output_ops = (*found_it).second;
+          any_change |= Converter::setBestResolution(op, output_ops);
+        }
+      }
+
+      for (auto op : m_operations) {
+        auto found_it = op_output_ops.find(op);
+        if (found_it != op_output_ops.end()) {
+          auto &output_ops = (*found_it).second;
+          any_change |= Converter::setBestResolution(op, output_ops);
+        }
+      }
     }
   }
 
@@ -489,7 +522,8 @@ void NodeOperationBuilder::determineResolutions()
   for (Links::const_iterator it = m_links.begin(); it != m_links.end(); ++it) {
     const Link &link = *it;
 
-    if (link.to()->getResizeMode() != InputResizeMode::NO_RESIZE) {
+    auto resize_mode = link.to()->getResizeMode();
+    if (resize_mode != InputResizeMode::NO_RESIZE) {
       NodeOperation *from_op = link.from()->getOperation();
       NodeOperation *to_op = link.to()->getOperation();
       if (from_op->getWidth() != to_op->getWidth() || from_op->getHeight() != to_op->getHeight()) {
@@ -497,9 +531,10 @@ void NodeOperationBuilder::determineResolutions()
       }
     }
   }
+
   for (Links::const_iterator it = convert_links.begin(); it != convert_links.end(); ++it) {
     const Link &link = *it;
-    Converter::convertResolution(*this, link.from(), link.to());
+    Converter::convertResolution(*this, link.from(), link.to(), res_mode);
   }
 }
 

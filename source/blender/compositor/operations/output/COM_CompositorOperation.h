@@ -104,10 +104,9 @@ class CompositorOperation : public NodeOperation {
   }
   void initExecution();
   void deinitExecution();
-  void determineResolution(int resolution[2],
-                           int preferredResolution[2],
-                           DetermineResolutionMode mode,
-                           bool setResolution) override;
+  ResolutionType determineResolution(int resolution[2],
+                                     int preferredResolution[2],
+                                     bool setResolution) override;
   void setUseAlphaInput(bool value)
   {
     this->m_useAlphaInput = value;

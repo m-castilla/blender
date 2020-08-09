@@ -331,6 +331,8 @@ bool BufferManager::prepareForWrite(bool is_write_computed, OpReads *reads)
                     buf->host.state == HostMemoryState::FILLED;
   bool host_empty = buf->host.state == HostMemoryState::NONE;
   bool device_empty = buf->device.state == DeviceMemoryState::NONE;
+  (void)host_empty;    // removes warnings
+  (void)device_empty;  // removes warnings
   if (reads->total_compute_reads > 0 && reads->total_cpu_reads > 0) {
     if (!host_ready) {
       BLI_assert(host_empty);
