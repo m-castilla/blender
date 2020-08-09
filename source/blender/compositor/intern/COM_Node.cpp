@@ -176,6 +176,9 @@ DataType NodeInput::getDataType() const
       // A dynamic input requires a linked input
       BLI_assert(m_link);
       return m_link->getDataType();
+    default:
+      BLI_assert(!"None implemented SocketType");
+      return (DataType)0;
   }
 }
 

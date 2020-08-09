@@ -33,9 +33,15 @@ class GlobalManager {
   ComputeManager *ComputeMan;
   ViewCacheManager *ViewCacheMan;
 
+  const CompositorContext *m_context;
+
   void initialize(const CompositorContext &ctx);
   void deinitialize(const CompositorContext &ctx);
   bool hasAnyKindOfCache(NodeOperation *op);
+  const CompositorContext *getContext()
+  {
+    return m_context;
+  }
 
   GlobalManager();
   ~GlobalManager();

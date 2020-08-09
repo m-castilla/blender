@@ -482,8 +482,6 @@ void Converter::convertResolution(NodeOperationBuilder &builder,
   const float fromHeight = fromOperation->getHeight();
   bool doCenter = false;
   bool doScale = false;
-  float addX = (toWidth - fromWidth) / 2.0f;
-  float addY = (toHeight - fromHeight) / 2.0f;
   float scaleX = 0;
   float scaleY = 0;
 
@@ -524,60 +522,66 @@ void Converter::convertResolution(NodeOperationBuilder &builder,
   }
 
   if (doCenter) {
-    NodeOperation *first = NULL;
-    ScaleOperation *scaleOperation = NULL;
+    NodeOperation *first_op = nullptr;
+    NodeOperation *last_op = nullptr;
+    ScaleFixedSizeOperation *scaleOperation = nullptr;
+    float addX = 0.0f;
+    float addY = 0.0f;
     if (doScale) {
-      scaleOperation = new ScaleOperation();
-      scaleOperation->getInputSocket(1)->setResizeMode(InputResizeMode::NO_RESIZE);
-      scaleOperation->getInputSocket(2)->setResizeMode(InputResizeMode::NO_RESIZE);
-      first = scaleOperation;
-      SetValueOperation *sxop = new SetValueOperation();
-      sxop->setValue(scaleX);
-      builder.addLink(sxop->getOutputSocket(), scaleOperation->getInputSocket(1));
-      SetValueOperation *syop = new SetValueOperation();
-      syop->setValue(scaleY);
-      builder.addLink(syop->getOutputSocket(), scaleOperation->getInputSocket(2));
-      builder.addOperation(sxop);
-      builder.addOperation(syop);
-
-      int resolution[2] = {fromOperation->getWidth(), fromOperation->getHeight()};
-      scaleOperation->setResolution(resolution);
-      sxop->setResolution(resolution);
-      syop->setResolution(resolution);
+      scaleOperation = new ScaleFixedSizeOperation();
+      first_op = scaleOperation;
+      last_op = scaleOperation;
+      int scale_w = fromWidth * scaleX;
+      int scale_h = fromHeight * scaleY;
+      scaleOperation->setResolution(scale_w, scale_h);
       builder.addOperation(scaleOperation);
+
+      addX = (toWidth - scale_w) / 2.0f;
+      addY = (toHeight - scale_h) / 2.0f;
+    }
+    else {
+      addX = (toWidth - fromWidth) / 2.0f;
+      addY = (toHeight - fromHeight) / 2.0f;
     }
 
-    TranslateOperation *translateOperation = new TranslateOperation();
-    translateOperation->getInputSocket(1)->setResizeMode(InputResizeMode::NO_RESIZE);
-    translateOperation->getInputSocket(2)->setResizeMode(InputResizeMode::NO_RESIZE);
-    if (!first) {
-      first = translateOperation;
-    }
-    SetValueOperation *xop = new SetValueOperation();
-    xop->setValue(addX);
-    builder.addLink(xop->getOutputSocket(), translateOperation->getInputSocket(1));
-    SetValueOperation *yop = new SetValueOperation();
-    yop->setValue(addY);
-    builder.addLink(yop->getOutputSocket(), translateOperation->getInputSocket(2));
-    builder.addOperation(xop);
-    builder.addOperation(yop);
+    if (addY != 0.0f || addX != 0.0f) {
+      TranslateOperation *translateOperation = new TranslateOperation();
+      if (!first_op) {
+        first_op = translateOperation;
+      }
+      last_op = translateOperation;
+      translateOperation->getInputSocket(1)->setResizeMode(InputResizeMode::NO_RESIZE);
+      translateOperation->getInputSocket(2)->setResizeMode(InputResizeMode::NO_RESIZE);
 
-    int resolution[2] = {toOperation->getWidth(), toOperation->getHeight()};
-    translateOperation->setResolution(resolution);
-    xop->setResolution(resolution);
-    yop->setResolution(resolution);
-    builder.addOperation(translateOperation);
+      SetValueOperation *xop = new SetValueOperation();
+      xop->setValue(addX);
+      builder.addLink(xop->getOutputSocket(), translateOperation->getInputSocket(1));
+      SetValueOperation *yop = new SetValueOperation();
+      yop->setValue(addY);
+      builder.addLink(yop->getOutputSocket(), translateOperation->getInputSocket(2));
+      builder.addOperation(xop);
+      builder.addOperation(yop);
 
-    if (doScale) {
-      translateOperation->getInputSocket(0)->setResizeMode(InputResizeMode::NO_RESIZE);
-      builder.addLink(scaleOperation->getOutputSocket(), translateOperation->getInputSocket(0));
+      int translate_w = toOperation->getWidth();
+      int translate_h = toOperation->getHeight();
+      translateOperation->setResolution(translate_w, translate_h);
+      xop->setResolution(translate_w, translate_h);
+      yop->setResolution(translate_w, translate_h);
+      builder.addOperation(translateOperation);
+
+      if (doScale) {
+        translateOperation->getInputSocket(0)->setResizeMode(InputResizeMode::NO_RESIZE);
+        builder.addLink(scaleOperation->getOutputSocket(), translateOperation->getInputSocket(0));
+      }
     }
 
     /* remove previous link and replace */
-    builder.removeInputLink(toSocket);
-    first->getInputSocket(0)->setResizeMode(InputResizeMode::NO_RESIZE);
-    toSocket->setResizeMode(InputResizeMode::NO_RESIZE);
-    builder.addLink(fromSocket, first->getInputSocket(0));
-    builder.addLink(translateOperation->getOutputSocket(), toSocket);
+    if (first_op != nullptr && last_op != nullptr) {
+      builder.removeInputLink(toSocket);
+      first_op->getInputSocket(0)->setResizeMode(InputResizeMode::NO_RESIZE);
+      toSocket->setResizeMode(InputResizeMode::NO_RESIZE);
+      builder.addLink(fromSocket, first_op->getInputSocket(0));
+      builder.addLink(last_op->getOutputSocket(), toSocket);
+    }
   }
 }

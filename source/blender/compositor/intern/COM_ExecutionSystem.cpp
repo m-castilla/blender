@@ -38,7 +38,7 @@
 #include "opencl/COM_OpenCLManager.h"
 
 ExecutionSystem::ExecutionSystem(const CompositorContext &context)
-    : m_context(context), m_bNodeTree(context.getbNodeTree())
+    : m_bNodeTree(context.getbNodeTree()), m_context(context)
 {
   {
     NodeOperationBuilder builder(*this, m_bNodeTree);

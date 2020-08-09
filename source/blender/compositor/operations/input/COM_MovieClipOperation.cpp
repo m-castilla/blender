@@ -74,6 +74,7 @@ void MovieClipBaseOperation::deinitExecution()
 
 void MovieClipBaseOperation::determineResolution(int resolution[2],
                                                  int /*preferredResolution*/[2],
+                                                 DetermineResolutionMode mode,
                                                  bool setResolution)
 {
   resolution[0] = 0;

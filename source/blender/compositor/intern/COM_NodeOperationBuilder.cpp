@@ -25,6 +25,7 @@
 #include "COM_NodeConverter.h"
 #include "COM_SocketProxyNode.h"
 
+#include "COM_CompositorOperation.h"
 #include "COM_NodeOperation.h"
 #include "COM_PreviewOperation.h"
 #include "COM_SetColorOperation.h"
@@ -433,51 +434,97 @@ void NodeOperationBuilder::resolve_proxies()
   }
 }
 
+static bool isViewOperation(NodeOperation *op)
+{
+  return op->isViewerOperation() || op->isPreviewOperation();
+}
+
 void NodeOperationBuilder::determineResolutions()
 {
-  /* determine all resolutions of the operations (Width/Height) */
-  for (Operations::const_iterator it = m_operations.begin(); it != m_operations.end(); ++it) {
-    NodeOperation *op = *it;
-
-    if (op->isOutputOperation(m_context->isRendering()) && !op->isPreviewOperation()) {
-      int resolution[2] = {0, 0};
-      int preferredResolution[2] = {0, 0};
-      op->determineResolution(resolution, preferredResolution, true);
-      op->setResolution(resolution);
+  /* Determine and set nonview outputs resolutions first, which are the most important and all
+   * operations should try to determine their resolutions based on this outputs */
+  std::vector<NodeOperation *> nonview_outputs;
+  if (m_context->isRendering()) {
+    NodeOperation *compo_output = nullptr;
+    compo_output = getCompositorOutput();
+    if (compo_output != nullptr) {
+      nonview_outputs.push_back(compo_output);
     }
   }
 
+  auto nonview_noncompo = getNonViewNonCompositorOutputs();
+  nonview_outputs.insert(nonview_outputs.end(), nonview_noncompo.begin(), nonview_noncompo.end());
+
+  auto res_mode = m_context->getDetermineResolutionMode();
+  for (Operations::const_iterator it = nonview_outputs.begin(); it != nonview_outputs.end();
+       ++it) {
+    auto op = *it;
+    int resolution[2] = {0, 0};
+    int preferredResolution[2] = {0, 0};
+    op->determineResolution(resolution, preferredResolution, res_mode, true);
+    op->setResolution(resolution[0], resolution[1]);
+  }
+
+  /* Determine and set view outputs resolutions*/
   for (Operations::const_iterator it = m_operations.begin(); it != m_operations.end(); ++it) {
     NodeOperation *op = *it;
-
-    if (op->isOutputOperation(m_context->isRendering()) && op->isPreviewOperation()) {
+    if (!op->isResolutionSet() && op->isOutputOperation(m_context->isRendering())) {
       int resolution[2] = {0, 0};
       int preferredResolution[2] = {0, 0};
-      op->determineResolution(resolution, preferredResolution, true);
-      op->setResolution(resolution);
+      op->determineResolution(resolution, preferredResolution, res_mode, true);
+      op->setResolution(resolution[0], resolution[1]);
+    }
+  }
+
+  /* Set the others operations resolutions if not set*/
+  for (Operations::const_iterator it = m_operations.begin(); it != m_operations.end(); ++it) {
+    NodeOperation *op = *it;
+    if (!op->isResolutionSet()) {
+      op->setBestDeterminedResolution();
     }
   }
 
   /* add convert resolution operations when needed */
-  {
-    Links convert_links;
-    for (Links::const_iterator it = m_links.begin(); it != m_links.end(); ++it) {
-      const Link &link = *it;
+  Links convert_links;
+  for (Links::const_iterator it = m_links.begin(); it != m_links.end(); ++it) {
+    const Link &link = *it;
 
-      if (link.to()->getResizeMode() != InputResizeMode::NO_RESIZE) {
-        NodeOperation *from_op = link.from()->getOperation();
-        NodeOperation *to_op = link.to()->getOperation();
-        if (from_op->getWidth() != to_op->getWidth() ||
-            from_op->getHeight() != to_op->getHeight()) {
-          convert_links.push_back(link);
-        }
+    if (link.to()->getResizeMode() != InputResizeMode::NO_RESIZE) {
+      NodeOperation *from_op = link.from()->getOperation();
+      NodeOperation *to_op = link.to()->getOperation();
+      if (from_op->getWidth() != to_op->getWidth() || from_op->getHeight() != to_op->getHeight()) {
+        convert_links.push_back(link);
       }
     }
-    for (Links::const_iterator it = convert_links.begin(); it != convert_links.end(); ++it) {
-      const Link &link = *it;
-      Converter::convertResolution(*this, link.from(), link.to());
+  }
+  for (Links::const_iterator it = convert_links.begin(); it != convert_links.end(); ++it) {
+    const Link &link = *it;
+    Converter::convertResolution(*this, link.from(), link.to());
+  }
+}
+
+NodeOperation *NodeOperationBuilder::getCompositorOutput()
+{
+  for (Operations::const_iterator it = m_operations.begin(); it != m_operations.end(); ++it) {
+    NodeOperation *op = *it;
+    if (op->isOutputOperation(m_context->isRendering()) &&
+        typeid(*op) == typeid(CompositorOperation)) {
+      return op;
     }
   }
+  return nullptr;
+}
+
+std::vector<NodeOperation *> NodeOperationBuilder::getNonViewNonCompositorOutputs()
+{
+  std::vector<NodeOperation *> views;
+  for (Operations::const_iterator it = m_operations.begin(); it != m_operations.end(); ++it) {
+    NodeOperation *op = *it;
+    if (op->isOutputOperation(m_context->isRendering()) && !isViewOperation(op)) {
+      views.push_back(op);
+    }
+  }
+  return views;
 }
 
 NodeOperationBuilder::OpInputs NodeOperationBuilder::cache_output_links(
