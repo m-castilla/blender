@@ -97,10 +97,9 @@ float *RenderLayersProg::getCustomBuffer()
   return m_inputBuffer;
 }
 
-void RenderLayersProg::determineResolution(int resolution[2],
-                                           int /*preferredResolution*/[2],
-                                           DetermineResolutionMode mode,
-                                           bool setResolution)
+ResolutionType RenderLayersProg::determineResolution(int resolution[2],
+                                                     int /*preferredResolution*/[2],
+                                                     bool setResolution)
 {
   Scene *sce = this->getScene();
   Render *re = (sce) ? RE_GetSceneRender(sce) : NULL;
@@ -127,6 +126,8 @@ void RenderLayersProg::determineResolution(int resolution[2],
   if (re) {
     RE_ReleaseResult(re);
   }
+
+  return ResolutionType::Fixed;
 }
 
 /* ******** Render Layers Alpha Operation ******** */

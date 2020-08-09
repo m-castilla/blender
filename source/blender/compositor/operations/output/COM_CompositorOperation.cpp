@@ -61,9 +61,9 @@ void CompositorOperation::initExecution()
 
   // When initializing the tree during initial load the width and height can be zero.
   if (this->getWidth() * this->getHeight() != 0) {
-    this->m_outputBuffer = (float *)MEM_callocN(
+    this->m_outputBuffer = (float *)MEM_mallocN(
         (size_t)this->getWidth() * this->getHeight() * 4 * sizeof(float), "CompositorOperation");
-    this->m_depthBuffer = (float *)MEM_callocN(
+    this->m_depthBuffer = (float *)MEM_mallocN(
         (size_t)this->getWidth() * this->getHeight() * sizeof(float), "CompositorOperation");
   }
 }
@@ -156,10 +156,9 @@ void CompositorOperation::execPixels(ExecutionManager &man)
   cpuWriteSeek(man, cpuWrite);
 }
 
-void CompositorOperation::determineResolution(int resolution[2],
-                                              int preferredResolution[2],
-                                              DetermineResolutionMode mode,
-                                              bool setResolution)
+ResolutionType CompositorOperation::determineResolution(int resolution[2],
+                                                        int preferredResolution[2],
+                                                        bool setResolution)
 {
   int width = this->m_rd->xsch * this->m_rd->size / 100;
   int height = this->m_rd->ysch * this->m_rd->size / 100;
@@ -179,9 +178,10 @@ void CompositorOperation::determineResolution(int resolution[2],
   preferredResolution[0] = width;
   preferredResolution[1] = height;
 
-  NodeOperation::determineResolution(
-      resolution, preferredResolution, DetermineResolutionMode::FromOutput, setResolution);
+  NodeOperation::determineResolution(resolution, preferredResolution, setResolution);
 
   resolution[0] = width;
   resolution[1] = height;
+
+  return ResolutionType::Fixed;
 }

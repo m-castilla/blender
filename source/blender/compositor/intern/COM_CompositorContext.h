@@ -67,11 +67,6 @@ class CompositorContext {
    */
   bNodeInstanceHash *m_previews;
 
-  /**
-   * \brief does this system have active opencl devices?
-   */
-  bool m_hasActiveOpenCLDevices;
-
   /* \brief color management settings */
   const ColorManagedViewSettings *m_viewSettings;
   const ColorManagedDisplaySettings *m_displaySettings;
@@ -88,6 +83,8 @@ class CompositorContext {
   int m_cpu_work_threads;
 
   DetermineResolutionMode m_res_mode;
+
+  float m_inputs_scale;
 
  private:
   CompositorContext();
@@ -112,19 +109,6 @@ class CompositorContext {
                          PixelExtend::CLIP};
   }
 
-  InputResizeMode getDefaultInputResizeMode() const
-  {
-    switch (m_res_mode) {
-      case DetermineResolutionMode::FromInput:
-        return InputResizeMode::CENTER;
-      case DetermineResolutionMode::FromOutput:
-        return InputResizeMode::FIT;
-      default:
-        BLI_assert(!"Non implemented DetermineResolutionMode");
-        return InputResizeMode::CENTER;
-    }
-  }
-
   bool isBreaked() const;
 
   void setDetermineResolutionMode(DetermineResolutionMode mode)
@@ -135,6 +119,16 @@ class CompositorContext {
   {
     return m_res_mode;
   }
+
+  float getInputsScale()
+  {
+    return m_inputs_scale;
+  }
+  void setInputsScale(int scale)
+  {
+    m_inputs_scale = scale;
+  }
+
   int getNCpuWorkThreads() const
   {
     return m_cpu_work_threads;
@@ -288,22 +282,6 @@ class CompositorContext {
   int getFramenumber() const;
 
   /**
-   * \brief has this system active openclDevices?
-   */
-  bool getHasActiveOpenCLDevices() const
-  {
-    return this->m_hasActiveOpenCLDevices;
-  }
-
-  /**
-   * \brief set has this system active openclDevices?
-   */
-  void setHasActiveOpenCLDevices(bool hasAvtiveOpenCLDevices)
-  {
-    this->m_hasActiveOpenCLDevices = hasAvtiveOpenCLDevices;
-  }
-
-  /**
    * \brief get the active rendering view
    */
   const char *getViewName() const
@@ -317,10 +295,5 @@ class CompositorContext {
   void setViewName(const char *viewName)
   {
     this->m_viewName = viewName;
-  }
-
-  bool isGroupnodeBufferEnabled() const
-  {
-    return (this->getbNodeTree()->flag & NTREE_COM_GROUPNODE_BUFFER) != 0;
   }
 };

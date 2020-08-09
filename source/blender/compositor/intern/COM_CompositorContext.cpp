@@ -25,12 +25,12 @@ CompositorContext::CompositorContext()
   m_scene = nullptr;
   m_rd = nullptr;
   m_quality = CompositorQuality::HIGH;
-  m_hasActiveOpenCLDevices = false;
   m_viewSettings = nullptr;
   m_displaySettings = nullptr;
   m_cpu_work_threads = 0;
   m_res_mode = DetermineResolutionMode::FromInput;
   m_previews = nullptr;
+  m_inputs_scale = 1.0f;
 }
 
 CompositorContext CompositorContext::build(const std::string &execution_id,
@@ -60,10 +60,6 @@ CompositorContext CompositorContext::build(const std::string &execution_id,
   }
   context.setRendering(rendering);
 
-  /* TODO */
-  // context.setHasActiveOpenCLDevices(WorkScheduler::hasGPUDevices() &&
-  //                                          (editingtree->flag & NTREE_COM_OPENCL));
-
   context.setRenderData(rd);
   context.setViewSettings(viewSettings);
   context.setDisplaySettings(displaySettings);
@@ -80,6 +76,8 @@ int CompositorContext::getFramenumber() const
   if (this->m_rd) {
     return this->m_rd->cfra;
   }
-
-  return -1; /* this should never happen */
+  else {
+    BLI_assert(!"Unavailable frame number");
+    return -1; /* this should never happen */
+  }
 }

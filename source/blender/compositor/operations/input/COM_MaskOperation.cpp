@@ -108,13 +108,14 @@ void MaskOperation::deinitExecution()
   }
 }
 
-void MaskOperation::determineResolution(int resolution[2],
-                                        int preferredResolution[2],
-                                        DetermineResolutionMode mode,
-                                        bool setResolution)
+ResolutionType MaskOperation::determineResolution(int resolution[2],
+                                                  int preferredResolution[2],
+
+                                                  bool setResolution)
 {
   if (this->m_maskWidth == 0 || this->m_maskHeight == 0) {
-    NodeOperation::determineResolution(resolution, preferredResolution, mode, setResolution);
+    NodeOperation::determineResolution(resolution, preferredResolution, setResolution);
+    return ResolutionType::Determined;
   }
   else {
     int nr[2];
@@ -123,11 +124,12 @@ void MaskOperation::determineResolution(int resolution[2],
     nr[1] = this->m_maskHeight;
 
     if (setResolution) {
-      NodeOperation::determineResolution(resolution, nr, mode, setResolution);
+      NodeOperation::determineResolution(resolution, nr, setResolution);
     }
 
     resolution[0] = this->m_maskWidth;
     resolution[1] = this->m_maskHeight;
+    return ResolutionType::Fixed;
   }
 }
 

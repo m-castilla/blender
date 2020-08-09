@@ -61,6 +61,13 @@ class SetValueOperation : public NodeOperation {
     return m_value;
   }
 
+  ResolutionType determineResolution(int resolution[2],
+                                     int preferredResolution[2],
+                                     bool setResolution)
+  {
+    return NodeOperation::determineResolution(resolution, preferredResolution, setResolution);
+  }
+
  protected:
   void hashParams() override;
 };

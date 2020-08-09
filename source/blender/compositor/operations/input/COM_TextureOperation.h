@@ -51,10 +51,9 @@ class TextureBaseOperation : public NodeOperation {
   /**
    * Determine the output resolution. The resolution is retrieved from the Renderer
    */
-  void determineResolution(int resolution[2],
-                           int preferredResolution[2],
-                           DetermineResolutionMode mode,
-                           bool setResolution) override;
+  ResolutionType determineResolution(int resolution[2],
+                                     int preferredResolution[2],
+                                     bool setResolution) override;
 
   /**
    * Constructor
