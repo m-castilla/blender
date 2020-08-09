@@ -99,6 +99,7 @@ float *RenderLayersProg::getCustomBuffer()
 
 void RenderLayersProg::determineResolution(int resolution[2],
                                            int /*preferredResolution*/[2],
+                                           DetermineResolutionMode mode,
                                            bool setResolution)
 {
   Scene *sce = this->getScene();

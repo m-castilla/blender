@@ -110,10 +110,11 @@ void MaskOperation::deinitExecution()
 
 void MaskOperation::determineResolution(int resolution[2],
                                         int preferredResolution[2],
+                                        DetermineResolutionMode mode,
                                         bool setResolution)
 {
   if (this->m_maskWidth == 0 || this->m_maskHeight == 0) {
-    NodeOperation::determineResolution(resolution, preferredResolution, setResolution);
+    NodeOperation::determineResolution(resolution, preferredResolution, mode, setResolution);
   }
   else {
     int nr[2];
@@ -122,7 +123,7 @@ void MaskOperation::determineResolution(int resolution[2],
     nr[1] = this->m_maskHeight;
 
     if (setResolution) {
-      NodeOperation::determineResolution(resolution, nr, setResolution);
+      NodeOperation::determineResolution(resolution, nr, mode, setResolution);
     }
 
     resolution[0] = this->m_maskWidth;

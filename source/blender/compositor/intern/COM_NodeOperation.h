@@ -43,6 +43,7 @@ struct WriteRectContext {
  * \ingroup Model
  */
 class NodeOperation : public NodeSocketReader {
+
  private:
   std::hash<float> m_float_hasher;
 
@@ -51,6 +52,7 @@ class NodeOperation : public NodeSocketReader {
   bool m_op_hash_calculated;
   size_t m_op_hash;
   bool m_exec_pixels_optimized;
+  bool base_hash_params_called;
 
  public:
   virtual ~NodeOperation();
@@ -202,6 +204,7 @@ class NodeOperation : public NodeSocketReader {
 
   template<class T> inline void hashParam(T param)
   {
+    BLI_assert(base_hash_params_called);
     MathUtil::hashCombine(m_op_hash, std::hash<T>()(param));
   }
 
