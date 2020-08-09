@@ -43,11 +43,12 @@ class ScaleOperation : public NodeOperation {
   virtual void execPixels(ExecutionManager &man) override;
 };
 
+/// <summary>
+/// For setting the new width and height call setResolution
+/// </summary>
 class ScaleFixedSizeOperation : public NodeOperation {
   PixelsSampler m_sampler;
   NodeOperation *m_inputOperation;
-  int m_newWidth;
-  int m_newHeight;
   float m_relX;
   float m_relY;
 
@@ -63,20 +64,14 @@ class ScaleFixedSizeOperation : public NodeOperation {
  public:
   ScaleFixedSizeOperation();
 
-  void determineResolution(int resolution[2],
-                           int preferredResolution[2],
-                           bool setResolution) override;
+  // void determineResolution(int resolution[2],
+  //                         int preferredResolution[2],
+  //                         DetermineResolutionMode mode,
+  //                         bool setResolution) override;
 
   void initExecution() override;
   void deinitExecution() override;
-  void setNewWidth(int width)
-  {
-    this->m_newWidth = width;
-  }
-  void setNewHeight(int height)
-  {
-    this->m_newHeight = height;
-  }
+
   void setIsAspect(bool is_aspect)
   {
     this->m_is_aspect = is_aspect;

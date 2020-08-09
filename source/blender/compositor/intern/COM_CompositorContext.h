@@ -18,7 +18,7 @@
 
 #pragma once
 
-#include "BLI_rect.h"
+#include "COM_Pixels.h"
 #include "COM_defines.h"
 #include "DNA_color_types.h"
 #include "DNA_node_types.h"
@@ -86,7 +86,8 @@ class CompositorContext {
   std::string m_execution_id;
 
   int m_cpu_work_threads;
-  int m_preview_w, m_preview_h;
+
+  DetermineResolutionMode m_res_mode;
 
  private:
   CompositorContext();
@@ -104,15 +105,44 @@ class CompositorContext {
                                  const ColorManagedDisplaySettings *displaySettings,
                                  const char *viewName);
 
+  PixelsSampler getDefaultSampler() const
+  {
+    return PixelsSampler{isRendering() ? PixelInterpolation::BILINEAR :
+                                         PixelInterpolation::NEAREST,
+                         PixelExtend::CLIP};
+  }
+
+  InputResizeMode getDefaultInputResizeMode() const
+  {
+    switch (m_res_mode) {
+      case DetermineResolutionMode::FromInput:
+        return InputResizeMode::CENTER;
+      case DetermineResolutionMode::FromOutput:
+        return InputResizeMode::FIT;
+      default:
+        BLI_assert(!"Non implemented DetermineResolutionMode");
+        return InputResizeMode::CENTER;
+    }
+  }
+
   bool isBreaked() const;
 
-  void setNCpuWorkThreads(int n_threads)
+  void setDetermineResolutionMode(DetermineResolutionMode mode)
   {
-    m_cpu_work_threads = n_threads;
+    m_res_mode = mode;
+  }
+  DetermineResolutionMode getDetermineResolutionMode() const
+  {
+    return m_res_mode;
   }
   int getNCpuWorkThreads() const
   {
     return m_cpu_work_threads;
+  }
+
+  void setNCpuWorkThreads(int n_threads)
+  {
+    m_cpu_work_threads = n_threads;
   }
   void setExecutionId(const std::string &execution_id)
   {

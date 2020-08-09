@@ -70,6 +70,7 @@ class RenderLayersProg : public NodeOperation {
    */
   void determineResolution(int resolution[2],
                            int preferredResolution[2],
+                           DetermineResolutionMode mode,
                            bool setResolution) override;
 
   /**

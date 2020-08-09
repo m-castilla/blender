@@ -158,6 +158,7 @@ void CompositorOperation::execPixels(ExecutionManager &man)
 
 void CompositorOperation::determineResolution(int resolution[2],
                                               int preferredResolution[2],
+                                              DetermineResolutionMode mode,
                                               bool setResolution)
 {
   int width = this->m_rd->xsch * this->m_rd->size / 100;
@@ -178,7 +179,8 @@ void CompositorOperation::determineResolution(int resolution[2],
   preferredResolution[0] = width;
   preferredResolution[1] = height;
 
-  NodeOperation::determineResolution(resolution, preferredResolution, setResolution);
+  NodeOperation::determineResolution(
+      resolution, preferredResolution, DetermineResolutionMode::FromOutput, setResolution);
 
   resolution[0] = width;
   resolution[1] = height;

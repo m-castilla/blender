@@ -22,15 +22,15 @@
 
 CompositorContext::CompositorContext()
 {
-  this->m_scene = NULL;
-  this->m_rd = NULL;
-  this->m_quality = CompositorQuality::HIGH;
-  this->m_hasActiveOpenCLDevices = false;
-  this->m_viewSettings = NULL;
-  this->m_displaySettings = NULL;
+  m_scene = nullptr;
+  m_rd = nullptr;
+  m_quality = CompositorQuality::HIGH;
+  m_hasActiveOpenCLDevices = false;
+  m_viewSettings = nullptr;
+  m_displaySettings = nullptr;
   m_cpu_work_threads = 0;
-  m_preview_h = 0;
-  m_preview_w = 0;
+  m_res_mode = DetermineResolutionMode::FromInput;
+  m_previews = nullptr;
 }
 
 CompositorContext CompositorContext::build(const std::string &execution_id,

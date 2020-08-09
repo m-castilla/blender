@@ -41,6 +41,8 @@ class NodeSocketReader {
  public:
   typedef std::vector<NodeOperationInput *> Inputs;
   typedef std::vector<NodeOperationOutput *> Outputs;
+  std::vector<int> m_determined_widths;
+  std::vector<int> m_determined_heights;
 
  protected:
   int m_width;
@@ -91,6 +93,7 @@ class NodeSocketReader {
    */
   virtual void determineResolution(int resolution[2],
                                    int preferredResolution[2],
+                                   DetermineResolutionMode mode,
                                    bool setResolution);
 
   /**
@@ -154,18 +157,9 @@ class NodeSocketReader {
     this->m_btree = tree;
   }
 
-  /**
-   * \brief set the resolution
-   * \param resolution: the resolution to set
-   */
-  void setResolution(int resolution[2])
-  {
-    if (!isResolutionSet()) {
-      this->m_width = resolution[0];
-      this->m_height = resolution[1];
-      this->m_isResolutionSet = true;
-    }
-  }
+  void setResolution(int width, int height);
+  void addDeterminedResolution(int resolution[2]);
+  void setBestDeterminedResolution();
 
   void getConnectedInputSockets(Inputs *sockets) const;
 
@@ -184,22 +178,11 @@ class NodeSocketReader {
  protected:
   NodeSocketReader();
 
-  NodeOperationInput *addInputSocket(SocketType socket_type,
-                                     InputResizeMode resize_mode = InputResizeMode::CENTER);
+  NodeOperationInput *addInputSocket(SocketType socket_type);
+  NodeOperationInput *addInputSocket(SocketType socket_type, InputResizeMode resize_mode);
   NodeOperationOutput *addOutputSocket(SocketType socket_type);
 
   NodeOperation *getInputOperation(int inputSocketindex) const;
-
-  void setWidth(int width)
-  {
-    this->m_width = width;
-    this->m_isResolutionSet = true;
-  }
-  void setHeight(int height)
-  {
-    this->m_height = height;
-    this->m_isResolutionSet = true;
-  }
 
  private:
   /* allow the DebugInfo class to look at internals for printing info*/
@@ -272,7 +255,10 @@ class NodeOperationInput {
 
   NodeOperation *getLinkedOp();
 
-  void determineResolution(int resolution[2], int preferredResolution[2], bool setResolution);
+  void determineResolution(int resolution[2],
+                           int preferredResolution[2],
+                           DetermineResolutionMode mode,
+                           bool setResolution);
 
 #ifdef WITH_CXX_GUARDEDALLOC
   MEM_CXX_CLASS_ALLOC_FUNCS("COM:NodeOperationInput")
@@ -312,7 +298,10 @@ class NodeOperationOutput {
    * \param resolution: the result of this operation
    * \param preferredResolution: the preferable resolution as no resolution could be determined
    */
-  void determineResolution(int resolution[2], int preferredResolution[2], bool setResolution);
+  void determineResolution(int resolution[2],
+                           int preferredResolution[2],
+                           DetermineResolutionMode mode,
+                           bool setResolution);
 
 #ifdef WITH_CXX_GUARDEDALLOC
   MEM_CXX_CLASS_ALLOC_FUNCS("COM:NodeOperationOutput")

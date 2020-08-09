@@ -73,8 +73,9 @@ void ScaleNode::convertToOperations(NodeConverter &converter,
       operation->setIsAspect((bnode->custom2 & CMP_SCALE_RENDERSIZE_FRAME_ASPECT) != 0);
       operation->setIsCrop((bnode->custom2 & CMP_SCALE_RENDERSIZE_FRAME_CROP) != 0);
       operation->setOffset(bnode->custom3, bnode->custom4);
-      operation->setNewWidth(rd->xsch * rd->size / 100.0f);
-      operation->setNewHeight(rd->ysch * rd->size / 100.0f);
+      int scale_w = rd->xsch * rd->size / 100.0f;
+      int scale_h = rd->ysch * rd->size / 100.0f;
+      operation->setResolution(scale_w, scale_h);
       operation->getInputSocket(0)->setResizeMode(InputResizeMode::NO_RESIZE);
       converter.addOperation(operation);
 

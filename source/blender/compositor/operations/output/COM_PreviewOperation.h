@@ -58,6 +58,7 @@ class PreviewOperation : public NodeOperation {
   /*void executeRegion(rcti *rect, unsigned int tileNumber);*/
   void determineResolution(int resolution[2],
                            int preferredResolution[2],
+                           DetermineResolutionMode mode,
                            bool setResolution) override;
   // bool determineDependingAreaOfInterest(rcti *input,
   //                                      ReadBufferOperation *readOperation,
@@ -81,7 +82,7 @@ class PreviewOperation : public NodeOperation {
   virtual void execPixels(ExecutionManager &man) override;
 
  private:
-  unsigned char *createBuffer();
+  unsigned char *createPreviewBuffer();
   size_t getBufferBytes()
   {
     return sizeof(unsigned char) * 4 * getWidth() * getHeight();

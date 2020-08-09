@@ -112,6 +112,7 @@ enum class OrderOfChunks {
 };
 
 enum class OperationMode { Optimize, Exec };
+enum class DetermineResolutionMode { FromInput, FromOutput };
 
 #define COM_NUM_CHANNELS_VALUE 1
 #define COM_NUM_CHANNELS_VECTOR 3
@@ -151,14 +152,13 @@ enum class ComDebugLevel {
   NORMAL,  // without graphviz output
   FULL     // with graphviz output
 };
-const ComDebugLevel COM_DEBUG_LEVEL = ComDebugLevel::NORMAL;
+const ComDebugLevel COM_DEBUG_LEVEL = ComDebugLevel::FULL;
 
 // chunk order
 #define COM_ORDER_OF_CHUNKS_DEFAULT OrderOfChunks::CENTER_OUT
 
 #define COM_RULE_OF_THIRDS_DIVIDER 100.0f
 
-#define DETERMINE_RESOLUTION_BY_OUTPUT 0
 //
 //#if COM_CURRENT_THREADING_MODEL == COM_TM_NOTHREAD
 //#  if !(defined(DEBUG) || \

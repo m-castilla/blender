@@ -31,6 +31,7 @@
 #include "WM_types.h"
 
 #include "BKE_node.h"
+#include "COM_BufferUtil.h"
 #include "COM_GlobalManager.h"
 #include "COM_PixelsUtil.h"
 #include "IMB_colormanagement.h"
@@ -41,7 +42,7 @@ PreviewOperation::PreviewOperation(const ColorManagedViewSettings *viewSettings,
                                    const ColorManagedDisplaySettings *displaySettings)
     : NodeOperation()
 {
-  this->addInputSocket(SocketType::COLOR, InputResizeMode::NO_RESIZE);
+  this->addInputSocket(SocketType::COLOR, InputResizeMode::FIT);
   this->m_preview = NULL;
   this->m_outputBuffer = NULL;
   this->m_viewSettings = viewSettings;
@@ -69,7 +70,7 @@ bool PreviewOperation::isOutputOperation(bool /*rendering*/) const
   return !G.background;
 }
 
-unsigned char *PreviewOperation::createBuffer()
+unsigned char *PreviewOperation::createPreviewBuffer()
 {
   return (unsigned char *)MEM_mallocN(getBufferBytes(), "PreviewOperation");
 }
@@ -78,12 +79,13 @@ void PreviewOperation::initExecution()
 {
   m_preview->xsize = getWidth();
   m_preview->ysize = getHeight();
+
   bool has_cache = GlobalMan->ViewCacheMan->getPreviewCache(this) != nullptr;
   if (has_cache) {
     m_needs_write = false;
   }
   else {
-    this->m_outputBuffer = createBuffer();
+    this->m_outputBuffer = createPreviewBuffer();
     m_needs_write = true;
   }
 }
@@ -98,7 +100,7 @@ void PreviewOperation::deinitExecution()
       }
     }
     else {
-      preview_buffer = createBuffer();
+      preview_buffer = createPreviewBuffer();
       memcpy(preview_buffer, m_outputBuffer, getBufferBytes());
       GlobalMan->ViewCacheMan->reportPreviewWrite(this, m_outputBuffer);
     }
@@ -108,7 +110,7 @@ void PreviewOperation::deinitExecution()
   if (preview_buffer == nullptr) {
     auto cache = GlobalMan->ViewCacheMan->getPreviewCache(this);
     if (cache) {
-      preview_buffer = createBuffer();
+      preview_buffer = createPreviewBuffer();
       memcpy(preview_buffer, cache, getBufferBytes());
     }
   }
@@ -122,39 +124,65 @@ void PreviewOperation::deinitExecution()
 
 void PreviewOperation::execPixels(ExecutionManager &man)
 {
-  int width = getWidth();
-  int height = getHeight();
   auto src_pixels = getInputOperation(0)->getPixels(this, man);
 
-  auto cpuWrite = [=](PixelsRect &dst, const WriteRectContext &ctx) {
-    float color[4];
-    struct ColormanageProcessor *cm_processor;
-    cm_processor = IMB_colormanagement_display_processor_new(this->m_viewSettings,
-                                                             this->m_displaySettings);
+  auto cpuWrite = [&](PixelsRect &dst, const WriteRectContext &ctx) {
+    int rect_w = dst.getWidth();
+    int rect_h = dst.getHeight();
+    auto src_img = src_pixels->pixelsImg();
+    auto out_float_buffer = (float *)MEM_mallocN(
+        (size_t)rect_w * rect_h * COM_NUM_CHANNELS_COLOR * sizeof(float), "PreviewOperation");
 
-    auto img = src_pixels->pixelsImg();
-    PixelsSampler sampler = PixelsSampler{PixelInterpolation::NEAREST, PixelExtend::CLIP};
-    size_t dst_offset;
-    for (int y = 0; y < height; y++) {
-      dst_offset = y * (size_t)width * COM_NUM_CHANNELS_COLOR;
-      for (int x = 0; x < width; x++) {
-        img.sample(color, sampler, x * m_multiplier, y * m_multiplier);
-        IMB_colormanagement_processor_apply_v4(cm_processor, color);
-        unit_float_to_uchar_clamp_v4(this->m_outputBuffer + dst_offset, color);
-        dst_offset += COM_NUM_CHANNELS_COLOR;
-      }
+    auto dst_float_buf = BufferUtil::createUnmanagedTmpBuffer(
+        COM_NUM_CHANNELS_COLOR, out_float_buffer, rect_w, rect_h, false);
+    PixelsRect dst_rect(dst_float_buf.get(), 0, rect_w, 0, rect_h);
+    auto dst_img = dst_rect.pixelsImg();
+    PixelsRect src_rect = src_pixels->toRect(dst);
+    PixelsUtil::copyEqualRects(dst_rect, src_rect);
+
+    // IMB_colormanagement_processor_apply function don't support row pitch
+    BLI_assert(dst_img.row_jump == 0);
+
+    struct ColormanageProcessor *cm_processor = IMB_colormanagement_display_processor_new(
+        this->m_viewSettings, this->m_displaySettings);
+    IMB_colormanagement_processor_apply(
+        cm_processor, dst_img.start, rect_w, rect_h, dst_img.elem_chs, false);
+    IMB_colormanagement_processor_free(cm_processor);
+
+    float *float_pixel = dst_img.start;
+    unsigned char *uchar_pixel = this->m_outputBuffer +
+                                 (size_t)dst.ymin * rect_w * COM_NUM_CHANNELS_COLOR +
+                                 (size_t)dst.xmin * COM_NUM_CHANNELS_COLOR;
+    while (float_pixel < dst_img.end) {
+      unit_float_to_uchar_clamp_v4(uchar_pixel, float_pixel);
+      float_pixel += COM_NUM_CHANNELS_COLOR;
+      uchar_pixel += COM_NUM_CHANNELS_COLOR;
     }
 
-    IMB_colormanagement_processor_free(cm_processor);
+    MEM_freeN(out_float_buffer);
+
+    // PixelsSampler sampler = PixelsSampler{PixelInterpolation::NEAREST, PixelExtend::CLIP};
+    // size_t dst_offset;
+    // for (int y = 0; y < height; y++) {
+    //  dst_offset = y * (size_t)width * COM_NUM_CHANNELS_COLOR;
+    //  for (int x = 0; x < width; x++) {
+    //    img.sample(color, sampler, x * m_multiplier, y * m_multiplier);
+    //    IMB_colormanagement_processor_apply_v4(cm_processor, color);
+    //    unit_float_to_uchar_clamp_v4(this->m_outputBuffer + dst_offset, color);
+    //    dst_offset += COM_NUM_CHANNELS_COLOR;
+    //  }
+    //}
   };
   return cpuWriteSeek(man, cpuWrite);
 }
 
 void PreviewOperation::determineResolution(int resolution[2],
                                            int preferredResolution[2],
+                                           DetermineResolutionMode mode,
                                            bool setResolution)
 {
-  NodeOperation::determineResolution(resolution, preferredResolution, setResolution);
+  NodeOperation::determineResolution(
+      resolution, preferredResolution, DetermineResolutionMode::FromInput, false);
   int width = resolution[0];
   int height = resolution[1];
   float divider = 0.0f;
@@ -175,5 +203,10 @@ void PreviewOperation::determineResolution(int resolution[2],
 
     resolution[0] = width;
     resolution[1] = height;
+
+    int temp_res[2] = {0, 0};
+    int local_preferred[2] = {width, height};
+    NodeOperation::determineResolution(
+        temp_res, local_preferred, DetermineResolutionMode::FromOutput, true);
   }
 }

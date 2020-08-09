@@ -36,7 +36,8 @@ NodeOperation::NodeOperation()
       m_key(),
       m_op_hash_calculated(false),
       m_op_hash(0),
-      m_exec_pixels_optimized(false)
+      m_exec_pixels_optimized(false),
+      base_hash_params_called(false)
 {
 }
 
@@ -46,6 +47,7 @@ NodeOperation::~NodeOperation()
 
 void NodeOperation::hashParams()
 {
+  base_hash_params_called = true;
   const type_info &typeInfo = typeid(*this);
   m_op_hash = typeInfo.hash_code();
   hashParam(m_width);
@@ -79,11 +81,13 @@ size_t NodeOperation::getOpHash()
 
 void NodeOperation::initExecution()
 {
+  NodeSocketReader::initExecution();
   m_exec_pixels_optimized = false;
 }
 
 void NodeOperation::deinitExecution()
 {
+  NodeSocketReader::deinitExecution();
 }
 
 bool NodeOperation::isComputed(ExecutionManager &man) const

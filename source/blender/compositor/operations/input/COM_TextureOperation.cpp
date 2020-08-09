@@ -79,6 +79,7 @@ void TextureBaseOperation::hashParams()
 
 void TextureBaseOperation::determineResolution(int resolution[2],
                                                int preferredResolution[2],
+                                               DetermineResolutionMode mode,
                                                bool setResolution)
 {
   if (preferredResolution[0] == 0 || preferredResolution[1] == 0) {

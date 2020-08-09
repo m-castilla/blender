@@ -196,3 +196,37 @@ void ViewerOperation::updateImage(const rcti *rect)
   this->m_image->gpuflag |= IMA_GPU_REFRESH;
   this->updateDraw();
 }
+//
+// void ViewerOperation::determineResolution(int resolution[2],
+//                                          int preferredResolution[2],
+//                                          DetermineResolutionMode mode,
+//                                          bool setResolution)
+//{
+//  NodeOperation::determineResolution(
+//      resolution, preferredResolution, DetermineResolutionMode::FromInput, false);
+//  int width = resolution[0];
+//  int height = resolution[1];
+//  float divider = 0.0f;
+//  if (width == 0 || height == 0) {
+//    resolution[0] = 0;
+//    resolution[1] = 0;
+//  }
+//  else {
+//    if (width > height) {
+//      divider = COM_PREVIEW_SIZE / width;
+//    }
+//    else {
+//      divider = COM_PREVIEW_SIZE / height;
+//    }
+//    width = width * divider;
+//    height = height * divider;
+//
+//    resolution[0] = width;
+//    resolution[1] = height;
+//
+//    int temp_res[2] = {0, 0};
+//    int local_preferred[2] = {width, height};
+//    NodeOperation::determineResolution(
+//        temp_res, local_preferred, DetermineResolutionMode::FromOutput, true);
+//  }
+//}

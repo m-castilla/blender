@@ -46,3 +46,7 @@ Desktop.ini
 
 # smoke simulation noise tile (generated)
 waveletNoiseTile.bin
+
+# Compilation generated compositor files:
+/source/blender/compositor/computing/COM_OpenCLKernels.cl
+/source/blender/compositor/computing/COM_OpenCLKernels.cl.h
