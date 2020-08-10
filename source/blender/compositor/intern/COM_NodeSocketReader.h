@@ -30,6 +30,7 @@ class NodeOperationInput;
 class NodeOperationOutput;
 class NodeOperation;
 class NodeOutput;
+class NodeOperationBuilder;
 
 /**
  * \brief NodeOperation contains calculation logic
@@ -160,8 +161,6 @@ class NodeSocketReader {
     this->m_btree = tree;
   }
 
-  void setResolution(int width, int height, ResolutionType res_type = ResolutionType::Fixed);
-
   void getConnectedInputSockets(Inputs *sockets) const;
 
   inline bool isBreaked() const
@@ -186,10 +185,13 @@ class NodeSocketReader {
   NodeOperation *getInputOperation(int inputSocketindex) const;
 
  private:
+  void setResolution(int width, int height, ResolutionType res_type = ResolutionType::Fixed);
   /* allow the DebugInfo class to look at internals for printing info*/
   friend class DebugInfo;
+  /* Let Converter, NodeOperationOutput and NodeOperationBuilder call setResolution*/
   friend class Converter;
-  void scaleResolution(float scale);
+  friend class NodeOperationOutput;
+  friend class NodeOperationBuilder;
 
 #ifdef WITH_CXX_GUARDEDALLOC
   MEM_CXX_CLASS_ALLOC_FUNCS("COM:NodeSocketReader");

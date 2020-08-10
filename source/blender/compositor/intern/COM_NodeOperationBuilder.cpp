@@ -438,6 +438,18 @@ static bool isViewOperation(NodeOperation *op)
   return op->isViewerOperation() || op->isPreviewOperation();
 }
 
+NodeOperationBuilder::Links NodeOperationBuilder::getOutputLinks(NodeOperationOutput *output)
+{
+  Links output_links;
+  for (Links::const_iterator it = m_links.begin(); it != m_links.end(); ++it) {
+    const Link link = *it;
+    if (link.from() == output) {
+      output_links.push_back(link);
+    }
+  }
+  return output_links;
+}
+
 void NodeOperationBuilder::determineResolutions()
 {
   /* Determine and set nonview outputs resolutions first, which are the most important and all
@@ -459,8 +471,8 @@ void NodeOperationBuilder::determineResolutions()
     auto op = *it;
     int resolution[2] = {0, 0};
     int preferredResolution[2] = {0, 0};
-    op->determineResolution(resolution, preferredResolution, true);
-    op->setResolution(resolution[0], resolution[1]);
+    auto res_type = op->determineResolution(resolution, preferredResolution, true);
+    op->setResolution(resolution[0], resolution[1], res_type);
   }
 
   /* Determine and set view outputs resolutions*/
@@ -469,49 +481,22 @@ void NodeOperationBuilder::determineResolutions()
     if (!op->isResolutionSet() && op->isOutputOperation(m_context->isRendering())) {
       int resolution[2] = {0, 0};
       int preferredResolution[2] = {0, 0};
-      op->determineResolution(resolution, preferredResolution, true);
-      op->setResolution(resolution[0], resolution[1]);
+      auto res_type = op->determineResolution(resolution, preferredResolution, true);
+      op->setResolution(resolution[0], resolution[1], res_type);
     }
   }
 
-  auto res_mode = m_context->getDetermineResolutionMode();
-  if (res_mode == DetermineResolutionMode::FitOutput) {
-    std::unordered_map<NodeOperation *, std::vector<const NodeOperation *>> op_output_ops;
-    for (Links::const_iterator it = m_links.begin(); it != m_links.end(); ++it) {
-      const Link &link = *it;
-      auto op = link.from()->getOperation();
-      auto output_op = link.to()->getOperation();
-
-      auto found_it = op_output_ops.find(op);
-      if (found_it != op_output_ops.end()) {
-        auto &output_ops = (*found_it).second;
-        output_ops.push_back(output_op);
-      }
-      else {
-        std::vector<const NodeOperation *> output_ops;
-        output_ops.push_back(output_op);
-        op_output_ops.insert({op, std::move(output_ops)});
-      }
-    }
-
-    /* try set the best (efficient while keeping quality) resolution possible */
-    bool any_change = true;
-    while (any_change) {
-      any_change = false;
-      for (auto it = m_operations.rbegin(); it != m_operations.rend(); it++) {
-        auto op = *it;
-        auto found_it = op_output_ops.find(op);
-        if (found_it != op_output_ops.end()) {
-          auto &output_ops = (*found_it).second;
-          any_change |= Converter::setBestResolution(op, output_ops);
-        }
-      }
-
-      for (auto op : m_operations) {
-        auto found_it = op_output_ops.find(op);
-        if (found_it != op_output_ops.end()) {
-          auto &output_ops = (*found_it).second;
-          any_change |= Converter::setBestResolution(op, output_ops);
+  /* Scale inputs if necessary*/
+  float inputs_scale = m_context->getInputsScale();
+  if (inputs_scale < 1.0f) {
+    Operations ops_copy(m_operations);
+    for (Operations::const_iterator it = ops_copy.begin(); it != ops_copy.end(); ++it) {
+      NodeOperation *op = *it;
+      if (op->getResolutionType() == ResolutionType::Fixed && op->getNumberOfInputSockets() == 0) {
+        auto output_links = getOutputLinks(op->getOutputSocket());
+        for (Link link : output_links) {
+          Converter::convertResolution(
+              *this, link.from(), link.to(), InputResizeMode::FIT, inputs_scale);
         }
       }
     }
@@ -534,7 +519,7 @@ void NodeOperationBuilder::determineResolutions()
 
   for (Links::const_iterator it = convert_links.begin(); it != convert_links.end(); ++it) {
     const Link &link = *it;
-    Converter::convertResolution(*this, link.from(), link.to(), res_mode);
+    Converter::convertResolution(*this, link.from(), link.to());
   }
 }
 
@@ -562,154 +547,7 @@ std::vector<NodeOperation *> NodeOperationBuilder::getNonViewNonCompositorOutput
   return views;
 }
 
-NodeOperationBuilder::OpInputs NodeOperationBuilder::cache_output_links(
-    NodeOperationOutput *output) const
-{
-  OpInputs inputs;
-  for (Links::const_iterator it = m_links.begin(); it != m_links.end(); ++it) {
-    const Link &link = *it;
-    if (link.from() == output) {
-      inputs.push_back(link.to());
-    }
-  }
-  return inputs;
-}
-
-// WriteBufferOperation *NodeOperationBuilder::find_attached_write_buffer_operation(
-//    NodeOperationOutput *output) const
-//{
-//  for (Links::const_iterator it = m_links.begin(); it != m_links.end(); ++it) {
-//    const Link &link = *it;
-//    if (link.from() == output) {
-//      NodeOperation &op = link.to()->getOperation();
-//      if (op.isWriteBufferOperation()) {
-//        return (WriteBufferOperation *)(&op);
-//      }
-//    }
-//  }
-//  return NULL;
-//}
-
-// void NodeOperationBuilder::add_input_buffers(NodeOperation * /*operation*/,
-//                                             NodeOperationInput *input)
-//{
-//  if (!input->isConnected()) {
-//    return;
-//  }
-//
-//  NodeOperationOutput *output = input->getLink();
-//  if (output->getOperation().isReadBufferOperation()) {
-//    /* input is already buffered, no need to add another */
-//    return;
-//  }
-//
-//  /* this link will be replaced below */
-//  removeInputLink(input);
-//
-//  /* check of other end already has write operation, otherwise add a new one */
-//  WriteBufferOperation *writeoperation = find_attached_write_buffer_operation(output);
-//  if (!writeoperation) {
-//    writeoperation = new WriteBufferOperation(output->getDataType());
-//    writeoperation->setbNodeTree(m_context->getbNodeTree());
-//    addOperation(writeoperation);
-//
-//    addLink(output, writeoperation->getInputSocket(0));
-//
-//    writeoperation->readResolutionFromInputSocket();
-//  }
-//
-//  /* add readbuffer op for the input */
-//  ReadBufferOperation *readoperation = new ReadBufferOperation(output->getDataType());
-//  readoperation->setMemoryProxy(writeoperation->getMemoryProxy());
-//  this->addOperation(readoperation);
-//
-//  addLink(readoperation->getOutputSocket(), input);
-//
-//  readoperation->readResolutionFromWriteBuffer();
-//}
-
-// void NodeOperationBuilder::add_output_buffers(NodeOperation *operation,
-//                                              NodeOperationOutput *output)
-//{
-//  /* cache connected sockets, so we can safely remove links first before replacing them */
-//  OpInputs targets = cache_output_links(output);
-//  if (targets.empty()) {
-//    return;
-//  }
-//
-//  WriteBufferOperation *writeOperation = NULL;
-//  for (OpInputs::const_iterator it = targets.begin(); it != targets.end(); ++it) {
-//    NodeOperationInput *target = *it;
-//
-//    /* try to find existing write buffer operation */
-//    if (target->getOperation().isWriteBufferOperation()) {
-//      BLI_assert(writeOperation == NULL); /* there should only be one write op connected */
-//      writeOperation = (WriteBufferOperation *)(&target->getOperation());
-//    }
-//    else {
-//      /* remove all links to other nodes */
-//      removeInputLink(target);
-//    }
-//  }
-//
-//  /* if no write buffer operation exists yet, create a new one */
-//  if (!writeOperation) {
-//    writeOperation = new WriteBufferOperation(operation->getOutputSocket()->getDataType());
-//    writeOperation->setbNodeTree(m_context->getbNodeTree());
-//    addOperation(writeOperation);
-//
-//    addLink(output, writeOperation->getInputSocket(0));
-//  }
-//
-//  writeOperation->readResolutionFromInputSocket();
-//
-//  /* add readbuffer op for every former connected input */
-//  for (OpInputs::const_iterator it = targets.begin(); it != targets.end(); ++it) {
-//    NodeOperationInput *target = *it;
-//    if (&target->getOperation() == writeOperation) {
-//      continue; /* skip existing write op links */
-//    }
-//
-//    ReadBufferOperation *readoperation = new ReadBufferOperation(
-//        operation->getOutputSocket()->getDataType());
-//    readoperation->setMemoryProxy(writeOperation->getMemoryProxy());
-//    addOperation(readoperation);
-//
-//    addLink(readoperation->getOutputSocket(), target);
-//
-//    readoperation->readResolutionFromWriteBuffer();
-//  }
-//}
-
-// void NodeOperationBuilder::add_complex_operation_buffers()
-//{
-//  /* note: complex ops and get cached here first, since adding operations
-//   * will invalidate iterators over the main m_operations
-//   */
-//  Operations complex_ops;
-//  for (Operations::const_iterator it = m_operations.begin(); it != m_operations.end(); ++it) {
-//    if ((*it)->isComplex()) {
-//      complex_ops.push_back(*it);
-//    }
-//  }
-//
-//  for (Operations::const_iterator it = complex_ops.begin(); it != complex_ops.end(); ++it) {
-//    NodeOperation *op = *it;
-//
-//    DebugInfo::operation_read_write_buffer(op);
-//
-//    for (int index = 0; index < op->getNumberOfInputSockets(); index++) {
-//      add_input_buffers(op, op->getInputSocket(index));
-//    }
-//
-//    for (int index = 0; index < op->getNumberOfOutputSockets(); index++) {
-//      add_output_buffers(op, op->getOutputSocket(index));
-//    }
-//  }
-//}
-
 typedef std::set<NodeOperation *> Tags;
-
 static void find_reachable_operations_recursive(Tags &reachable, NodeOperation *op)
 {
   if (reachable.find(op) != reachable.end()) {

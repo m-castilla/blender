@@ -85,7 +85,7 @@ class BufferManager {
   TmpBuffer *getCustomBuffer(NodeOperation *op);
   bool prepareForWrite(bool is_write_computed, OpReads *reads);
   bool prepareForRead(bool is_compute_written, OpReads *reads);
-  void reportWriteCompleted(NodeOperation *op, ExecutionManager &man);
+  void reportWriteCompleted(NodeOperation *op, OpReads *op_reads, ExecutionManager &man);
 
 #ifdef WITH_CXX_GUARDEDALLOC
   MEM_CXX_CLASS_ALLOC_FUNCS("COM:BufferManager")

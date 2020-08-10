@@ -533,9 +533,10 @@ void ED_node_composit_default(const bContext *C, struct Scene *sce)
 
   sce->nodetree = ntreeAddTree(NULL, "Compositing Nodetree", ntreeType_Composite->idname);
 
-  sce->nodetree->chunksize = 256;
   sce->nodetree->edit_quality = NTREE_QUALITY_HIGH;
   sce->nodetree->render_quality = NTREE_QUALITY_HIGH;
+  sce->nodetree->preview_size = NTREE_PREVIEW_SIZE_SMALL;
+  sce->nodetree->inputs_scale = 1.0f;
 
   out = nodeAddStaticNode(C, sce->nodetree, CMP_NODE_COMPOSITE);
   out->locx = 300.0f;

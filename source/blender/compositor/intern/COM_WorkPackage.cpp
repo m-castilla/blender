@@ -28,7 +28,6 @@ WorkPackage::WorkPackage(
 }
 WorkPackage::~WorkPackage()
 {
-  int i = 0;
 }
 
 void WorkPackage::setWriteContext(WriteRectContext ctx)

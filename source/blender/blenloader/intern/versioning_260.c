@@ -1343,14 +1343,6 @@ void blo_do_versions_260(FileData *fd, Library *UNUSED(lib), Main *bmain)
   if (!MAIN_VERSION_ATLEAST(bmain, 263, 10)) {
     {
       Scene *scene;
-      /* composite redesign */
-      for (scene = bmain->scenes.first; scene; scene = scene->id.next) {
-        if (scene->nodetree) {
-          if (scene->nodetree->chunksize == 0) {
-            scene->nodetree->chunksize = 256;
-          }
-        }
-      }
 
       FOREACH_NODETREE_BEGIN (bmain, ntree, id) {
         if (ntree->type == NTREE_COMPOSIT) {

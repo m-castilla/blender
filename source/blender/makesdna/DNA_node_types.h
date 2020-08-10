@@ -404,13 +404,10 @@ typedef struct bNodeLink {
 #define NTREE_QUALITY_MEDIUM 1
 #define NTREE_QUALITY_LOW 2
 
-/* tree->chunksize */
-#define NTREE_CHUNKSIZE_32 32
-#define NTREE_CHUNKSIZE_64 64
-#define NTREE_CHUNKSIZE_128 128
-#define NTREE_CHUNKSIZE_256 256
-#define NTREE_CHUNKSIZE_512 512
-#define NTREE_CHUNKSIZE_1024 1024
+/* tree->preview_size */
+#define NTREE_PREVIEW_SIZE_SMALL 0
+#define NTREE_PREVIEW_SIZE_MEDIUM 1
+#define NTREE_PREVIEW_SIZE_BIG 2
 
 /* the basis for a Node tree, all links and nodes reside internal here */
 /* only re-usable node trees are in the library though,
@@ -458,8 +455,9 @@ typedef struct bNodeTree {
   short edit_quality;
   /** Quality setting when rendering. */
   short render_quality;
-  /** Tile size for compositor engine. */
-  int chunksize;
+
+  /* Setting for scaling down inputs. Compositor only*/
+  float inputs_scale;
 
   rctf viewer_border;
 
@@ -477,7 +475,11 @@ typedef struct bNodeTree {
    * in case multiple different editors are used and make context ambiguous.
    */
   bNodeInstanceKey active_viewer_key;
-  char _pad[4];
+
+  /* Enum setting for choosing a predefined preview size (Small, Medium, Big). Compositor only */
+  short preview_size;
+
+  char _pad[2];
 
   /** Execution data.
    *

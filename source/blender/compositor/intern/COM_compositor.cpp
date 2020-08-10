@@ -69,30 +69,11 @@ void COM_execute(RenderData *rd,
 
   DebugInfo::start_benchmark();
 
-  /* Make sure node tree has previews.
-   * Don't create previews in advance, this is done when adding preview operations.
-   * Reserved preview size is determined by render output for now.
-   *
-   * We fit the aspect into COM_PREVIEW_SIZE x COM_PREVIEW_SIZE image to avoid
-   * insane preview resolution, which might even overflow preview dimensions.
-   */
-  const float aspect = rd->xsch > 0 ? (float)rd->ysch / (float)rd->xsch : 1.0f;
-  int preview_width, preview_height;
-  if (aspect < 1.0f) {
-    preview_width = COM_PREVIEW_SIZE;
-    preview_height = (int)(COM_PREVIEW_SIZE * aspect);
-  }
-  else {
-    preview_width = (int)(COM_PREVIEW_SIZE / aspect);
-    preview_height = COM_PREVIEW_SIZE;
-  }
-  BKE_node_preview_init_tree(editingtree, preview_width, preview_height, false);
-
   /* build context */
   const std::string execution_id = boost::lexical_cast<std::string>(uuid_generator());
   CompositorContext context = CompositorContext::build(
       execution_id, rd, scene, editingtree, rendering, viewSettings, displaySettings, viewName);
-  int m_cpu_work_threads = BLI_system_thread_count() * 2;
+  int m_cpu_work_threads = BLI_system_thread_count();
   context.setNCpuWorkThreads(m_cpu_work_threads);
 
   /* set progress bar to 0% and status to init compositing */

@@ -48,7 +48,6 @@ PreviewOperation::PreviewOperation(const ColorManagedViewSettings *viewSettings,
   this->m_viewSettings = viewSettings;
   this->m_displaySettings = displaySettings;
   this->m_needs_write = false;
-  this->m_multiplier = 0.0f;
 }
 
 void PreviewOperation::verifyPreview(bNodeInstanceHash *previews, bNodeInstanceKey key)
@@ -153,18 +152,6 @@ void PreviewOperation::execPixels(ExecutionManager &man)
       float_pixel += COM_NUM_CHANNELS_COLOR;
       uchar_pixel += COM_NUM_CHANNELS_COLOR;
     }
-
-    // PixelsSampler sampler = PixelsSampler{PixelInterpolation::NEAREST, PixelExtend::CLIP};
-    // size_t dst_offset;
-    // for (int y = 0; y < height; y++) {
-    //  dst_offset = y * (size_t)width * COM_NUM_CHANNELS_COLOR;
-    //  for (int x = 0; x < width; x++) {
-    //    img.sample(color, sampler, x * m_multiplier, y * m_multiplier);
-    //    IMB_colormanagement_processor_apply_v4(cm_processor, color);
-    //    unit_float_to_uchar_clamp_v4(this->m_outputBuffer + dst_offset, color);
-    //    dst_offset += COM_NUM_CHANNELS_COLOR;
-    //  }
-    //}
   };
   return cpuWriteSeek(man, cpuWrite);
 }
@@ -182,15 +169,15 @@ ResolutionType PreviewOperation::determineResolution(int resolution[2],
     resolution[1] = 0;
   }
   else {
+    int preview_size = GlobalMan->getContext()->getPreviewSize();
     if (width > height) {
-      divider = COM_PREVIEW_SIZE / width;
+      divider = preview_size / (float)width;
     }
     else {
-      divider = COM_PREVIEW_SIZE / height;
+      divider = preview_size / (float)height;
     }
     width = width * divider;
     height = height * divider;
-    m_multiplier = 1.0f / divider;
 
     resolution[0] = width;
     resolution[1] = height;
@@ -200,8 +187,6 @@ ResolutionType PreviewOperation::determineResolution(int resolution[2],
     NodeOperation::determineResolution(temp_res, local_preferred, true);
   }
 
-  // It's been partially determined by inputs but still need to consider it fixed so that any
-  // input is automatically resized on DetermineResolutionMode::FromOutput in case we set a
-  // socket with InputResizeMode::DEFAULT
+  // It's been partially determined by inputs but still it's behavior is more like a fixed one
   return ResolutionType::Fixed;
 }
