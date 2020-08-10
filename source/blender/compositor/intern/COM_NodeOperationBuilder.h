@@ -155,17 +155,6 @@ class NodeOperationBuilder {
   /** Calculate resolution for each operation */
   void determineResolutions();
 
-  /** Helper function to store connected inputs for replacement */
-  OpInputs cache_output_links(NodeOperationOutput *output) const;
-
-  /** Find a connected write buffer operation to an OpOutput */
-  // WriteBufferOperation *find_attached_write_buffer_operation(NodeOperationOutput *output) const;
-
-  /** Add read/write buffer operations around complex operations */
-  // void add_complex_operation_buffers();
-  // void add_input_buffers(NodeOperation *operation, NodeOperationInput *input);
-  // void add_output_buffers(NodeOperation *operation, NodeOperationOutput *output);
-
   /** Remove unreachable operations */
   void prune_operations();
 
@@ -177,6 +166,7 @@ class NodeOperationBuilder {
   ExecutionGroup *make_group(NodeOperation *op);
 
  private:
+  Links getOutputLinks(NodeOperationOutput *output);
   NodeOperation *getCompositorOutput();
   std::vector<NodeOperation *> getNonViewNonCompositorOutputs();
   PreviewOperation *make_preview_operation() const;

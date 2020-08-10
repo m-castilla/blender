@@ -468,83 +468,22 @@ NodeOperation *Converter::convertDataType(NodeOperationOutput *from, NodeOperati
   return NULL;
 }
 
-bool Converter::setBestResolution(NodeOperation *op,
-                                  const std::vector<const NodeOperation *> &output_ops)
-{
-  if (op->getResolutionType() == ResolutionType::Determined) {
-    int op_width = op->getWidth();
-    int op_height = op->getHeight();
-    if (op_width > 0 && op_height > 0) {
-      float input_scale = 0.0f;
-      float output_scale = 0.0f;
-
-      /* Calc input scale */
-      int n_inputs = op->getNumberOfInputSockets();
-      int greater_input_w = 0;
-      int greater_input_h = 0;
-      for (int i = 0; i < n_inputs; i++) {
-        auto input_op = op->getInputSocket(i)->getLinkedOp();
-        int input_w = input_op->getWidth();
-        int input_h = input_op->getHeight();
-        if (input_w > greater_input_w && input_h > greater_input_h) {
-          greater_input_w = input_w;
-          greater_input_h = input_h;
-        }
-      }
-      if (greater_input_w > 0 && greater_input_h > 0) {
-        float scaleX = (float)greater_input_w / op_width;
-        float scaleY = (float)greater_input_h / op_height;
-        input_scale = scaleX < scaleY ? scaleY : scaleX;
-      }
-
-      /* Calc output scale */
-      int n_outputs = output_ops.size();
-      int greater_output_w = 0;
-      int greater_output_h = 0;
-      for (int i = 0; i < n_outputs; i++) {
-        auto output_op = output_ops[i];
-        int output_w = output_op->getWidth();
-        int output_h = output_op->getHeight();
-        if (output_w > greater_output_w && output_h > greater_output_h) {
-          greater_output_w = output_w;
-          greater_output_h = output_h;
-        }
-      }
-      if (greater_output_w > 0 && greater_output_h > 0) {
-        float scaleX = (float)greater_output_w / op_width;
-        float scaleY = (float)greater_output_h / op_height;
-        output_scale = scaleX < scaleY ? scaleY : scaleX;
-      }
-
-      /* Set scale if needed */
-      float scale = input_scale > output_scale ? input_scale : output_scale;
-      if (scale > 0.0f && scale < 1.0f) {
-        op->scaleResolution(scale);
-        return true;
-      }
-    }
-  }
-  return false;
-}
-
 void Converter::convertResolution(NodeOperationBuilder &builder,
                                   NodeOperationOutput *fromSocket,
                                   NodeOperationInput *toSocket,
-                                  DetermineResolutionMode res_mode)
+                                  InputResizeMode forcedInputResizeMode,
+                                  float forced_scale)
 {
-  InputResizeMode mode = toSocket->getResizeMode();
-  if (mode == InputResizeMode::DEFAULT) {
-    switch (res_mode) {
-      case DetermineResolutionMode::FromInput:
-        mode = InputResizeMode::CENTER;
-        break;
-      case DetermineResolutionMode::FitOutput:
-        mode = InputResizeMode::FIT;
-        break;
-      default:
-        BLI_assert(!"Non implemented DetermineResolutionMode");
-        break;
+  InputResizeMode mode;
+  bool has_forced_scale = forced_scale > 0.0f;
+  if (forcedInputResizeMode == InputResizeMode::DEFAULT) {
+    mode = toSocket->getResizeMode();
+    if (mode == InputResizeMode::DEFAULT) {
+      mode = InputResizeMode::CENTER;
     }
+  }
+  else {
+    mode = forcedInputResizeMode;
   }
 
   NodeOperation *toOperation = toSocket->getOperation();
@@ -604,6 +543,10 @@ void Converter::convertResolution(NodeOperationBuilder &builder,
     float addX = 0.0f;
     float addY = 0.0f;
     if (doScale) {
+      if (has_forced_scale) {
+        scaleX = forced_scale;
+        scaleY = forced_scale;
+      }
       int scale_w = fromWidth * scaleX;
       int scale_h = fromHeight * scaleY;
       scaleOperation = new ScaleFixedSizeOperation(scale_w, scale_h);
@@ -655,7 +598,9 @@ void Converter::convertResolution(NodeOperationBuilder &builder,
     if (first_op != nullptr && last_op != nullptr) {
       builder.removeInputLink(toSocket);
       first_op->getInputSocket(0)->setResizeMode(InputResizeMode::NO_RESIZE);
-      toSocket->setResizeMode(InputResizeMode::NO_RESIZE);
+      if (!has_forced_scale) {
+        toSocket->setResizeMode(InputResizeMode::NO_RESIZE);
+      }
       builder.addLink(fromSocket, first_op->getInputSocket(0));
       builder.addLink(last_op->getOutputSocket(), toSocket);
     }

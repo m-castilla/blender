@@ -61,9 +61,6 @@ class Converter {
    */
   static NodeOperation *convertDataType(NodeOperationOutput *from, NodeOperationInput *to);
 
-  static bool setBestResolution(NodeOperation *op,
-                                const std::vector<const NodeOperation *> &output_ops);
-
   /**
    * \brief This method will add a resolution rule based on the settings of the NodeInput.
    *
@@ -77,7 +74,8 @@ class Converter {
   static void convertResolution(NodeOperationBuilder &builder,
                                 NodeOperationOutput *fromSocket,
                                 NodeOperationInput *toSocket,
-                                DetermineResolutionMode res_mode);
+                                InputResizeMode forcedInputResizeMode = InputResizeMode::DEFAULT,
+                                float forced_scale = 0.0f);
 
 #ifdef WITH_CXX_GUARDEDALLOC
   MEM_CXX_CLASS_ALLOC_FUNCS("COM:Converter")
