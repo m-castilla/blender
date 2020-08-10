@@ -206,12 +206,6 @@ void NodeSocketReader::getConnectedInputSockets(Inputs *sockets) const
   }
 }
 
-void NodeSocketReader::scaleResolution(float scale)
-{
-  m_width *= scale;
-  m_height *= scale;
-}
-
 /**
  * \brief set the resolution
  * \param resolution: the resolution to set
@@ -341,14 +335,17 @@ void NodeOperationOutput::determineResolution(int resolution[2],
                                               bool setResolution)
 {
   NodeOperation *operation = getOperation();
-  if (operation->isResolutionSet()) {
-    resolution[0] = operation->getWidth();
-    resolution[1] = operation->getHeight();
+  auto res_type = operation->determineResolution(resolution, preferredResolution, setResolution);
+  if (setResolution) {
+    operation->setResolution(resolution[0], resolution[1], res_type);
   }
-  else {
-    auto res_type = operation->determineResolution(resolution, preferredResolution, setResolution);
-    if (setResolution) {
-      operation->setResolution(resolution[0], resolution[1], res_type);
+  if (res_type == ResolutionType::Fixed && operation->getNumberOfInputSockets() == 0) {
+    // input resolutions are forcedly scaled down later. Set input resolution as future scale
+    // down.
+    float input_scale = GlobalMan->getContext()->getInputsScale();
+    if (input_scale < 1.0f) {
+      resolution[0] *= input_scale;
+      resolution[1] *= input_scale;
     }
   }
 }

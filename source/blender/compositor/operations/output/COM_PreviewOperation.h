@@ -34,7 +34,6 @@ class PreviewOperation : public NodeOperation {
    * \brief holds reference to the SDNA bNode, where this nodes will render the preview image for
    */
   bNodePreview *m_preview;
-  float m_multiplier;
   bool m_needs_write;
 
   const ColorManagedViewSettings *m_viewSettings;
