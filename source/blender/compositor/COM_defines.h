@@ -131,7 +131,6 @@ enum class DetermineResolutionMode { FromInput, FitOutput };
 
 // configurable items
 #define COM_BLUR_BOKEH_PIXELS 512
-#define COM_PREVIEW_SIZE 140.0f
 
 // workscheduler threading models
 /**
@@ -151,7 +150,7 @@ enum class DetermineResolutionMode { FromInput, FitOutput };
  * release.
  */
 #if defined(COM_DEBUG) || defined(DEBUG)
-#  define COM_CURRENT_THREADING_MODEL COM_TM_NOTHREAD
+#  define COM_CURRENT_THREADING_MODEL COM_TM_QUEUE
 #else
 #  define COM_CURRENT_THREADING_MODEL COM_TM_QUEUE
 #endif

@@ -120,14 +120,10 @@ static const EnumPropertyItem node_quality_items[] = {
     {NTREE_QUALITY_LOW, "LOW", 0, "Low", "Low quality"},
     {0, NULL, 0, NULL, NULL},
 };
-
-static const EnumPropertyItem node_chunksize_items[] = {
-    {NTREE_CHUNKSIZE_32, "32", 0, "32x32", "Chunksize of 32x32"},
-    {NTREE_CHUNKSIZE_64, "64", 0, "64x64", "Chunksize of 64x64"},
-    {NTREE_CHUNKSIZE_128, "128", 0, "128x128", "Chunksize of 128x128"},
-    {NTREE_CHUNKSIZE_256, "256", 0, "256x256", "Chunksize of 256x256"},
-    {NTREE_CHUNKSIZE_512, "512", 0, "512x512", "Chunksize of 512x512"},
-    {NTREE_CHUNKSIZE_1024, "1024", 0, "1024x1024", "Chunksize of 1024x1024"},
+static const EnumPropertyItem preview_size_items[] = {
+    {NTREE_PREVIEW_SIZE_BIG, "HIGH", 0, "High", "High quality"},
+    {NTREE_PREVIEW_SIZE_MEDIUM, "MEDIUM", 0, "Medium", "Medium quality"},
+    {NTREE_PREVIEW_SIZE_SMALL, "LOW", 0, "Low", "Low quality"},
     {0, NULL, 0, NULL, NULL},
 };
 #endif
@@ -9902,6 +9898,12 @@ static void rna_def_composite_nodetree(BlenderRNA *brna)
   RNA_def_property_enum_items(prop, node_quality_items);
   RNA_def_property_ui_text(prop, "Edit Quality", "Quality when editing");
 
+  prop = RNA_def_property(srna, "preview_size", PROP_ENUM, PROP_NONE);
+  RNA_def_property_enum_sdna(prop, NULL, "preview_size");
+  RNA_def_property_enum_items(prop, preview_size_items);
+  RNA_def_property_ui_text(prop, "Preview Quality", "Quality of nodes previews");
+  RNA_def_property_update(prop, NC_NODE | ND_DISPLAY, "rna_NodeTree_update");
+
   prop = RNA_def_property(srna, "use_opencl", PROP_BOOLEAN, PROP_NONE);
   RNA_def_property_boolean_sdna(prop, NULL, "flag", NTREE_COM_OPENCL);
   RNA_def_property_ui_text(prop, "OpenCL", "Enable GPU calculations");
@@ -9910,6 +9912,14 @@ static void rna_def_composite_nodetree(BlenderRNA *brna)
   RNA_def_property_boolean_sdna(prop, NULL, "flag", NTREE_VIEWER_BORDER);
   RNA_def_property_ui_text(
       prop, "Viewer Region", "Use boundaries for viewer nodes and composite backdrop");
+  RNA_def_property_update(prop, NC_NODE | ND_DISPLAY, "rna_NodeTree_update");
+
+  prop = RNA_def_property(srna, "inputs_scale", PROP_FLOAT, PROP_NONE);
+  RNA_def_property_float_sdna(prop, NULL, "inputs_scale");
+  RNA_def_property_float_default(prop, 1.0f);
+  RNA_def_property_range(prop, 0.01f, 1.0f);
+  RNA_def_property_ui_range(prop, 0.01, 1.0, 1, 2);
+  RNA_def_property_ui_text(prop, "Inputs Scale", "Scale inputs down");
   RNA_def_property_update(prop, NC_NODE | ND_DISPLAY, "rna_NodeTree_update");
 }
 

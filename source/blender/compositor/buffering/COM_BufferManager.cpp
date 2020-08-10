@@ -205,7 +205,7 @@ BufferManager::ReadResult BufferManager::readSeek(NodeOperation *op,
     if (cache->host.state == HostMemoryState::FILLED) {
       if (!reads->is_write_complete) {
         reads->is_write_complete = true;
-        reportWriteCompleted(op, man);
+        reportWriteCompleted(op, reads, man);
       }
       reads->tmp_buffer = m_recycler->createTmpBuffer(op->getOutputNChannels(), false);
       reads->tmp_buffer->host = cache->host;
@@ -218,7 +218,7 @@ BufferManager::ReadResult BufferManager::readSeek(NodeOperation *op,
   else if (op->getBufferType() == BufferType::NO_BUFFER_NO_WRITE) {
     if (!reads->is_write_complete) {
       reads->is_write_complete = true;
-      reportWriteCompleted(op, man);
+      reportWriteCompleted(op, reads, man);
     }
   }
 
@@ -313,7 +313,7 @@ void BufferManager::writeSeek(NodeOperation *op,
         if (compute_work_enqueued) {
           man.deviceWaitQueueToFinish();
         }
-        reportWriteCompleted(op, man);
+        reportWriteCompleted(op, reads, man);
       }
 
       reads->is_write_complete = true;
@@ -368,7 +368,9 @@ bool BufferManager::prepareForWrite(bool is_write_computed, OpReads *reads)
         }
       }
     }
-    else if (reads->total_cpu_reads > 0) {
+    else if (reads->total_cpu_reads >= 0) {
+      // total_cpu_reads==0 case should only happen for outputs that might want to temporarily
+      // write to a buffer.
       if (is_write_computed) {
         BLI_assert(device_empty && host_empty);
         recycle_type = BufferRecycleType::DEVICE_HOST_ALLOC;
@@ -384,7 +386,7 @@ bool BufferManager::prepareForWrite(bool is_write_computed, OpReads *reads)
       }
     }
     else {
-      BLI_assert(!"If there is no reads this method shouldn't have been called");
+      BLI_assert(!"Should never happen");
     }
 
     if (take_recycle) {
@@ -509,10 +511,17 @@ TmpBuffer *BufferManager::getCustomBuffer(NodeOperation *op)
   return custom;
 }
 
-void BufferManager::reportWriteCompleted(NodeOperation *op, ExecutionManager &man)
+void BufferManager::reportWriteCompleted(NodeOperation *op,
+                                         OpReads *op_reads,
+                                         ExecutionManager &man)
 {
   if (op->getBufferType() == BufferType::CACHED) {
     getCache(op)->host.state = HostMemoryState::FILLED;
+  }
+  if (op_reads->tmp_buffer != nullptr && op_reads->total_compute_reads == 0 &&
+      op_reads->total_cpu_reads == 0) {
+    m_recycler->giveRecycle(op_reads->tmp_buffer);
+    op_reads->tmp_buffer = nullptr;
   }
 
   if (!m_readers_reads_gotten) {

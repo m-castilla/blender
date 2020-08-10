@@ -661,14 +661,17 @@ class NODE_PT_quality(bpy.types.Panel):
         tree = snode.node_tree
 
         col = layout.column()
-        col.prop(tree, "render_quality", text="Render")
-        col.prop(tree, "edit_quality", text="Edit")
+        col.prop(tree, "render_quality", text="Render Quality")
+        col.prop(tree, "edit_quality", text="Edit Quality")
+        col.prop(tree, "preview_size", text="Preview Quality")
+        col.prop(tree, "inputs_scale")
 
         col = layout.column()
         col.prop(tree, "use_opencl")
         col.prop(tree, "use_viewer_border")
         col.separator()
         col.prop(snode, "use_auto_render")
+        col.separator()
 
 
 class NODE_UL_interface_sockets(bpy.types.UIList):

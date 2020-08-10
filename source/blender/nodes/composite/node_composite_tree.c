@@ -97,7 +97,6 @@ static void free_cache(bNodeTree *ntree)
 /* local tree then owns all compbufs */
 static void localize(bNodeTree *localtree, bNodeTree *ntree)
 {
-
   bNode *node = ntree->nodes.first;
   bNode *local_node = localtree->nodes.first;
   while (node != NULL) {
@@ -185,6 +184,10 @@ static void local_merge(Main *bmain, bNodeTree *localtree, bNodeTree *ntree)
 
 static void update(bNodeTree *ntree)
 {
+  if (ntree->inputs_scale <= 0.0f || ntree->inputs_scale > 1.0f) {
+    ntree->inputs_scale = 1.0f;
+  }
+
   ntreeSetOutput(ntree);
 
   ntree_update_reroute_nodes(ntree);

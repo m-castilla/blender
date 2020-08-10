@@ -110,6 +110,7 @@ class CompositorContext {
   }
 
   bool isBreaked() const;
+  int getPreviewSize() const;
 
   void setDetermineResolutionMode(DetermineResolutionMode mode)
   {
@@ -120,13 +121,9 @@ class CompositorContext {
     return m_res_mode;
   }
 
-  float getInputsScale()
+  float getInputsScale() const
   {
-    return m_inputs_scale;
-  }
-  void setInputsScale(int scale)
-  {
-    m_inputs_scale = scale;
+    return m_bnodetree->inputs_scale;
   }
 
   int getNCpuWorkThreads() const
