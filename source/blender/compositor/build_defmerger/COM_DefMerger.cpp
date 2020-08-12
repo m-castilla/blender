@@ -21,18 +21,8 @@
 #include "BLI_fileops_types.h"
 #include "BLI_path_util.h"
 #include "BLI_string.h"
+#include "COM_CyclesWrapper.h"
 #include <algorithm>
-
-#undef CHECK_TYPE
-#undef CHECK_TYPE_PAIR
-#undef CHECK_TYPE_INLINE
-
-#define CCL_NAMESPACE ccl
-#define CCL_NAMESPACE_BEGIN namespace CCL_NAMESPACE {
-#define CCL_NAMESPACE_END }
-#include "../../../intern/cycles/util/util_path.h"
-#undef CCL_NAMESPACE_BEGIN
-#undef CCL_NAMESPACE_END
 
 namespace DefMerger {
 
@@ -66,7 +56,7 @@ std::string defmerge(const char *tag,
     char file_name[FILE_MAX];
     BLI_split_dir_part(dst_path, dir_path, FILE_MAX);
     BLI_split_file_part(dst_path, file_name, FILE_MAX);
-    result = CCL_NAMESPACE::path_source_replace_includes(result, dir_path, file_name);
+    result = CyclesWrapper::path_source_replace_includes(result, dir_path, file_name);
 /*Remove carriage returns which outputs file with double carriage on windows. They get probably
 added because cycles "path_source_replace_includes" reads source files as binaries instead of text.
 So windows new lines are not converted properly from \r\n  to \n on reading, so on writing it would
@@ -165,7 +155,7 @@ const char *search_macro_start_tag(const char *str, const char *tag, const char 
 const char *search_macro_end_tag(const char *str, const char *end_macro, const char *tag)
 {
   const char *result = NULL;
-  if (end_macro == "undef") {
+  if (strcmp(end_macro, "undef") == 0) {
     result = strstr(str, tag);
     return rsearch_macro_in_line(str, result, end_macro);
   }

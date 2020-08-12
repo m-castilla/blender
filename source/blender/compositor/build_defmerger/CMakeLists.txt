@@ -29,6 +29,8 @@ set(SYS
 )
 
 set(SRC
+  COM_CyclesWrapper.cpp
+  COM_CyclesWrapper.h
   COM_DefMerger.cpp
   COM_DefMerger.h
 )
