@@ -52,8 +52,8 @@ ccl_kernel colorRampOp(CCL_WRITE(dst),
                        const int interp_type,
                        const int hue_interp_type,
                        const int color_mode,
-                       const float4 *bands_colors,
-                       const float *bands_pos)
+                       ccl_constant float4 *bands_colors,
+                       ccl_constant float *bands_pos)
 {
   READ_DECL(factor);
   WRITE_DECL(dst);

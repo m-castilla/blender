@@ -201,12 +201,7 @@ void PixelsUtil::setRectElem(PixelsRect &wr1, const float *elem, int n_channels)
 
 void PixelsUtil::saveAsImage(TmpBuffer *buf, std::string filename, ExecutionManager &man)
 {
-  bool is_device_save = (buf->device.state == DeviceMemoryState::FILLED &&
-                         buf->host.state == HostMemoryState::CLEARED) ||
-                        buf->host.state == HostMemoryState::NONE;
-  int width = is_device_save ? buf->device.width : buf->host.width;
-  int height = is_device_save ? buf->device.height : buf->host.height;
-  PixelsRect rect(buf, 0, width, 0, height);
+  PixelsRect rect(buf, 0, buf->width, 0, buf->height);
   saveAsImage(rect, filename, man);
 }
 

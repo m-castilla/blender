@@ -25,18 +25,24 @@
 #include "COM_WorkScheduler.h"
 #include <algorithm>
 
-ExecutionManager::ExecutionManager(ExecutionGroup &exec_group) : m_exec_group(exec_group)
+ExecutionManager::ExecutionManager(const CompositorContext &context,
+                                   std::vector<ExecutionGroup *> &exec_groups)
+    : m_context(context), m_exec_groups(exec_groups), m_op_mode(OperationMode::Optimize)
 {
 }
 
 bool ExecutionManager::isBreaked() const
 {
-  return m_exec_group.isBreaked();
+  return m_context.isBreaked();
 }
 
+void ExecutionManager::setOperationMode(OperationMode mode)
+{
+  m_op_mode = mode;
+}
 OperationMode ExecutionManager::getOperationMode() const
 {
-  return m_exec_group.getOperationMode();
+  return m_op_mode;
 }
 
 void ExecutionManager::execWriteJob(
@@ -48,19 +54,17 @@ void ExecutionManager::execWriteJob(
     std::function<void(ComputeKernel *)> add_kernel_args_func)
 {
   if (!isBreaked()) {
-    NodeOperation *outputOp = m_exec_group.getOutputOperation();
-
     // in case of output with viewer border set operation rect to viewer border
     int xmin = 0;
     int ymin = 0;
     int xmax = op->getWidth();
     int ymax = op->getHeight();
-    if (op == outputOp && m_exec_group.hasOutputViewerBorder()) {
-      const rcti &viewer_border = m_exec_group.getOutputViewerBorder();
-      xmin = std::max(viewer_border.xmin, xmin);
-      ymin = std::max(viewer_border.ymin, ymin);
-      xmax = std::min(viewer_border.xmax, xmax);
-      ymax = std::min(viewer_border.ymax, ymax);
+    const rcti *viewer_border = getOpViewerBorder(op);
+    if (viewer_border != nullptr) {
+      xmin = std::max(viewer_border->xmin, xmin);
+      ymin = std::max(viewer_border->ymin, ymin);
+      xmax = std::min(viewer_border->xmax, xmax);
+      ymax = std::min(viewer_border->ymax, ymax);
     }
 
     rcti full_op_rect = {xmin, xmax, ymin, ymax};
@@ -80,7 +84,7 @@ void ExecutionManager::execWriteJob(
       int width = xmax - xmin;
       int height = ymax - ymin;
 
-      int n_works = m_exec_group.getContext().getNCpuWorkThreads();
+      int n_works = m_context.getNCpuWorkThreads();
       std::vector<rcti> splits = RectUtil::splitImgRectInEqualRects(n_works, width, height);
 
       for (auto &rect : splits) {
@@ -147,4 +151,21 @@ void ExecutionManager::deviceWaitQueueToFinish()
 {
   auto device = GlobalMan->ComputeMan->getSelectedDevice();
   device->waitQueueToFinish();
+}
+
+const rcti *ExecutionManager::getOpViewerBorder(NodeOperation *op)
+{
+  if (op->isOutputOperation(m_context.isRendering())) {
+    for (auto group : m_exec_groups) {
+      if (group->getOutputOperation() == op) {
+        if (group->hasOutputViewerBorder()) {
+          return &group->getOutputViewerBorder();
+        }
+        else {
+          return nullptr;
+        }
+      }
+    }
+  }
+  return nullptr;
 }

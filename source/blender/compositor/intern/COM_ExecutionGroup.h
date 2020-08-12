@@ -26,7 +26,7 @@
 #include "COM_CompositorContext.h"
 #include "COM_Node.h"
 #include "COM_NodeOperation.h"
-#include <vector>
+#include <unordered_set>
 
 class ExecutionSystem;
 class MemoryProxy;
@@ -41,9 +41,6 @@ class CompositorContext;
  * \ingroup Execution
  */
 class ExecutionGroup {
- public:
-  typedef std::vector<NodeOperation *> Operations;
-
  private:
   // fields
 
@@ -51,9 +48,7 @@ class ExecutionGroup {
   /**
    * \brief list of operations in this ExecutionGroup
    */
-  Operations m_operations;
-
-  OperationMode m_operation_mode;
+  std::vector<NodeOperation *> m_operations;
 
   /**
    * \brief denotes boundary for border compositing
@@ -64,10 +59,6 @@ class ExecutionGroup {
  public:
   ExecutionGroup(ExecutionSystem &sys);
 
-  void setOperationMode(OperationMode mode);
-  OperationMode getOperationMode() const;
-
-  bool isBreaked() const;
   /**
    * \brief add an operation to this ExecutionGroup
    * \note this method will add input of the operations recursively
@@ -77,6 +68,11 @@ class ExecutionGroup {
    * \return True if the operation was successfully added
    */
   bool addOperation(NodeOperation *operation);
+
+  std::vector<NodeOperation *> getOperations()
+  {
+    return m_operations;
+  }
 
   /**
    * \brief get the output operation of this ExecutionGroup
@@ -89,13 +85,7 @@ class ExecutionGroup {
   }
   bool hasOutputViewerBorder();
 
-  const CompositorContext &getContext() const;
-
-  void initExecution();
-
-  void deinitExecution();
-
-  void execute();
+  void execute(ExecutionManager &man);
 
   /**
    * \brief set border for viewer operation

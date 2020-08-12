@@ -12574,8 +12574,8 @@ ccl_device_inline float4 colorband_evaluate(const float input_factor,
                                             const int interp_type,
                                             const int hue_interp_type,
                                             const int color_mode,
-                                            const ccl_global float4 *bands_colors,
-                                            const ccl_global float *bands_pos)
+                                            ccl_global float4 *bands_colors,
+                                            ccl_global float *bands_pos)
 {
   int cbd1, cbd2, cbd0, cbd3;
   int ipotype;
@@ -37357,8 +37357,8 @@ ccl_device_inline float4 colorband_evaluate(const float input_factor,
                                             const int interp_type,
                                             const int hue_interp_type,
                                             const int color_mode,
-                                            const ccl_global float4 *bands_colors,
-                                            const ccl_global float *bands_pos)
+                                            ccl_global float4 *bands_colors,
+                                            ccl_global float *bands_pos)
 {
   int cbd1, cbd2, cbd0, cbd3;
   int ipotype;
@@ -51515,7 +51515,7 @@ CCL_NAMESPACE_END
   __read_only image2d_t image, const BOOL image##_single, const float4 image##_single_elem
 #define CCL_WRITE(image) \
   __write_only image2d_t image, const int image##_start_x, const int image##_start_y
-#define CCL_SAMPLER(sampler) sampler_t sampler
+#define CCL_SAMPLER(sampler) const sampler_t sampler
 /* END of OpenCL kernel function signature macros*/
 
 #define READ_DECL(src) float4 src##_pix;
@@ -52837,8 +52837,8 @@ ccl_kernel colorRampOp(CCL_WRITE(dst),
                        const int interp_type,
                        const int hue_interp_type,
                        const int color_mode,
-                       const ccl_global float4 *bands_colors,
-                       const ccl_global float *bands_pos)
+                       ccl_global float4 *bands_colors,
+                       ccl_global float *bands_pos)
 {
   READ_DECL(factor);
   WRITE_DECL(dst);

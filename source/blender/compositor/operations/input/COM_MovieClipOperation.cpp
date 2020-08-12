@@ -123,7 +123,7 @@ void MovieClipOperation::execPixels(ExecutionManager &man)
     else if (m_movieClipBuffer->rect_float) {
       int n_channels = m_movieClipBuffer->channels == 0 ? 4 : m_movieClipBuffer->channels;
       auto buf = BufferUtil::createUnmanagedTmpBuffer(
-          n_channels, m_movieClipBuffer->rect_float, m_width, m_height, true);
+          m_movieClipBuffer->rect_float, m_width, m_height, n_channels, true);
       PixelsRect src_rect = PixelsRect(buf.get(), dst);
       PixelsUtil::copyEqualRectsNChannels(dst, src_rect, n_channels);
     }
@@ -172,7 +172,7 @@ void MovieClipAlphaOperation::execPixels(ExecutionManager &man)
     else if (m_movieClipBuffer->rect_float) {
       int n_channels = m_movieClipBuffer->channels == 0 ? 4 : m_movieClipBuffer->channels;
       auto buf = BufferUtil::createUnmanagedTmpBuffer(
-          n_channels, m_movieClipBuffer->rect_float, m_width, m_height, true);
+          m_movieClipBuffer->rect_float, m_width, m_height, n_channels, true);
       PixelsRect src_rect = PixelsRect(buf.get(), dst);
       PixelsUtil::copyEqualRectsChannel(dst, 0, src_rect, 3);
     }
