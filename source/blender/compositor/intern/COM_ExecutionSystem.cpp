@@ -21,6 +21,7 @@
 #include "COM_Converter.h"
 #include "COM_Debug.h"
 #include "COM_ExecutionGroup.h"
+#include "COM_GlobalManager.h"
 #include "COM_NodeOperation.h"
 #include "COM_NodeOperationBuilder.h"
 #include "COM_WorkScheduler.h"
@@ -36,6 +37,7 @@
 #include "BLT_translation.h"
 #include "MEM_guardedalloc.h"
 #include "opencl/COM_OpenCLManager.h"
+#include <algorithm>
 
 ExecutionSystem::ExecutionSystem(const CompositorContext &context)
     : m_bNodeTree(context.getbNodeTree()), m_context(context)
@@ -91,6 +93,7 @@ ExecutionSystem::~ExecutionSystem()
     delete group;
   }
   this->m_groups.clear();
+  m_ops_deps.clear();
 }
 
 void ExecutionSystem::set_operations(const Operations &operations, const Groups &groups)
@@ -105,42 +108,78 @@ void ExecutionSystem::execute()
 
   DebugInfo::execute_started(this);
 
-  unsigned int index;
-
   // initialize operations
-  for (index = 0; index < this->m_operations.size(); index++) {
+  for (int index = 0; index < this->m_operations.size(); index++) {
     NodeOperation *operation = this->m_operations[index];
     operation->setbNodeTree(m_context.getbNodeTree());
     operation->initExecution();
   }
 
-  for (int index = 0; index < this->m_groups.size(); index++) {
-    ExecutionGroup *executionGroup = this->m_groups[index];
-    executionGroup->initExecution();
-  }
+  ExecutionManager man(m_context, m_groups);
+  man.setOperationMode(OperationMode::Optimize);
+  execGroups(man);
 
-  execGroups(OperationMode::Optimize);
-  execGroups(OperationMode::Exec);
+  man.setOperationMode(OperationMode::Exec);
+  execGroups(man);
+  // auto ops_by_deps = getOperationsOrderedByNDepends(man);
+  // for (auto dep : ops_by_deps) {
+  //  dep.op->getPixels(nullptr, man);
+  //}
 
   m_bNodeTree->stats_draw(m_bNodeTree->sdh, TIP_("Compositing | De-initializing execution"));
-  for (index = 0; index < this->m_operations.size(); index++) {
+  for (int index = 0; index < this->m_operations.size(); index++) {
     NodeOperation *operation = this->m_operations[index];
     operation->deinitExecution();
   }
-
-  for (int index = 0; index < this->m_groups.size(); index++) {
-    ExecutionGroup *executionGroup = this->m_groups[index];
-    executionGroup->deinitExecution();
-  }
 }
 
-void ExecutionSystem::execGroups(OperationMode op_mode)
+void ExecutionSystem::execGroups(ExecutionManager &man)
 {
   for (int index = 0; index < m_groups.size(); index++) {
     if (!isBreaked()) {
       ExecutionGroup *group = m_groups[index];
-      group->setOperationMode(op_mode);
-      group->execute();
+      group->execute(man);
     }
+  }
+}
+
+std::vector<ExecutionSystem::OpDeps> ExecutionSystem::getOperationsOrderedByNDepends(
+    ExecutionManager &man)
+{
+  BLI_assert(m_ops_deps.empty());
+  m_readers_reads = GlobalMan->BufferMan->getReadersReads(man);
+  for (auto op : m_operations) {
+    getOperationNDepends(op);
+  }
+
+  std::vector<OpDeps> deps;
+  for (auto &entry : m_ops_deps) {
+    deps.push_back(entry.second);
+  }
+  std::sort(deps.begin(), deps.end(), OpDepsSorter());
+  return std::move(deps);
+}
+
+int ExecutionSystem::getOperationNDepends(NodeOperation *op)
+{
+  OpKey op_key = op->getKey();
+  auto deps_found = m_ops_deps.find(op_key);
+  if (deps_found != m_ops_deps.end()) {
+    return deps_found->second.n_deps;
+  }
+  else {
+    auto reader_found = m_readers_reads->find(op_key);
+    OpDeps deps = {op, 0};
+    deps.op = op;
+    if (reader_found != m_readers_reads->end()) {
+      auto reads = reader_found->second;
+      deps.n_deps += reads.size();
+      for (auto read : reads) {
+        BLI_assert(read->reads->readed_op != op);
+        deps.n_deps += getOperationNDepends(read->reads->readed_op);
+      }
+    }
+    m_ops_deps.insert({op_key, deps});
+    return deps.n_deps;
   }
 }

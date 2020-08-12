@@ -364,7 +364,7 @@ bool DebugInfo::graphviz_system(const ExecutionSystem *system, char *str, int ma
       len += snprintf(str + len, maxlen > len ? maxlen - len : 0, "fillcolor=chartreuse4\r\n");
     }
 
-    for (ExecutionGroup::Operations::const_iterator it = group->m_operations.begin();
+    for (std::vector<NodeOperation *>::const_iterator it = group->m_operations.begin();
          it != group->m_operations.end();
          ++it) {
       NodeOperation *operation = *it;
@@ -396,31 +396,6 @@ bool DebugInfo::graphviz_system(const ExecutionSystem *system, char *str, int ma
 
     len += graphviz_operation(system, operation, 0, str + len, maxlen > len ? maxlen - len : 0);
   }
-
-  /* TODO: Fix this for the new implementation*/
-  /*for (int i = 0; i < totops; i++) {
-    NodeOperation *operation = system->m_operations[i];
-
-
-    if (operation->isReadBufferOperation()) {
-      ReadBufferOperation *read = (ReadBufferOperation *)operation;
-      WriteBufferOperation *write = read->getMemoryProxy()->getWriteBufferOperation();
-      std::vector<std::string> &read_groups = op_groups[read];
-      std::vector<std::string> &write_groups = op_groups[write];
-
-      for (int k = 0; k < write_groups.size(); k++) {
-        for (int l = 0; l < read_groups.size(); l++) {
-          len += snprintf(str + len,
-                          maxlen > len ? maxlen - len : 0,
-                          "\"O_%p%s\" -> \"O_%p%s\" [style=dotted]\r\n",
-                          write,
-                          write_groups[k].c_str(),
-                          read,
-                          read_groups[l].c_str());
-        }
-      }
-    }
-}*/
 
   for (int i = 0; i < totops; i++) {
     NodeOperation *op = system->m_operations[i];

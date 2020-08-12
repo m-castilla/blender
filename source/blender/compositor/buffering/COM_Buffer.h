@@ -25,21 +25,22 @@ enum class HostMemoryState { NONE, CLEARED, MAP_FROM_DEVICE, FILLED };
 enum class DeviceMemoryState { NONE, CLEARED, MAP_TO_HOST, FILLED };
 typedef struct HostBuffer {
   float *buffer;
-  int width;
-  int height;
-  size_t row_bytes;
+  /* Buffer row bytes (pitch). Should only be different from image row bytes when mapping from a
+   * device but all host buffers we create should not have added pitch (don't have row jump)
+   */
+  size_t brow_bytes;
   HostMemoryState state;
 } HostBuffer;
 typedef struct DeviceBuffer {
   void *buffer;
-  int width;
-  int height;
   bool has_map_alloc;
   DeviceMemoryState state;
 } DeviceBuffer;
 
 typedef struct CacheBuffer {
   HostBuffer host;
+  int width;
+  int height;
   int elem_chs;
   long last_use_time;
 } CacheBuffer;
@@ -51,6 +52,8 @@ typedef struct TmpBuffer {
   /* recyclable buffers can be reused and deleted. If false host_buffer can't be either reused or
    * deleted because is owned externally. But device_buffer can always be reused or deleted */
   bool is_host_recyclable;
+  int width;
+  int height;
   int elem_chs;
   std::string execution_id;
 
@@ -58,6 +61,15 @@ typedef struct TmpBuffer {
   int n_give_recycles;
   int n_take_recycles;
   /**/
+
+  inline size_t getMinBufferBytes()
+  {
+    return (size_t)width * height * elem_chs * sizeof(float);
+  }
+  inline size_t getMinBufferRowBytes()
+  {
+    return (size_t)width * elem_chs * sizeof(float);
+  }
 } TmpBuffer;
 
 #endif

@@ -92,6 +92,7 @@
 #include "COM_ConvertOperation.h"
 #include "COM_Converter.h"
 #include "COM_GammaNode.h"
+#include "COM_GlobalManager.h"
 #include "COM_HueSaturationValueCorrectNode.h"
 #include "COM_HueSaturationValueNode.h"
 #include "COM_IDMaskNode.h"
@@ -547,23 +548,32 @@ void Converter::convertResolution(NodeOperationBuilder &builder,
         scaleX = forced_scale;
         scaleY = forced_scale;
       }
-      int scale_w = fromWidth * scaleX;
-      int scale_h = fromHeight * scaleY;
-      scaleOperation = new ScaleFixedSizeOperation(scale_w, scale_h);
-      scaleOperation->setResolution(scale_w, scale_h);
-      first_op = scaleOperation;
-      last_op = scaleOperation;
-      builder.addOperation(scaleOperation);
+      if (scaleX != 1.0f || scaleY != 1.0f) {
+        int scale_w = fromWidth * scaleX;
+        int scale_h = fromHeight * scaleY;
+        if (toOperation->isViewerOperation()) {
+          scaleOperation = new ScaleFixedSizeOperation(
+              scale_w, scale_h, GlobalMan->getContext()->getViewsSampler());
+        }
+        else {
+          scaleOperation = new ScaleFixedSizeOperation(scale_w, scale_h);
+        }
 
-      addX = (toWidth - scale_w) / 2.0f;
-      addY = (toHeight - scale_h) / 2.0f;
+        scaleOperation->setResolution(scale_w, scale_h);
+        first_op = scaleOperation;
+        last_op = scaleOperation;
+        builder.addOperation(scaleOperation);
+
+        addX = (toWidth - scale_w) / 2.0f;
+        addY = (toHeight - scale_h) / 2.0f;
+      }
     }
     else {
       addX = (toWidth - fromWidth) / 2.0f;
       addY = (toHeight - fromHeight) / 2.0f;
     }
 
-    if (addY != 0.0f || addX != 0.0f) {
+    if (!has_forced_scale && (addY != 0.0f || addX != 0.0f)) {
       TranslateOperation *translateOperation = new TranslateOperation();
       if (!first_op) {
         first_op = translateOperation;

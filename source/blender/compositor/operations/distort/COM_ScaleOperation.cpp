@@ -118,6 +118,7 @@ void ScaleOperation::hashParams()
 {
   NodeOperation::hashParams();
   hashParam(m_relative);
+  hashParam(m_sampler);
 }
 
 void ScaleOperation::initExecution()
@@ -172,14 +173,16 @@ void ScaleOperation::execPixels(ExecutionManager &man)
 }
 
 // Absolute fixed size
-ScaleFixedSizeOperation::ScaleFixedSizeOperation(int final_width, int final_height)
+ScaleFixedSizeOperation::ScaleFixedSizeOperation(int final_width,
+                                                 int final_height,
+                                                 PixelsSampler sampler)
     : NodeOperation()
 {
   this->addInputSocket(SocketType::DYNAMIC, InputResizeMode::NO_RESIZE);
   this->addOutputSocket(SocketType::DYNAMIC);
   this->setMainInputSocketIndex(0);
 
-  m_sampler = GlobalMan->getContext()->getDefaultSampler();
+  m_sampler = sampler;
   m_inputOperation = NULL;
 
   m_relX = 0;
@@ -195,6 +198,12 @@ ScaleFixedSizeOperation::ScaleFixedSizeOperation(int final_width, int final_heig
   m_scale_height = final_height;
 }
 
+ScaleFixedSizeOperation::ScaleFixedSizeOperation(int final_width, int final_height)
+    : ScaleFixedSizeOperation(
+          final_width, final_height, GlobalMan->getContext()->getDefaultSampler())
+{
+}
+
 void ScaleFixedSizeOperation::hashParams()
 {
   NodeOperation::hashParams();
@@ -203,6 +212,7 @@ void ScaleFixedSizeOperation::hashParams()
   hashParam(m_is_aspect);
   hashParam(m_is_crop);
   hashParam(m_is_offset);
+  hashParam(m_sampler);
 }
 
 void ScaleFixedSizeOperation::initExecution()

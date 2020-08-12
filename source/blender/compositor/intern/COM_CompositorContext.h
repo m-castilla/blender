@@ -104,9 +104,12 @@ class CompositorContext {
 
   PixelsSampler getDefaultSampler() const
   {
-    return PixelsSampler{isRendering() ? PixelInterpolation::BILINEAR :
-                                         PixelInterpolation::NEAREST,
-                         PixelExtend::CLIP};
+    return PixelsSampler{PixelInterpolation::BILINEAR, PixelExtend::CLIP};
+  }
+
+  PixelsSampler getViewsSampler() const
+  {
+    return PixelsSampler{PixelInterpolation::NEAREST, PixelExtend::CLIP};
   }
 
   bool isBreaked() const;
