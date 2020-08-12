@@ -23,6 +23,7 @@
 #include "BLI_string.h"
 #include "COM_CyclesWrapper.h"
 #include <algorithm>
+#include <string.h>
 
 namespace DefMerger {
 
