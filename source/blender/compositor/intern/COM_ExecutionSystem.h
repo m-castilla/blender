@@ -56,6 +56,20 @@ class ExecutionSystem {
    */
   Groups m_groups;
 
+  const std::unordered_map<OpKey, std::vector<ReaderReads *>> *m_readers_reads;
+
+  struct OpDeps {
+    NodeOperation *op;
+    int n_deps;
+  };
+  struct OpDepsSorter {
+    inline bool operator()(const OpDeps &o1, const OpDeps &o2)
+    {
+      return (o1.n_deps < o2.n_deps);
+    }
+  };
+  std::unordered_map<OpKey, OpDeps> m_ops_deps;
+
  public:
   /**
    * \brief Create a new ExecutionSystem and initialize it with the
@@ -95,7 +109,9 @@ class ExecutionSystem {
   }
 
  private:
-  void execGroups(OperationMode op_mode);
+  void execGroups(ExecutionManager &man);
+  std::vector<OpDeps> getOperationsOrderedByNDepends(ExecutionManager &man);
+  int getOperationNDepends(NodeOperation *op);
 
   /* allow the DebugInfo class to look at internals */
   friend class DebugInfo;

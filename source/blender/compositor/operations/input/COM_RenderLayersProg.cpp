@@ -139,7 +139,7 @@ void RenderLayersAlphaProg::execPixels(ExecutionManager &man)
     }
     else {
       auto input_buffer = BufferUtil::createUnmanagedTmpBuffer(
-          COM_NUM_CHANNELS_COLOR, m_inputBuffer, getWidth(), getHeight(), true);
+          m_inputBuffer, getWidth(), getHeight(), COM_NUM_CHANNELS_COLOR, true);
       PixelsRect src(input_buffer.get(), dst);
       PixelsUtil::copyEqualRectsChannel(dst, 0, src, 3);
     }

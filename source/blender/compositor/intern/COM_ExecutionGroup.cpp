@@ -38,37 +38,14 @@
 
 ExecutionGroup::ExecutionGroup(ExecutionSystem &sys) : m_sys(sys)
 {
-  this->m_operation_mode = OperationMode::Optimize;
-
   BLI_rcti_init(&this->m_viewerBorder, 0, 0, 0, 0);
-}
-
-void ExecutionGroup::setOperationMode(OperationMode mode)
-{
-  m_operation_mode = mode;
-}
-
-OperationMode ExecutionGroup::getOperationMode() const
-{
-  return m_operation_mode;
-}
-
-bool ExecutionGroup::isBreaked() const
-{
-  return m_sys.isBreaked();
 }
 
 bool ExecutionGroup::addOperation(NodeOperation *operation)
 {
 
   m_operations.push_back(operation);
-
   return true;
-}
-
-const CompositorContext &ExecutionGroup::getContext() const
-{
-  return m_sys.getContext();
 }
 
 NodeOperation *ExecutionGroup::getOutputOperation() const
@@ -77,27 +54,18 @@ NodeOperation *ExecutionGroup::getOutputOperation() const
       ->m_operations[0];  // the first operation of the group is always the output operation.
 }
 
-void ExecutionGroup::initExecution()
-{
-}
-
-void ExecutionGroup::deinitExecution()
-{
-}
-
 /**
  * this method is called for the top execution groups. containing the compositor node or the
  * preview node or the viewer node)
  */
-void ExecutionGroup::execute()
+void ExecutionGroup::execute(ExecutionManager &man)
 {
   auto output_op = getOutputOperation();
-  if (output_op->getWidth() == 0 || output_op->getHeight() == 0 || isBreaked()) {
+  if (output_op->getWidth() == 0 || output_op->getHeight() == 0 || m_sys.isBreaked()) {
     return;
   }
 
-  ExecutionManager exec_man = ExecutionManager(*this);
-  getOutputOperation()->getPixels(nullptr, exec_man);
+  getOutputOperation()->getPixels(nullptr, man);
 }
 
 bool ExecutionGroup::hasOutputViewerBorder()

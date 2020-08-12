@@ -24,6 +24,7 @@
 #include <functional>
 #include <memory>
 #include <string>
+#include <vector>
 
 struct WriteRectContext;
 class ComputeManager;
@@ -32,14 +33,20 @@ class ExecutionGroup;
 struct rcti;
 class ComputeKernel;
 class NodeOperation;
+class CompositorContext;
 class ExecutionManager {
  private:
-  ExecutionGroup &m_exec_group;
+  const CompositorContext &m_context;
+  std::vector<ExecutionGroup *> &m_exec_groups;
+  OperationMode m_op_mode;
 
  public:
-  ExecutionManager(ExecutionGroup &exec_group);
+  ExecutionManager(const CompositorContext &context, std::vector<ExecutionGroup *> &exec_groups);
   bool isBreaked() const;
+
+  void setOperationMode(OperationMode mode);
   OperationMode getOperationMode() const;
+
   void execWriteJob(NodeOperation *op,
                     TmpRectBuilder &write_rect_builder,
                     std::function<void(PixelsRect &, const WriteRectContext &)> &cpu_write_func,
@@ -47,6 +54,10 @@ class ExecutionManager {
                     std::string compute_kernel,
                     std::function<void(ComputeKernel *)> add_kernel_args_func);
   static void deviceWaitQueueToFinish();
+
+ private:
+  // returns null if operation has no viewer border
+  const rcti *getOpViewerBorder(NodeOperation *op);
 };
 
 #endif
