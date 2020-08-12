@@ -116,7 +116,6 @@ void OpenCLKernel::clearArgs()
 
 void OpenCLKernel::addReadImgArgs(PixelsRect &pixels)
 {
-  auto img = pixels.pixelsImg();
   cl_mem cl_img = pixels.is_single_elem ? m_device->getEmptyImg() :
                                           (cl_mem)pixels.tmp_buffer->device.buffer;
   m_man.printIfError(clSetKernelArg(m_cl_kernel, m_args_count, sizeof(cl_mem), &cl_img));
@@ -203,12 +202,12 @@ cl_mem OpenCLKernel::addReadOnlyBufferArg(void *data, size_t data_size)
 {
   cl_int error;
   cl_mem buffer = clCreateBuffer(
-      m_platform.getContext(), CL_MEM_READ_ONLY, data_size, data, &error);
+      m_platform.getContext(), CL_MEM_READ_ONLY, data_size, NULL, &error);
   m_args_buffers.push_back(buffer);
 
   m_man.printIfError(error);
   m_man.printIfError(clEnqueueWriteBuffer(
-      m_device->getQueue(), buffer, CL_FALSE, 0, data_size, &data, 0, NULL, NULL));
+      m_device->getQueue(), buffer, CL_FALSE, 0, data_size, data, 0, NULL, NULL));
   m_work_enqueued = true;
 
   m_man.printIfError(clSetKernelArg(m_cl_kernel, m_args_count, sizeof(cl_mem), &buffer));

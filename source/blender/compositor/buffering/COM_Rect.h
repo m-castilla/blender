@@ -78,8 +78,15 @@ class PixelsRect : public rcti {
   {
     return ymax - ymin;
   }
+
+  /* This methods are only called for host buffers */
   PixelsImg pixelsImg();
-  PixelsImg pixelsImgCustom(float *buffer, int buffer_width, int n_channels, const rcti &rect);
+  static PixelsImg pixelsImgCustom(float *buffer,
+                                   bool is_single_elem,
+                                   size_t buffer_row_bytes,
+                                   int n_channels,
+                                   const rcti &rect);
+  /* */
 
 #ifdef WITH_CXX_GUARDEDALLOC
   MEM_CXX_CLASS_ALLOC_FUNCS("COM:PixelsRect")

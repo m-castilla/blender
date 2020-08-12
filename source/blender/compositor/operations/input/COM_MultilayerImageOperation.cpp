@@ -64,7 +64,7 @@ void MultilayerColorOperation::execPixels(ExecutionManager &man)
     }
     else {
       auto buf = BufferUtil::createUnmanagedTmpBuffer(
-          m_numberOfChannels, m_imageFloatBuffer, m_imagewidth, m_imageheight, true);
+          m_imageFloatBuffer, m_imagewidth, m_imageheight, m_numberOfChannels, true);
       PixelsRect src_rect = PixelsRect(buf.get(), dst);
       PixelsUtil::copyEqualRectsNChannels(src_rect, dst, m_numberOfChannels);
     }
@@ -80,7 +80,7 @@ void MultilayerValueOperation::execPixels(ExecutionManager &man)
     }
     else {
       auto buf = BufferUtil::createUnmanagedTmpBuffer(
-          m_numberOfChannels, m_imageFloatBuffer, m_imagewidth, m_imageheight, true);
+          m_imageFloatBuffer, m_imagewidth, m_imageheight, m_numberOfChannels, true);
       PixelsRect src_rect = PixelsRect(buf.get(), dst);
       PixelsUtil::copyEqualRectsNChannels(src_rect, dst, COM_NUM_CHANNELS_VALUE);
     }
@@ -96,7 +96,7 @@ void MultilayerVectorOperation::execPixels(ExecutionManager &man)
     }
     else {
       auto buf = BufferUtil::createUnmanagedTmpBuffer(
-          m_numberOfChannels, m_imageFloatBuffer, m_imagewidth, m_imageheight, true);
+          m_imageFloatBuffer, m_imagewidth, m_imageheight, m_numberOfChannels, true);
       PixelsRect src_rect = PixelsRect(buf.get(), dst);
       PixelsUtil::copyEqualRectsNChannels(src_rect, dst, COM_NUM_CHANNELS_VECTOR);
     }

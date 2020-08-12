@@ -30,19 +30,19 @@
 
 namespace BufferUtil {
 
-std::unique_ptr<TmpBuffer> createUnmanagedTmpBuffer(int n_channels,
-                                                    float *host_buffer,
+std::unique_ptr<TmpBuffer> createUnmanagedTmpBuffer(float *host_buffer,
                                                     int host_width,
                                                     int host_height,
+                                                    int host_n_channels,
                                                     bool is_host_buffer_filled)
 {
   auto buf = new TmpBuffer();
-  buf->elem_chs = n_channels;
   buf->is_host_recyclable = false;
+  buf->elem_chs = host_n_channels;
   buf->host.buffer = host_buffer;
-  buf->host.width = host_width;
-  buf->host.height = host_height;
-  buf->host.row_bytes = (size_t)host_width * n_channels * sizeof(float);
+  buf->width = host_width;
+  buf->height = host_height;
+  buf->host.brow_bytes = BufferUtil::calcBufferRowBytes(host_width, host_n_channels);
   buf->host.state = is_host_buffer_filled ? HostMemoryState::FILLED : HostMemoryState::CLEARED;
   buf->device.buffer = nullptr;
   buf->device.state = DeviceMemoryState::NONE;
@@ -58,10 +58,11 @@ void deviceAlloc(TmpBuffer *dst,
                  int elem_chs,
                  bool alloc_host)
 {
+  ASSERT_VALID_TMP_BUFFER(dst, width, height, elem_chs);
   auto device = GlobalMan->ComputeMan->getSelectedDevice();
   dst->device.buffer = device->memDeviceAlloc(device_access, width, height, elem_chs, alloc_host);
-  dst->device.width = width;
-  dst->device.height = height;
+  dst->width = width;
+  dst->height = height;
   dst->elem_chs = elem_chs;
   dst->device.has_map_alloc = alloc_host;
   dst->device.state = DeviceMemoryState::CLEARED;
@@ -83,11 +84,12 @@ float *hostAlloc(int width, int height, int elem_chs)
 
 void hostAlloc(TmpBuffer *dst, int width, int height, int elem_chs)
 {
+  ASSERT_VALID_TMP_BUFFER(dst, width, height, elem_chs);
   dst->host.buffer = hostAlloc(width, height, elem_chs);
-  dst->host.width = width;
-  dst->host.height = height;
-  dst->host.row_bytes = (size_t)width * elem_chs * sizeof(float);
+  dst->width = width;
+  dst->height = height;
   dst->elem_chs = elem_chs;
+  dst->host.brow_bytes = BufferUtil::calcBufferRowBytes(width, elem_chs);
   dst->host.state = HostMemoryState::CLEARED;
 }
 
@@ -127,14 +129,13 @@ void deviceMapToHostEnqueue(TmpBuffer *buf, MemoryAccess host_access)
   if (buf->device.state == DeviceMemoryState::CLEARED) {
     host_access = MemoryAccess::WRITE;
   }
+  buf->host.brow_bytes = BufferUtil::calcBufferRowBytes(buf->width, buf->elem_chs);
   buf->host.buffer = device->memDeviceToHostMapEnqueue(buf->device.buffer,
                                                        host_access,
-                                                       buf->device.width,
-                                                       buf->device.height,
+                                                       buf->width,
+                                                       buf->height,
                                                        buf->elem_chs,
-                                                       buf->host.row_bytes);
-  buf->host.width = buf->device.width;
-  buf->host.height = buf->device.height;
+                                                       buf->host.brow_bytes);
   buf->host.state = HostMemoryState::MAP_FROM_DEVICE;
   buf->device.state = DeviceMemoryState::MAP_TO_HOST;
 }
@@ -158,10 +159,10 @@ void deviceToHostCopyEnqueue(TmpBuffer *buf, MemoryAccess host_access)
   auto device = GlobalMan->ComputeMan->getSelectedDevice();
   device->memDeviceToHostCopyEnqueue(buf->host.buffer,
                                      buf->device.buffer,
-                                     buf->host.row_bytes,
+                                     buf->host.brow_bytes,
                                      host_access,
-                                     buf->device.width,
-                                     buf->device.height,
+                                     buf->width,
+                                     buf->height,
                                      buf->elem_chs);
   buf->host.state = HostMemoryState::FILLED;
 }
@@ -174,10 +175,10 @@ void hostToDeviceCopyEnqueue(TmpBuffer *buf, MemoryAccess device_access)
   auto device = GlobalMan->ComputeMan->getSelectedDevice();
   device->memHostToDeviceCopyEnqueue(buf->device.buffer,
                                      buf->host.buffer,
-                                     buf->host.row_bytes,
+                                     buf->host.brow_bytes,
                                      device_access,
-                                     buf->device.width,
-                                     buf->device.height,
+                                     buf->width,
+                                     buf->height,
                                      buf->elem_chs);
   buf->device.state = DeviceMemoryState::FILLED;
 }

@@ -37,7 +37,9 @@ NodeOperation::NodeOperation()
       m_op_hash_calculated(false),
       m_op_hash(0),
       m_exec_pixels_optimized(false),
-      base_hash_params_called(false)
+      base_hash_params_called(false),
+      m_current_tree_level(0),
+      m_max_tree_level(0)
 {
 }
 
@@ -172,11 +174,18 @@ void NodeOperation::computeWriteSeek(
 // To assert that you should have gotten your pixels, Check the condition (!isBreaked() and
 // man.getOperationMode()==OperationMode::Exec) after the call. If true, the pixels must have
 // been returned, if not is an implementation error.
+// reader_op param is only needed during Optimize mode, for Exec mode it may always be nullptr
 std::shared_ptr<PixelsRect> NodeOperation::getPixels(NodeOperation *reader_op,
                                                      ExecutionManager &man)
 {
   if (!isBreaked()) {
     if (man.getOperationMode() == OperationMode::Optimize) {
+      BLI_assert(reader_op != nullptr || getNumberOfOutputSockets() == 0);
+      m_current_tree_level = reader_op == nullptr ? 0 : reader_op->getCurrentTreeLevel() + 1;
+      if (m_current_tree_level > m_max_tree_level) {
+        m_max_tree_level = m_current_tree_level;
+      }
+
       if (!m_exec_pixels_optimized && !GlobalMan->hasAnyKindOfCache(this)) {
         execPixels(man);
         m_exec_pixels_optimized = true;
@@ -184,13 +193,13 @@ std::shared_ptr<PixelsRect> NodeOperation::getPixels(NodeOperation *reader_op,
       GlobalMan->BufferMan->readOptimize(this, reader_op, man);
     }
     else {
-      auto result = GlobalMan->BufferMan->readSeek(this, reader_op, man);
+      auto result = GlobalMan->BufferMan->readSeek(this, man);
       if (result.is_written) {
         return result.pixels;
       }
       else {
         execPixels(man);
-        auto result = GlobalMan->BufferMan->readSeek(this, reader_op, man);
+        auto result = GlobalMan->BufferMan->readSeek(this, man);
         return result.pixels;
       }
     }

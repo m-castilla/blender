@@ -43,7 +43,7 @@ BufferManager::BufferManager()
       m_cached_buffers(),
       m_recycler(),
       m_readers_reads(),
-      m_readers_reads_gotten(false),
+      m_reads_gotten(false),
       m_max_cache_bytes(0),
       m_current_cache_bytes(0)
 {
@@ -105,7 +105,7 @@ void BufferManager::deinitialize(bool isBreaked)
 #endif
 
     m_readers_reads.clear();
-    m_readers_reads_gotten = false;
+    m_reads_gotten = false;
 
     for (const auto &opti_entry : m_optimizers) {
       delete opti_entry.second;
@@ -136,8 +136,9 @@ void BufferManager::checkCache()
     // we never delete the last cache added, would be undesirable for the user (end() - 1)
     for (auto it = caches_by_time.begin(); it != caches_by_time.end() - 1; it++) {
       if (m_current_cache_bytes > desired_bytes) {
-        HostBuffer host = it->second->host;
-        m_current_cache_bytes -= host.height * host.row_bytes;
+        CacheBuffer *cache = it->second;
+        HostBuffer host = cache->host;
+        m_current_cache_bytes -= cache->height * host.brow_bytes;
         BufferUtil::deleteCacheBuffer(it->second);
         m_cached_buffers.erase(it->first);
       }
@@ -191,44 +192,54 @@ void BufferManager::readOptimize(NodeOperation *op,
   optimizer->optimize(op, reader_op, man);
 }
 
-BufferManager::ReadResult BufferManager::readSeek(NodeOperation *op,
-                                                  NodeOperation *reader_op,
-                                                  ExecutionManager &man)
+BufferManager::ReadResult BufferManager::readSeek(NodeOperation *op, ExecutionManager &man)
 {
-  auto key = op->getKey();
-  auto optimizer = m_optimizers[key];
-  auto reads = optimizer->peepReads(man);
   ReadResult result = ReadResult{false, {}};
-  if (op->getBufferType() == BufferType::CACHED) {
-    CacheBuffer *cache = getCache(op);
-    BLI_assert(cache);
-    if (cache->host.state == HostMemoryState::FILLED) {
+  auto key = op->getKey();
+  auto optimizer_found = m_optimizers.find(key);
+  if (optimizer_found == m_optimizers.end()) {
+    // this operation getPixels() has not beed called during optimization phase. Probably an input
+    // constant
+    result.is_written = true;
+  }
+  else {
+    auto optimizer = optimizer_found->second;
+    auto reads = optimizer->peepReads(man);
+
+    if (op->getBufferType() == BufferType::CACHED) {
+      CacheBuffer *cache = getCache(op);
+      BLI_assert(cache);
+      if (cache->host.state == HostMemoryState::FILLED) {
+        if (!reads->is_write_complete) {
+          reads->is_write_complete = true;
+          reportWriteCompleted(op, reads, man);
+        }
+        reads->tmp_buffer = m_recycler->createTmpBuffer(
+            false, op->getWidth(), op->getHeight(), op->getOutputNChannels());
+        reads->tmp_buffer->host = cache->host;
+        ASSERT_VALID_TMP_BUFFER(reads->tmp_buffer, cache->width, cache->height, cache->elem_chs);
+      }
+      else {
+        BLI_assert(cache->host.state == HostMemoryState::CLEARED);
+        BLI_assert(!reads->is_write_complete);
+      }
+    }
+    else if (op->getBufferType() == BufferType::NO_BUFFER_NO_WRITE) {
       if (!reads->is_write_complete) {
         reads->is_write_complete = true;
         reportWriteCompleted(op, reads, man);
       }
-      reads->tmp_buffer = m_recycler->createTmpBuffer(op->getOutputNChannels(), false);
-      reads->tmp_buffer->host = cache->host;
     }
-    else {
-      BLI_assert(cache->host.state == HostMemoryState::CLEARED);
-      BLI_assert(!reads->is_write_complete);
-    }
-  }
-  else if (op->getBufferType() == BufferType::NO_BUFFER_NO_WRITE) {
-    if (!reads->is_write_complete) {
-      reads->is_write_complete = true;
-      reportWriteCompleted(op, reads, man);
+
+    if (reads->is_write_complete) {
+      result.is_written = true;
+      rcti full_rect;
+      BLI_rcti_init(&full_rect, 0, reads->readed_op->getWidth(), 0, reads->readed_op->getHeight());
+      auto pixels = tmpPixelsRect(op, full_rect, reads, true);
+      result.pixels.swap(pixels);
     }
   }
 
-  if (reads->is_write_complete) {
-    result.is_written = true;
-    rcti full_rect;
-    BLI_rcti_init(&full_rect, 0, reads->op->getWidth(), 0, reads->op->getHeight());
-    auto pixels = tmpPixelsRect(op, full_rect, reads, true);
-    result.pixels.swap(pixels);
-  }
   return result;
 }
 
@@ -252,7 +263,8 @@ void BufferManager::writeSeek(NodeOperation *op,
         // write cache should only be called when it's cleared because if filled it should be
         // returned on readSeek
         BLI_assert(cache->host.state == HostMemoryState::CLEARED);
-        reads->tmp_buffer = m_recycler->createTmpBuffer(op->getOutputNChannels(), false);
+        reads->tmp_buffer = m_recycler->createTmpBuffer(
+            false, op->getWidth(), op->getHeight(), op->getOutputNChannels());
         reads->tmp_buffer->host = cache->host;
       }
       else if (op->getBufferType() == BufferType::CUSTOM) {
@@ -269,7 +281,8 @@ void BufferManager::writeSeek(NodeOperation *op,
         is_write_computed = false;
       }
       else if (op->getBufferType() == BufferType::TEMPORAL) {
-        reads->tmp_buffer = m_recycler->createTmpBuffer(op->getOutputNChannels(), true);
+        reads->tmp_buffer = m_recycler->createTmpBuffer(
+            true, op->getWidth(), op->getHeight(), op->getOutputNChannels());
       }
       else {
         BLI_assert(!"Non implemented BufferType");
@@ -338,15 +351,15 @@ bool BufferManager::prepareForWrite(bool is_write_computed, OpReads *reads)
       BLI_assert(host_empty);
       work_enqueued |= m_recycler->takeRecycle(BufferRecycleType::HOST_CLEAR,
                                                buf,
-                                               reads->op->getWidth(),
-                                               reads->op->getHeight(),
+                                               reads->readed_op->getWidth(),
+                                               reads->readed_op->getHeight(),
                                                buf->elem_chs);
     }
     BLI_assert(device_empty);
     work_enqueued |= m_recycler->takeRecycle(BufferRecycleType::DEVICE_CLEAR,
                                              buf,
-                                             reads->op->getWidth(),
-                                             reads->op->getHeight(),
+                                             reads->readed_op->getWidth(),
+                                             reads->readed_op->getHeight(),
                                              buf->elem_chs);
   }
   else {
@@ -390,8 +403,11 @@ bool BufferManager::prepareForWrite(bool is_write_computed, OpReads *reads)
     }
 
     if (take_recycle) {
-      work_enqueued |= m_recycler->takeRecycle(
-          recycle_type, buf, reads->op->getWidth(), reads->op->getHeight(), buf->elem_chs);
+      work_enqueued |= m_recycler->takeRecycle(recycle_type,
+                                               buf,
+                                               reads->readed_op->getWidth(),
+                                               reads->readed_op->getHeight(),
+                                               buf->elem_chs);
     }
   }
   return work_enqueued;
@@ -469,23 +485,23 @@ CacheBuffer *BufferManager::getCache(NodeOperation *op)
   else {
     int n_channels = op->getOutputNChannels();
     cache = new CacheBuffer();
+    cache->height = op->getHeight();
+    cache->width = op->getWidth();
     cache->elem_chs = n_channels;
     HostBuffer &host = cache->host;
-    host.height = op->getHeight();
-    host.width = op->getWidth();
-    host.row_bytes = (size_t)host.width * n_channels * sizeof(float);
-    host.buffer = BufferUtil::hostAlloc(host.width, host.height, n_channels);
+    host.brow_bytes = BufferUtil::calcBufferRowBytes(cache->width, n_channels);
+    host.buffer = BufferUtil::hostAlloc(cache->width, cache->height, n_channels);
     host.state = HostMemoryState::CLEARED;
 
     m_cached_buffers.insert({key, cache});
-    m_current_cache_bytes += cache->host.height * cache->host.row_bytes;
+    m_current_cache_bytes += cache->height * cache->host.brow_bytes;
     checkCache();
     cache->last_use_time = clock();
   }
 
   BLI_assert(op->getOutputNChannels() == cache->elem_chs);
-  BLI_assert(op->getHeight() == cache->host.height);
-  BLI_assert(op->getWidth() == cache->host.width);
+  BLI_assert(op->getHeight() == cache->height);
+  BLI_assert(op->getWidth() == cache->width);
   return cache;
 }
 
@@ -498,11 +514,10 @@ bool BufferManager::hasBufferCache(NodeOperation *op)
 TmpBuffer *BufferManager::getCustomBuffer(NodeOperation *op)
 {
   BLI_assert(op->getBufferType() == BufferType::CUSTOM);
-  TmpBuffer *custom = m_recycler->createTmpBuffer(op->getOutputNChannels(), false);
+  TmpBuffer *custom = m_recycler->createTmpBuffer(
+      false, op->getWidth(), op->getHeight(), op->getOutputNChannels());
   HostBuffer &host = custom->host;
-  host.height = op->getHeight();
-  host.width = op->getWidth();
-  host.row_bytes = (size_t)host.width * custom->elem_chs * sizeof(float);
+  host.brow_bytes = BufferUtil::calcBufferRowBytes(custom->width, custom->elem_chs);
   host.buffer = op->getCustomBuffer();
   host.state = HostMemoryState::FILLED;
   if (host.buffer == nullptr) {
@@ -524,29 +539,7 @@ void BufferManager::reportWriteCompleted(NodeOperation *op,
     op_reads->tmp_buffer = nullptr;
   }
 
-  if (!m_readers_reads_gotten) {
-    if (!m_readers_reads_gotten) {
-      for (const auto &optimizer : m_optimizers) {
-        auto readers_reads = optimizer.second->peepAllReadersReads(man);
-        for (const std::pair<OpKey, ReaderReads *> &reads : readers_reads) {
-          const OpKey &reader_key = reads.first;
-          auto reader_found = m_readers_reads.find(reader_key);
-
-          std::vector<ReaderReads *> reader_reads;
-          if (reader_found == m_readers_reads.end()) {
-            auto reader_reads = std::vector<ReaderReads *>();
-            reader_reads.push_back(reads.second);
-            m_readers_reads.insert({reader_key, std::move(reader_reads)});
-          }
-          else {
-            auto &reader_reads = reader_found->second;
-            reader_reads.push_back(reads.second);
-          }
-        }
-      }
-      m_readers_reads_gotten = true;
-    }
-  }
+  assureReadsGotten(man);
 
   auto reader_key = op->getKey();
   auto reads_found = m_readers_reads.find(reader_key);
@@ -566,6 +559,44 @@ void BufferManager::reportWriteCompleted(NodeOperation *op,
         m_recycler->giveRecycle(op_reads->tmp_buffer);
         op_reads->tmp_buffer = nullptr;
       }
+    }
+  }
+}
+
+const std::unordered_map<OpKey, std::vector<ReaderReads *>> *BufferManager::getReadersReads(
+    ExecutionManager &man)
+{
+  assureReadsGotten(man);
+  return &m_readers_reads;
+}
+
+void BufferManager::assureReadsGotten(ExecutionManager &man)
+{
+  if (!m_reads_gotten) {
+    for (const auto &optimizer : m_optimizers) {
+      auto receiver_key = optimizer.first;
+      std::unordered_set<OpKey> receiver_reads;
+
+      auto readers_reads = optimizer.second->peepAllReadersReads(man);
+      for (const std::pair<OpKey, ReaderReads *> &reads : readers_reads) {
+        const OpKey &reader_key = reads.first;
+
+        auto reader_found = m_readers_reads.find(reader_key);
+        if (reader_found == m_readers_reads.end()) {
+          auto reader_reads = std::vector<ReaderReads *>();
+          reader_reads.push_back(reads.second);
+          m_readers_reads.insert({reader_key, std::move(reader_reads)});
+        }
+        else {
+          auto &reader_reads = reader_found->second;
+          reader_reads.push_back(reads.second);
+        }
+
+        receiver_reads.insert(reader_key);
+      }
+
+      m_received_reads.insert({receiver_key, std::move(receiver_reads)});
+      m_reads_gotten = true;
     }
   }
 }

@@ -143,7 +143,7 @@ void ImageOperation::execPixels(ExecutionManager &man)
     }
     else if (m_imageFloatBuffer) {
       auto buf = BufferUtil::createUnmanagedTmpBuffer(
-          m_numberOfChannels, m_imageFloatBuffer, m_imagewidth, m_imageheight, true);
+          m_imageFloatBuffer, m_imagewidth, m_imageheight, m_numberOfChannels, true);
       PixelsRect src_rect = PixelsRect(buf.get(), dst);
       PixelsUtil::copyEqualRectsNChannels(dst, src_rect, m_numberOfChannels);
     }
@@ -163,7 +163,7 @@ void ImageOperation::execPixels(ExecutionManager &man)
                                                                    uchar_buf[src_offset + 3]);
       // normalize
       src_pixel /= 255.0f;
-      memcpy(&dst_img.buffer[dst_offset], &src_pixel, sizeof(float) * 4);
+      memcpy(&dst_img.buffer[dst_offset], &src_pixel, sizeof(float) * COM_NUM_CHANNELS_COLOR);
 
       IMB_colormanagement_colorspace_to_scene_linear_v4(
           &dst_img.buffer[dst_offset], false, m_buffer->rect_colorspace);
@@ -188,9 +188,9 @@ void ImageAlphaOperation::execPixels(ExecutionManager &man)
     }
     else if (m_imageFloatBuffer) {
       auto buf = BufferUtil::createUnmanagedTmpBuffer(
-          1, m_imageFloatBuffer, m_imagewidth, m_imageheight, true);
+          m_imageFloatBuffer, m_imagewidth, m_imageheight, COM_NUM_CHANNELS_VALUE, true);
       PixelsRect src_rect = PixelsRect(buf.get(), dst);
-      PixelsUtil::copyEqualRectsNChannels(dst, src_rect, 1);
+      PixelsUtil::copyEqualRectsNChannels(dst, src_rect, COM_NUM_CHANNELS_VALUE);
     }
     else {
       unsigned char *uchar_buf = (unsigned char *)m_imageByteBuffer;
@@ -223,7 +223,7 @@ void ImageDepthOperation::execPixels(ExecutionManager &man)
     }
     else {
       auto buf = BufferUtil::createUnmanagedTmpBuffer(
-          1, m_depthBuffer, m_imagewidth, m_imageheight, true);
+          m_depthBuffer, m_imagewidth, m_imageheight, COM_NUM_CHANNELS_VALUE, true);
       PixelsRect src_rect = PixelsRect(buf.get(), dst);
       PixelsUtil::copyEqualRectsNChannels(dst, src_rect, 1);
     }

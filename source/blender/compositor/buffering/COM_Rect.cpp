@@ -64,40 +64,57 @@ PixelsRect PixelsRect::toRect(const rcti &rect)
 PixelsImg PixelsRect::pixelsImg()
 {
   if (is_single_elem) {
-    return pixelsImgCustom(single_elem, 1, single_elem_chs, *this);
+    return pixelsImgCustom(
+        single_elem, true, single_elem_chs * sizeof(float), single_elem_chs, *this);
   }
   else {
-    return pixelsImgCustom(
-        tmp_buffer->host.buffer, tmp_buffer->host.width, tmp_buffer->elem_chs, *this);
+    BLI_assert(tmp_buffer->host.state != HostMemoryState::NONE);
+    BLI_assert(tmp_buffer->host.buffer != nullptr);
+    PixelsImg img = pixelsImgCustom(
+        tmp_buffer->host.buffer, false, tmp_buffer->host.brow_bytes, tmp_buffer->elem_chs, *this);
+    /* When not mapped row_jump should always be 0 because we always create host buffers with 0
+     * added pitch and divide images rects only vertically*/
+    BLI_assert(tmp_buffer->host.state == HostMemoryState::MAP_FROM_DEVICE || img.row_jump == 0);
+
+    return img;
   }
 }
 
-PixelsImg PixelsRect::pixelsImgCustom(float *buffer,
-                                      int buffer_width,
-                                      int n_channels,
-                                      const rcti &rect)
+PixelsImg PixelsRect::pixelsImgCustom(
+    float *buffer, bool is_single_elem, size_t buffer_row_bytes, int n_channels, const rcti &rect)
 {
   BLI_assert(BLI_rcti_is_valid(&rect));
   BLI_assert(!BLI_rcti_is_empty(&rect));
-  float *buffer_y_start = buffer + (size_t)rect.ymin * buffer_width * n_channels;
-  float *rect_start = buffer_y_start + (size_t)rect.xmin * n_channels;
-  float *rect_end = buffer + ((size_t)rect.ymax - 1) * buffer_width * n_channels +
-                    (size_t)rect.xmax * n_channels;
+  BLI_assert(buffer_row_bytes > 0);
 
   int elem_chs = n_channels;
   size_t elem_bytes = elem_chs * sizeof(float);
+
+  int brow_elems = buffer_row_bytes / elem_bytes;
+  int brow_chs = brow_elems * elem_chs;
+
+  float *buffer_y_start = is_single_elem ? buffer :
+                                           buffer + (size_t)rect.ymin * brow_elems * n_channels;
+  float *rect_start = is_single_elem ? buffer : buffer_y_start + (size_t)rect.xmin * n_channels;
+  float *rect_end = is_single_elem ? buffer + elem_chs :
+                                     buffer + ((size_t)rect.ymax - 1) * brow_elems * n_channels +
+                                         (size_t)rect.xmax * n_channels;
+  BLI_assert(rect_end > rect_start);
+
   int row_elems = rect.xmax - rect.xmin;
   int col_elems = rect.ymax - rect.ymin;
   int row_chs = row_elems * elem_chs;
-  int row_jump = (buffer_width - row_elems) * elem_chs;
+  int row_jump = is_single_elem ? 0 : brow_chs - row_chs;
+  BLI_assert(row_jump >= 0);
   size_t row_bytes = row_chs * sizeof(float);
-  int brow_elems = buffer_width;
-  int brow_chs = brow_elems * elem_chs;
-  size_t brow_bytes = brow_chs * sizeof(float);
+
+  BLI_assert(!(row_jump == 0 && !is_single_elem) ||
+             (rect_end - rect_start) == (size_t)row_elems * col_elems * elem_chs);
+
   return PixelsImg{rect.xmin,        rect.ymin,        rect.xmax,        rect.ymax,
                    (float)rect.xmin, (float)rect.ymin, (float)rect.xmax, (float)rect.ymax,
                    buffer,           rect_start,       rect_end,         elem_chs,
                    elem_bytes,       row_elems,        col_elems,        row_chs,
                    row_jump,         row_bytes,        brow_elems,       brow_chs,
-                   brow_bytes};
+                   buffer_row_bytes};
 }

@@ -103,20 +103,29 @@ void NodeOperationBuilder::convertToOperations()
 
   determineResolutions();
 
-  /* surround complex ops with read/write buffer */
-  // add_complex_operation_buffers();
-
   /* links not available from here on */
   /* XXX make m_links a local variable to avoid confusion! */
   m_links.clear();
 
   prune_operations();
 
-  /* ensure topological (link-based) order of nodes */
-  /*sort_operations();*/ /* not needed yet */
-
   /* create execution groups */
   group_operations();
+
+  // prune operations which are in no groups
+  std::unordered_set<NodeOperation *> groups_ops;
+  for (auto group : m_groups) {
+    auto ops = group->getOperations();
+    groups_ops.insert(ops.begin(), ops.end());
+  }
+  for (auto it = m_operations.begin(); it != m_operations.end();) {
+    if (groups_ops.find(*it) == groups_ops.end()) {
+      it = m_operations.erase(it);
+    }
+    else {
+      it++;
+    }
+  }
 
   /* transfer resulting operations to the system */
   m_sys.set_operations(m_operations, m_groups);
@@ -392,6 +401,7 @@ void NodeOperationBuilder::add_input_constant_value(NodeOperationInput *input,
       }
       default:
         BLI_assert(!"Non implemented datatype");
+        return;
     }
   }
 
@@ -489,7 +499,9 @@ void NodeOperationBuilder::determineResolutions()
   /* Scale inputs if necessary*/
   float inputs_scale = m_context->getInputsScale();
   if (inputs_scale < 1.0f) {
-    Operations ops_copy(m_operations);
+    std::vector<NodeOperation *> ops_copy(
+        m_operations);  // we have to copy m_operations because we can't iterate it while adding
+                        // operations to it
     for (Operations::const_iterator it = ops_copy.begin(); it != ops_copy.end(); ++it) {
       NodeOperation *op = *it;
       if (op->getResolutionType() == ResolutionType::Fixed && op->getNumberOfInputSockets() == 0) {
@@ -594,41 +606,9 @@ void NodeOperationBuilder::prune_operations()
       delete op;
     }
   }
+
   /* finally replace the operations list with the pruned list */
   m_operations = reachable_ops;
-}
-
-/* topological (depth-first) sorting of operations */
-static void sort_operations_recursive(NodeOperationBuilder::Operations &sorted,
-                                      Tags &visited,
-                                      NodeOperation *op)
-{
-  if (visited.find(op) != visited.end()) {
-    return;
-  }
-  visited.insert(op);
-
-  for (int i = 0; i < op->getNumberOfInputSockets(); i++) {
-    NodeOperationInput *input = op->getInputSocket(i);
-    if (input->isConnected()) {
-      sort_operations_recursive(sorted, visited, input->getLink()->getOperation());
-    }
-  }
-
-  sorted.push_back(op);
-}
-
-void NodeOperationBuilder::sort_operations()
-{
-  Operations sorted;
-  sorted.reserve(m_operations.size());
-  Tags visited;
-
-  for (Operations::const_iterator it = m_operations.begin(); it != m_operations.end(); ++it) {
-    sort_operations_recursive(sorted, visited, *it);
-  }
-
-  m_operations = sorted;
 }
 
 static void add_group_operations_recursive(Tags &visited, NodeOperation *op, ExecutionGroup *group)
@@ -667,7 +647,8 @@ void NodeOperationBuilder::group_operations()
   for (Operations::const_iterator it = m_operations.begin(); it != m_operations.end(); ++it) {
     NodeOperation *op = *it;
 
-    if (op->isOutputOperation(m_context->isRendering())) {
+    if (op->isOutputOperation(m_context->isRendering()) && op->getWidth() > 0 &&
+        op->getHeight() > 0) {
       make_group(op);
     }
   }

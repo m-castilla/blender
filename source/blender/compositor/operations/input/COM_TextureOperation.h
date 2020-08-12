@@ -28,9 +28,7 @@
 #include "RE_shader_ext.h"
 
 /**
- * Base class for all renderlayeroperations
- *
- * \todo: rename to operation.
+ * Base class for all texture operations
  */
 class TextureBaseOperation : public NodeOperation {
  private:

@@ -115,26 +115,27 @@ CCL_NAMESPACE_BEGIN
 
 /*Read pixel from image*/
 #define READ_IMG(src, coords, result) \
-  memcpy(&result, \
-         (src##_single ? \
-              src##_img.buffer : \
-              &src##_img.buffer[src##_img.brow_chs * coords.y + coords.x * src##_img.elem_chs]), \
-         src##_img.elem_bytes);
+  memcpy( \
+      &(result), \
+      (src##_single ? \
+           src##_img.buffer : \
+           &src##_img.buffer[src##_img.brow_chs * (coords).y + (coords).x * src##_img.elem_chs]), \
+      src##_img.elem_bytes);
 
 /* sampler must be a PixelsSampler, coords can be either float2 or int2, src_img may have any
  * number of channels*/
 #define SAMPLE_IMG(src, coords, sampler, result) \
   if (src##_single) { \
-    memcpy(&result, src##_img.buffer, src##_img.elem_bytes); \
+    memcpy(&(result), src##_img.buffer, src##_img.elem_bytes); \
   } \
   else { \
-    src##_img.sample((float *)&result, sampler, coords.x, coords.y); \
+    src##_img.sample((float *)&result, sampler, (coords).x, (coords).y); \
   }
 
 /* Write pixel to image */
 #define WRITE_IMG(dst, coords, pixel) \
-  memcpy(&dst##_img.buffer[dst##_img.brow_chs * coords.y + coords.x * dst##_img.elem_chs], \
-         &pixel, \
+  memcpy(&dst##_img.buffer[dst##_img.brow_chs * (coords).y + (coords).x * dst##_img.elem_chs], \
+         &(pixel), \
          dst##_img.elem_bytes);
 
 CCL_NAMESPACE_END

@@ -137,13 +137,13 @@ void CompositorOperation::execPixels(ExecutionManager &man)
     float *out = this->m_outputBuffer;
     float *z = this->m_depthBuffer;
     auto out_buffer = BufferUtil::createUnmanagedTmpBuffer(
-        COM_NUM_CHANNELS_COLOR, out, getWidth(), getHeight(), false);
+        out, getWidth(), getHeight(), COM_NUM_CHANNELS_COLOR, false);
     PixelsRect out_rect(out_buffer.get(), dst);
     PixelsRect img_rect = img_pixels->toRect(dst);
     PixelsUtil::copyEqualRects(out_rect, img_rect);
 
     auto z_buffer = BufferUtil::createUnmanagedTmpBuffer(
-        COM_NUM_CHANNELS_VALUE, z, getWidth(), getHeight(), false);
+        z, getWidth(), getHeight(), COM_NUM_CHANNELS_VALUE, false);
     PixelsRect z_rect(z_buffer.get(), dst);
     PixelsRect depth_rect = depth_pixels->toRect(dst);
     PixelsUtil::copyEqualRects(z_rect, depth_rect);

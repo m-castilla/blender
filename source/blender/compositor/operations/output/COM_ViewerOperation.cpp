@@ -99,13 +99,13 @@ void ViewerOperation::execPixels(ExecutionManager &man)
   }
   auto cpuWrite = [&](PixelsRect &dst, const WriteRectContext &ctx) {
     auto img_buf = BufferUtil::createUnmanagedTmpBuffer(
-        COM_NUM_CHANNELS_COLOR, m_outputBuffer, getWidth(), getHeight(), false);
+        m_outputBuffer, getWidth(), getHeight(), COM_NUM_CHANNELS_COLOR, false);
     PixelsRect img_dst(img_buf.get(), dst);
     PixelsRect color_rect = src_color->toRect(dst);
     PixelsUtil::copyEqualRects(img_dst, color_rect);
     if (m_doDepthBuffer) {
       auto dep_buf = BufferUtil::createUnmanagedTmpBuffer(
-          COM_NUM_CHANNELS_VALUE, m_depthBuffer, getWidth(), getHeight(), false);
+          m_depthBuffer, getWidth(), getHeight(), COM_NUM_CHANNELS_VALUE, false);
       PixelsRect depth_rect = src_depth->toRect(dst);
       PixelsRect dep_dst(dep_buf.get(), dst);
       PixelsUtil::copyEqualRects(dep_dst, depth_rect);

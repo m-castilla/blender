@@ -25,6 +25,7 @@
 #include "MEM_guardedalloc.h"
 #include <memory>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -52,8 +53,11 @@ class BufferManager {
   std::unordered_map<OpKey, ReadsOptimizer *> m_optimizers;
   std::unordered_map<OpKey, CacheBuffer *> m_cached_buffers;
   std::unique_ptr<BufferRecycler> m_recycler;
+  /* reads make by each operations*/
   std::unordered_map<OpKey, std::vector<ReaderReads *>> m_readers_reads;
-  bool m_readers_reads_gotten;
+  /* received reads by each operation (saved readers op_key)*/
+  std::unordered_map<OpKey, std::unordered_set<OpKey>> m_received_reads;
+  bool m_reads_gotten;
   size_t m_max_cache_bytes;
   size_t m_current_cache_bytes;
 
@@ -69,17 +73,19 @@ class BufferManager {
   void readOptimize(NodeOperation *op, NodeOperation *reader_op, ExecutionManager &man);
   /* returns as first param whether it is written and could be read. And second the read rect.
   If couldn't be read, writeSeek must be called first and then call back readSeek*/
-  BufferManager::ReadResult readSeek(NodeOperation *op,
-                                     NodeOperation *reader_op,
-                                     ExecutionManager &man);
+  BufferManager::ReadResult readSeek(NodeOperation *op, ExecutionManager &man);
   void writeSeek(NodeOperation *op,
                  ExecutionManager &man,
                  std::function<void(TmpRectBuilder &)> write_func);
   bool hasBufferCache(NodeOperation *op);
 
+  const std::unordered_map<OpKey, std::vector<ReaderReads *>> *getReadersReads(
+      ExecutionManager &man);
+
   ~BufferManager();
 
  private:
+  void assureReadsGotten(ExecutionManager &man);
   void checkCache();
   CacheBuffer *getCache(NodeOperation *op);
   TmpBuffer *getCustomBuffer(NodeOperation *op);

@@ -28,8 +28,6 @@
 
 /**
  * Base class for all renderlayeroperations
- *
- * \todo: rename to operation.
  */
 class RenderLayersProg : public NodeOperation {
  protected:

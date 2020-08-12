@@ -77,6 +77,7 @@ int ComputeManager::getMaxImgW()
 
 std::pair<std::string, std::string> ComputeManager::loadKernelsSource()
 {
+#if defined(COM_DEBUG) || defined(DEBUG)
   /* get dst path and kernel code tag */
   std::string kernels_filename, code_tag, include_filename;
   switch (getComputeType()) {
@@ -91,7 +92,6 @@ std::pair<std::string, std::string> ComputeManager::loadKernelsSource()
   }
   auto app_dir = BKE_appdir_program_dir();
   char *blender_main = strdup(app_dir);
-#if defined(COM_DEBUG) || defined(DEBUG)
   std::vector<std::string> compo_defmerged_paths = {"operations/"};
 
   /* find bin folder */
@@ -142,6 +142,7 @@ std::pair<std::string, std::string> ComputeManager::loadKernelsSource()
       return {datatoc_COM_OpenCLKernels_cl, ""};
     default:
       BLI_assert(!"Non implemented compositor compute type");
+      return {"", ""};
   };
 #endif
 }

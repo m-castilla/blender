@@ -32,7 +32,7 @@ class ExecutionManager;
 
 struct ReaderReads;
 typedef struct OpReads {
-  NodeOperation *op;
+  NodeOperation *readed_op;
 
   int current_compute_reads;
   int current_cpu_reads;

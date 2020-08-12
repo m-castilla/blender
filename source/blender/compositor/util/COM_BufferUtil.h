@@ -27,7 +27,25 @@ struct rcti;
 struct TmpBuffer;
 class ExecutionManager;
 
+#if defined(DEBUG) || defined(COM_DEBUG)
+#  define ASSERT_VALID_TMP_BUFFER(tmp_buffer, width, height, n_channels) \
+    BLI_assert(BufferUtil::calcBufferBytes((width), (height), (n_channels)) == \
+               (tmp_buffer)->getMinBufferBytes())
+#else
+#  define ASSERT_VALID_TMP_BUFFER(tmp_buffer, width, height, n_channels)
+#endif
+
 namespace BufferUtil {
+
+inline size_t calcBufferBytes(int width, int height, int n_channels)
+{
+  return (size_t)width * height * n_channels * sizeof(float);
+}
+inline size_t calcBufferRowBytes(int width, int n_channels)
+{
+  return (size_t)width * n_channels * sizeof(float);
+}
+
 inline bool hasBuffer(BufferType buf_type)
 {
   return buf_type != BufferType::NO_BUFFER_WITH_WRITE &&
@@ -39,10 +57,10 @@ inline bool hasWrite(BufferType buf_type)
   return buf_type != BufferType::NO_BUFFER_NO_WRITE && buf_type != BufferType::CUSTOM;
 }
 
-std::unique_ptr<TmpBuffer> createUnmanagedTmpBuffer(int n_channels,
-                                                    float *host_buffer,
+std::unique_ptr<TmpBuffer> createUnmanagedTmpBuffer(float *host_buffer,
                                                     int host_width,
                                                     int host_height,
+                                                    int n_channels,
                                                     bool is_host_buffer_filled);
 void deviceAlloc(TmpBuffer *dst,
                  MemoryAccess device_access,

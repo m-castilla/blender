@@ -348,8 +348,8 @@ ccl_device_inline float4 colorband_evaluate(const float input_factor,
                                             const int interp_type,
                                             const int hue_interp_type,
                                             const int color_mode,
-                                            const float4 *bands_colors,
-                                            const float *bands_pos)
+                                            ccl_constant float4 *bands_colors,
+                                            ccl_constant float *bands_pos)
 {
   int cbd1, cbd2, cbd0, cbd3;
   int ipotype;

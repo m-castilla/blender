@@ -170,8 +170,8 @@
   int write_offset_x = get_global_id(0), write_offset_y = get_global_id(1);
 
 #define COORDS_TO_OFFSET(coords) \
-  coords.x = dst##_start_x + write_offset_x; \
-  coords.y = dst##_start_y + write_offset_y;
+  (coords).x = dst##_start_x + write_offset_x; \
+  (coords).y = dst##_start_y + write_offset_y;
 
 /*src_img must be a image2d_t , coords must be int2*/
 #define READ_IMG(src, coords, result) \

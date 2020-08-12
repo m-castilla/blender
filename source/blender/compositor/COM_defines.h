@@ -162,7 +162,7 @@ enum class ComDebugLevel {
   NORMAL,  // without graphviz output
   FULL     // with graphviz output
 };
-const ComDebugLevel COM_DEBUG_LEVEL = ComDebugLevel::FULL;
+const ComDebugLevel COM_DEBUG_LEVEL = ComDebugLevel::NORMAL;
 
 // chunk order
 #define COM_ORDER_OF_CHUNKS_DEFAULT OrderOfChunks::CENTER_OUT

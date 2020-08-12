@@ -38,6 +38,10 @@ class ScaleOperation : public NodeOperation {
   {
     m_relative = relative;
   }
+  void setSampler(PixelsSampler sampler)
+  {
+    m_sampler = sampler;
+  }
 
  protected:
   virtual void execPixels(ExecutionManager &man) override;
@@ -66,6 +70,7 @@ class ScaleFixedSizeOperation : public NodeOperation {
   int m_scale_height;
 
  public:
+  ScaleFixedSizeOperation(int final_width, int final_height, PixelsSampler sampler);
   ScaleFixedSizeOperation(int final_width, int final_height);
 
   ResolutionType determineResolution(int resolution[2],
