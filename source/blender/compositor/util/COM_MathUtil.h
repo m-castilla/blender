@@ -19,6 +19,7 @@
 #ifndef __COM_MATHUTIL_H__
 #define __COM_MATHUTIL_H__
 
+#include <stddef.h> /* For size_t */
 #include <utility>
 namespace MathUtil {
 

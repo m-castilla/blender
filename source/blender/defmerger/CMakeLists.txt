@@ -51,7 +51,8 @@ endif()
 
 set(LIB_EXEC
   bf_defmerger
-  ${LIB}
+  bf_blenlib
+  cycles_util
   ${ZLIB_LIBRARY}
   ${OPENIMAGEIO_LIBRARIES}
   ${PLATFORM_LINKLIBS}
