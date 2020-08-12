@@ -16,22 +16,17 @@
  * Copyright 2020, Blender Foundation.
  */
 
-#ifndef __COM_DEFMERGER_H__
-#define __COM_DEFMERGER_H__
+#ifndef __COM_CYCLES_WRAPPER_H__
+#define __COM_CYCLES_WRAPPER_H__
 
 #include <string>
 
-namespace DefMerger {
+namespace CyclesWrapper {
 
-/* Calling defmerge from source code is mainly for debugging purpuses, for release builds consider
- * using the "defmerger" executable in your CMakeLists.txt*/
-std::string defmerge(const char *tag,
-                     const char *dst_path,
-                     const char *include_file,
-                     int n_merge_files,
-                     const char *merge_paths[],
-                     bool save_file = true);
+std::string path_source_replace_includes(const std::string &source,
+                                         const std::string &path,
+                                         const std::string &source_filename);
 
-}  // namespace DefMerger
+}  // namespace CyclesWrapper
 
 #endif
