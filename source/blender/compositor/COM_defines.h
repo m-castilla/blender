@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include <stddef.h> /* For size_t */
+
 /**
  * \brief Possible data types of images
  */
@@ -169,14 +171,12 @@ const ComDebugLevel COM_DEBUG_LEVEL = ComDebugLevel::NORMAL;
 
 #define COM_RULE_OF_THIRDS_DIVIDER 100.0f
 
-//
-//#if COM_CURRENT_THREADING_MODEL == COM_TM_NOTHREAD
-//#  if !(defined(DEBUG) || \
-//        defined(COM_DEBUG)) /* test this so we dont get warnings in debug builds */
-//#    warning COM_CURRENT_THREADING_MODEL COM_TM_NOTHREAD is activated. Use only for debugging.
-//#  endif
-//#elif COM_CURRENT_THREADING_MODEL == COM_TM_QUEUE
-///* do nothing - default */
-//#else
-//#  error COM_CURRENT_THREADING_MODEL No threading model selected
-//#endif
+#if COM_CURRENT_THREADING_MODEL == COM_TM_NOTHREAD
+#  if !(defined(DEBUG) || defined(COM_DEBUG))
+#    warning COM_CURRENT_THREADING_MODEL COM_TM_NOTHREAD is activated. Use only for debugging.
+#  endif
+#elif COM_CURRENT_THREADING_MODEL == COM_TM_QUEUE
+/* do nothing - default */
+#else
+#  error COM_CURRENT_THREADING_MODEL No threading model selected
+#endif
