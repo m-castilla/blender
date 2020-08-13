@@ -21,6 +21,7 @@
 #include "COM_NodeOperation.h"
 #include "DNA_node_types.h"
 #include <mutex>
+#include <condition_variable>
 
 /**
  * \brief temporarily storage during execution of Tonemap

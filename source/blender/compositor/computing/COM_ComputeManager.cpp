@@ -40,6 +40,7 @@
 ComputeManager::ComputeManager() : m_device(nullptr), m_is_initialized(false)
 {
 }
+ComputeManager::~ComputeManager(){}
 
 void ComputeManager::initialize()
 {
