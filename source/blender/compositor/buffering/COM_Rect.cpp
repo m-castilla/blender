@@ -90,8 +90,8 @@ PixelsImg PixelsRect::pixelsImgCustom(
   int elem_chs = n_channels;
   size_t elem_bytes = elem_chs * sizeof(float);
 
-  int brow_elems = buffer_row_bytes / elem_bytes;
-  int brow_chs = brow_elems * elem_chs;
+  size_t brow_elems = buffer_row_bytes / elem_bytes;
+  size_t brow_chs = brow_elems * elem_chs;
 
   float *buffer_y_start = is_single_elem ? buffer :
                                            buffer + (size_t)rect.ymin * brow_elems * n_channels;

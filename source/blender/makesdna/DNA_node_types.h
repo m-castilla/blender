@@ -446,15 +446,18 @@ typedef struct bNodeTree {
   short is_updating;
   /** Generic temporary flag for recursion check (DFS/BFS). */
   short done;
-  char _pad2[4];
-
-  /** Specific node type this tree is used for. */
-  int nodetype DNA_DEPRECATED;
 
   /** Quality setting when editing. */
   short edit_quality;
   /** Quality setting when rendering. */
   short render_quality;
+
+  /** Specific node type this tree is used for. */
+  int nodetype DNA_DEPRECATED;
+
+  /** Tile size for compositor engine. */
+  int chunksize DNA_DEPRECATED; /* Kept only for saving files compatibility with previous versions.
+                                   Not used anymore. */
 
   /* Setting for scaling down inputs. Compositor only*/
   float inputs_scale;

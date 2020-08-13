@@ -88,9 +88,9 @@ typedef struct PixelsImg {
   /* whole rect row bytes*/
   const size_t row_bytes;
   /* buffer row elements  */
-  const int brow_elems;
+  const size_t brow_elems;
   /* buffer row channels (buffer row elems * elem channels)*/
-  const int brow_chs;
+  const size_t brow_chs;
   /* buffer row bytes (buffer row elems * elem channels)*/
   const size_t brow_bytes;
 
