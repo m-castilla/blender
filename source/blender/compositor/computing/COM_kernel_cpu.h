@@ -113,30 +113,119 @@ CCL_NAMESPACE_BEGIN
   }
 /*END of CPU op loop*/
 
-/*Read pixel from image*/
 #define READ_IMG(src, coords, result) \
-  memcpy( \
-      &(result), \
-      (src##_single ? \
-           src##_img.buffer : \
-           &src##_img.buffer[src##_img.brow_chs * (coords).y + (coords).x * src##_img.elem_chs]), \
-      src##_img.elem_bytes);
+  if (src##_single) { \
+    switch (src##_img.elem_chs) { \
+      case 4: \
+        result.w = src##_img.buffer[3]; \
+      case 3: \
+        result.z = src##_img.buffer[2]; \
+        result.y = src##_img.buffer[1]; \
+      case 1: \
+        result.x = src##_img.buffer[0]; \
+        break; \
+      default: \
+        kernel_assert(!"invalid elem_chs"); \
+        break; \
+    } \
+  } \
+  else { \
+    switch (src##_img.elem_chs) { \
+      case 4: { \
+        size_t src##_offset_tmp__ = src##_img.brow_chs * (coords).y + (coords).x * (size_t)4; \
+        result.x = src##_img.buffer[src##_offset_tmp__]; \
+        result.y = src##_img.buffer[src##_offset_tmp__ + 1]; \
+        result.z = src##_img.buffer[src##_offset_tmp__ + 2]; \
+        result.w = src##_img.buffer[src##_offset_tmp__ + 3]; \
+        break; \
+      } \
+      case 3: { \
+        size_t src##_offset_tmp__ = src##_img.brow_chs * (coords).y + (coords).x * (size_t)3; \
+        result.x = src##_img.buffer[src##_offset_tmp__]; \
+        result.y = src##_img.buffer[src##_offset_tmp__ + 1]; \
+        result.z = src##_img.buffer[src##_offset_tmp__ + 2]; \
+        break; \
+      } \
+      case 1: \
+        result.x = \
+            src##_img.buffer[(size_t)src##_img.brow_chs * (coords).y + (size_t)(coords).x]; \
+        break; \
+      default: \
+        kernel_assert(!"invalid elem_chs"); \
+        break; \
+    } \
+  }
 
-/* sampler must be a PixelsSampler, coords can be either float2 or int2, src_img may have any
- * number of channels*/
+/*Read pixel from image*/
+//#define READ_IMG(src, coords, result) \
+//  memcpy( \
+//      &(result), \
+//      (src##_single ? \
+//           src##_img.buffer : \
+//           &src##_img.buffer[src##_img.brow_chs * (coords).y + (coords).x * src##_img.elem_chs]), \
+//      src##_img.elem_bytes);
+
 #define SAMPLE_IMG(src, coords, sampler, result) \
   if (src##_single) { \
-    memcpy(&(result), src##_img.buffer, src##_img.elem_bytes); \
+    switch (src##_img.elem_chs) { \
+      case 4: \
+        result.w = src##_img.buffer[3]; \
+      case 3: \
+        result.z = src##_img.buffer[2]; \
+        result.y = src##_img.buffer[1]; \
+      case 1: \
+        result.x = src##_img.buffer[0]; \
+        break; \
+      default: \
+        kernel_assert(!"invalid elem_chs"); \
+        break; \
+    } \
   } \
   else { \
     src##_img.sample((float *)&result, sampler, (coords).x, (coords).y); \
   }
 
-/* Write pixel to image */
+/* sampler must be a PixelsSampler, coords can be either float2 or int2, src_img may have any
+ * number of channels*/
+//#define SAMPLE_IMG(src, coords, sampler, result) \
+//  if (src##_single) { \
+//    memcpy(&(result), src##_img.buffer, src##_img.elem_bytes); \
+//  } \
+//  else { \
+//    src##_img.sample((float *)&result, sampler, (coords).x, (coords).y); \
+//  }
+
 #define WRITE_IMG(dst, coords, pixel) \
-  memcpy(&dst##_img.buffer[dst##_img.brow_chs * (coords).y + (coords).x * dst##_img.elem_chs], \
-         &(pixel), \
-         dst##_img.elem_bytes);
+  switch (dst##_img.elem_chs) { \
+    case 4: { \
+      size_t dst##_offset_tmp__ = dst##_img.brow_chs * (coords).y + (coords).x * (size_t)4; \
+      dst##_img.buffer[dst##_offset_tmp__] = pixel.x; \
+      dst##_img.buffer[dst##_offset_tmp__ + 1] = pixel.y; \
+      dst##_img.buffer[dst##_offset_tmp__ + 2] = pixel.z; \
+      dst##_img.buffer[dst##_offset_tmp__ + 3] = pixel.w; \
+      break; \
+    } \
+    case 3: { \
+      size_t dst##_offset_tmp__ = dst##_img.brow_chs * (coords).y + (coords).x * (size_t)3; \
+      dst##_img.buffer[dst##_offset_tmp__] = pixel.x; \
+      dst##_img.buffer[dst##_offset_tmp__ + 1] = pixel.y; \
+      dst##_img.buffer[dst##_offset_tmp__ + 2] = pixel.z; \
+      break; \
+    } \
+    case 1: \
+      dst##_img.buffer[dst##_img.brow_chs * (coords).y + (size_t)(coords).x] = pixel.x; \
+      break; \
+\
+    default: \
+      kernel_assert(!"invalid elem_chs"); \
+      break; \
+  }
+
+/* Write pixel to image */
+//#define WRITE_IMG(dst, coords, pixel) \
+//  memcpy(&dst##_img.buffer[dst##_img.brow_chs * (coords).y + (coords).x * dst##_img.elem_chs], \
+//         &(pixel), \
+//         dst##_img.elem_bytes);
 
 CCL_NAMESPACE_END
 
