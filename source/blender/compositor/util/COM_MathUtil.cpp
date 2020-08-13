@@ -19,6 +19,7 @@
 #include "COM_MathUtil.h"
 #include "BLI_assert.h"
 #include <algorithm>
+#include <math.h>
 
 namespace MathUtil {
 

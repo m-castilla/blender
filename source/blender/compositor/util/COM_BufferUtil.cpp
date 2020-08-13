@@ -17,7 +17,6 @@
  */
 
 #include "COM_BufferUtil.h"
-#include "BLI_Rect.h"
 #include "BLI_assert.h"
 #include "COM_ComputeDevice.h"
 #include "COM_ExecutionManager.h"

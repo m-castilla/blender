@@ -65,25 +65,16 @@
 #endif
 
 #if defined(__GNUC__) || defined(__clang__)
-#  if defined(__cplusplus)
-/* Some magic to be sure we don't have reference in the type. */
-template<typename T> static inline T decltype_helper(T x)
-{
-  return x;
-}
-#    define TYPEOF(x) decltype(decltype_helper(x))
-#  else
 #    define TYPEOF(x) typeof(x)
-#  endif
 #endif
 
-/* Causes warning:
- * incompatible types when assigning to type 'Foo' from type 'Bar'
- * ... the compiler optimizes away the temp var */
 #undef CHECK_TYPE
 #undef CHECK_TYPE_PAIR
 #undef CHECK_TYPE_INLINE
 
+/* Causes warning:
+ * incompatible types when assigning to type 'Foo' from type 'Bar'
+ * ... the compiler optimizes away the temp var */
 #if defined(__GNUC__) && !defined(__KERNEL_COMPUTE__)
 #  define CHECK_TYPE(var, type) \
     { \

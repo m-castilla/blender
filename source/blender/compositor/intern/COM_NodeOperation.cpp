@@ -24,6 +24,7 @@
 #include "COM_GlobalManager.h"
 #include "COM_MathUtil.h"
 #include "COM_Node.h"
+#include <typeinfo>
 
 using namespace std::placeholders;
 
@@ -50,7 +51,7 @@ NodeOperation::~NodeOperation()
 void NodeOperation::hashParams()
 {
   base_hash_params_called = true;
-  const type_info &typeInfo = typeid(*this);
+  const std::type_info &typeInfo = typeid(*this);
   m_op_hash = typeInfo.hash_code();
   hashParam(m_width);
   hashParam(m_height);
