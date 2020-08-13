@@ -30,7 +30,7 @@ struct float2 {
   __forceinline float &operator[](int i);
 };
 
-float2 make_float2(float x, float y);
+ccl_device_inline float2 make_float2(float x, float y);
 ccl_device_inline void print_float2(const char *label, const float2 &a);
 
 CCL_NAMESPACE_END

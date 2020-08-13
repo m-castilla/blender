@@ -38,8 +38,10 @@ class ComputeManager {
 
   virtual ComputeType getComputeType() = 0;
 
+virtual ~ComputeManager()=0;
  protected:
   ComputeManager();
+  
 
   /* Returns {source code, source path}*/
   std::pair<std::string, std::string> loadKernelsSource();

@@ -157,7 +157,7 @@ std::vector<ExecutionSystem::OpDeps> ExecutionSystem::getOperationsOrderedByNDep
     deps.push_back(entry.second);
   }
   std::sort(deps.begin(), deps.end(), OpDepsSorter());
-  return std::move(deps);
+  return deps;
 }
 
 int ExecutionSystem::getOperationNDepends(NodeOperation *op)

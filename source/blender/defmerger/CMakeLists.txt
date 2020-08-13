@@ -53,11 +53,14 @@ set(LIB_EXEC
   bf_defmerger
   bf_blenlib
   cycles_util
+  ${TBB_LIBRARIES}
   ${ZLIB_LIBRARY}
   ${OPENIMAGEIO_LIBRARIES}
   ${PLATFORM_LINKLIBS}
   ${BOOST_LIBRARIES}
 )
+
+add_definitions(${GL_DEFINITIONS})
 
 add_executable(defmerger ${SRC_EXEC})
 

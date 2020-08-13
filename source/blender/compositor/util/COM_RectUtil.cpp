@@ -17,7 +17,6 @@
  */
 
 #include "COM_RectUtil.h"
-#include "BLI_Rect.h"
 #include "BLI_assert.h"
 #include "COM_MathUtil.h"
 #include <algorithm>

@@ -16,7 +16,6 @@
  * Copyright 2011, Blender Foundation.
  */
 #include "COM_Pixels.h"
-#include "BLI_Rect.h"
 
 void PixelInterpolationForeach(std::function<void(PixelInterpolation)> func)
 {

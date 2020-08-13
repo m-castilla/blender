@@ -87,7 +87,7 @@ CompositorContext CompositorContext::build(const std::string &execution_id,
   context.setViewSettings(viewSettings);
   context.setDisplaySettings(displaySettings);
 
-  return std::move(context);
+  return context;
 }
 
 bool CompositorContext::isBreaked() const
