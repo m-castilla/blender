@@ -21,7 +21,7 @@
 #include "BLI_fileops_types.h"
 #include "BLI_path_util.h"
 #include "BLI_string.h"
-#include "COM_CyclesWrapper.h"
+#include "COM_IncludesResolver.h"
 #include <algorithm>
 #include <string.h>
 
@@ -57,7 +57,7 @@ std::string defmerge(const char *tag,
     char file_name[FILE_MAX];
     BLI_split_dir_part(dst_path, dir_path, FILE_MAX);
     BLI_split_file_part(dst_path, file_name, FILE_MAX);
-    result = CyclesWrapper::path_source_replace_includes(result, dir_path, file_name);
+    result = IncludesResolver::path_source_replace_includes(result, dir_path, file_name);
 /*Remove carriage returns which outputs file with double carriage on windows. They get probably
 added because cycles "path_source_replace_includes" reads source files as binaries instead of text.
 So windows new lines are not converted properly from \r\n  to \n on reading, so on writing it would
