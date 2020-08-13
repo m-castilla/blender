@@ -152,7 +152,7 @@ enum class DetermineResolutionMode { FromInput, FitOutput };
  * release.
  */
 #if defined(COM_DEBUG) || defined(DEBUG)
-#  define COM_CURRENT_THREADING_MODEL COM_TM_QUEUE
+#  define COM_CURRENT_THREADING_MODEL COM_TM_NOTHREAD
 #else
 #  define COM_CURRENT_THREADING_MODEL COM_TM_QUEUE
 #endif
@@ -164,7 +164,7 @@ enum class ComDebugLevel {
   NORMAL,  // without graphviz output
   FULL     // with graphviz output
 };
-const ComDebugLevel COM_DEBUG_LEVEL = ComDebugLevel::NORMAL;
+const ComDebugLevel COM_DEBUG_LEVEL = ComDebugLevel::FULL;
 
 // chunk order
 #define COM_ORDER_OF_CHUNKS_DEFAULT OrderOfChunks::CENTER_OUT
