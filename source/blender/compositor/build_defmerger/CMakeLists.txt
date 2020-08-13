@@ -21,7 +21,6 @@
 # DefMerger
 set(INC
   .
-  ../../../../intern/cycles
   ../../blenlib
 )
 
@@ -29,15 +28,14 @@ set(SYS
 )
 
 set(SRC
-  COM_CyclesWrapper.cpp
-  COM_CyclesWrapper.h
+  COM_IncludesResolver.cpp
+  COM_IncludesResolver.h
   COM_DefMerger.cpp
   COM_DefMerger.h
 )
 
 set(LIB
   bf_blenlib
-  cycles_util
 )
 
 blender_add_lib(bf_defmerger "${SRC}" "${INC}" "${SYS}" "${LIB}")

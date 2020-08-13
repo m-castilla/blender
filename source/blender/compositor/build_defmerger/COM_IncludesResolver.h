@@ -16,21 +16,17 @@
  * Copyright 2020, Blender Foundation.
  */
 
-#include "COM_CyclesWrapper.h"
+#ifndef __COM_INCLUDES_RESOLVER_H__
+#define __COM_INCLUDES_RESOLVER_H__
 
-#define CCL_NAMESPACE ccl
-#define CCL_NAMESPACE_BEGIN namespace CCL_NAMESPACE {
-#define CCL_NAMESPACE_END }
-#include "../../../intern/cycles/util/util_path.h"
-#undef CCL_NAMESPACE_BEGIN
-#undef CCL_NAMESPACE_END
+#include <string>
 
-namespace CyclesWrapper {
+namespace IncludesResolver {
+
 std::string path_source_replace_includes(const std::string &source,
                                          const std::string &path,
-                                         const std::string &source_filename)
-{
-  return CCL_NAMESPACE::path_source_replace_includes(source, path, source_filename);
-}
+                                         const std::string &source_filename);
 
-}  // namespace CyclesWrapper
+}  // namespace IncludesResolver
+
+#endif
