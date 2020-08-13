@@ -25,6 +25,8 @@
 #include <stdarg.h>
 #include <string>
 #include <vector>
+#include <sys/stat.h>
+#include <string.h>
 
 #if defined(_WIN32)
 #  define DIR_SEP '\\'
