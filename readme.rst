@@ -7,8 +7,8 @@ Currently I'm adapting all image operations to this new system. Only the followi
 - All input nodes (including Memory Cache)
 - All output nodes
 - All color nodes
+- All convert nodes
 - From distort group: Scale and Translate nodes
-- From convert group: Math node
 - All things from group and layout can be used too.
 
 These are some of the changes from the previous system (is explained from development point of view):
@@ -31,15 +31,22 @@ About implementing compatible CPU/GPU code for computing systems (OpenCL right n
 About vectorizing
 =================
 - In the previous system there were no vectoring at all.
-- In the new system there is the possibility to use vectors. Vectors types implementation taken from Cycles, just modified and added what was needed. Right now I'm  using sometimes vectors where possible for simplicity more than trying to improve performance, otherwise it would take a lot of time to get all the nodes available.
+- In the new system there is the possibility to use vectors. Vectors types implementation taken from Cycles, just modified and added what was needed. Right now I'm   mostly using float4 vectors where possible for simplicity more than trying to improve performance. Sometimes there may be algorithms, specially color related, that just need to operate on rgb channels and not alpha. As of now I simply use float4 even in these cases and later set alpha to original value, on CPUs with SSE2 this is ok and improve performance a lot, but for gpus which most of them work with 1 sized vectors I know I'm doing one operation more than needed (if not optimized by compiler), should not be a big issue as these algorithms are usually very simple and fast. 
 
-About new features
+New features
 ==================
-Only added these 3 new features which I think was really necessary:
+I added these features because I think it was really necessary:
 
 - **Any data sockets**: I created a new socket type (green), it just intends to indicate to the user the he can input any kind of image data (1 (gray),3 (purple) or 4 channels (yellow)) and it will be treated appropiately (not converted). For output sockets it means that it will be same type of data as the main input socket. An example is the Scale node which it doesn't matter how many channels the data has, you just want to resize image.
 - **Memory Cache Node**: This is a feature I've seen a lot of people asking for, basically you place this node anywhere in the tree and all the previous operations result is cached in Memory RAM, if you modify a node ahead of this node it calculates everything from this point only, don't need to recalculate what is behing the Memory Cache Node. If you modify a parameter or the tree structure behind the Memory Cache Node it will automatically recalculate everything is behind and cache it. Of course you can place as many of this nodes as you want and should work as expected, being aware that it uses your RAM. How much? The last operation -> (n_channels * width * height * 4) bytes. I could implement this thanks to the hashParams() method that all operations must implement. Here you call "hashParam" on every parameter of the operation that if changed would imply a change in the output result. It's very important to hash the right parameters otherwise the system wouldn't be updated correctly. This is not only used for Memory Cache Node, is used in general to uniquely identify the operation with its current parameters in current and between executions.
 - **Previews and Viewers are now cached**: This is again thanks to what I said before. I think it's necessary to do this so that compositor execution don't depend on the UI, because it may have glitches or just calling the compositor execution when it really don't need update as in fact happens. For example if you disconnect a socket by pressing without releasing and connect it again in the same place it calls the compositor to recalculate everything when it's not necessary. So now if such thing happens, the compositor operations hashes would be exactly the same so it just returns the cached previews and viewers very fast. The added memory consumption that this implies it's very little, only the current previews because they are deleted when next execution is called (I have to duplicated them yes). I can't keep previews that I pass back to the node system tree between executions because of an internal blender implementation that its shared with other parts of blender and I dont want to touch it. But the right behavior would be that they are not deleted between executions (only if the user closes the preview) and the compositor(c++ part) decides to update/delete them or not.
+- **Option to change Preview Quality**: Previously previews were always 140 pixels, if you zoomed in or increased the size of the nodes you would see very pixelated previews. I just added this option for anyone who might like to work seeing node previews, because by default is too low quality. Setting previews to high quality affects almost nothing to performance. Right now you may choose:
+
+   * Low Quality = 150 pixels (default)
+   * Medium Quality = 300 pixels
+   * High Quality = 450 pixels
+
+- **Option to Scale Inputs down**: This option is a fast way to reduce the size of inputs (images, renders, textures, masks, video clips...). It's very useful because most of the time user don't need them to be the original size, only when going to render the final result. So when working and testing different parameters in the nodes instead of zooming out the view, user should better try to scale down inputs with this option because it will increase the performance a lot and at the same time reduce the size of the output result. It affects to the resolution of all the nodes from the input to the output. But when using this option, user should always use relative sizes in the options of the nodes (for example scale node) because using absolute size values in the nodes and setting Inputs Scale option to 0.5 for example will obviously produce a very different result than inputs scale 1.0.
 
 Removed options from UI
 =======================
