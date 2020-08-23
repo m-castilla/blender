@@ -20,11 +20,10 @@
 #define __COM_RECT_H__
 
 #include "BLI_rect.h"
+#include "COM_Buffer.h"
 #include "COM_Pixels.h"
 #include "COM_defines.h"
-#include "MEM_guardedalloc.h"
 #include <functional>
-#include <tuple>
 
 typedef std::function<std::shared_ptr<PixelsRect>(const rcti)> TmpRectBuilder;
 struct TmpBuffer;
@@ -78,14 +77,20 @@ class PixelsRect : public rcti {
   {
     return ymax - ymin;
   }
+  inline int getElemChs()
+  {
+    return is_single_elem ? single_elem_chs : tmp_buffer->elem_chs;
+  }
 
   /* This methods are only called for host buffers */
   PixelsImg pixelsImg();
-  static PixelsImg pixelsImgCustom(float *buffer,
-                                   bool is_single_elem,
-                                   size_t buffer_row_bytes,
-                                   int n_channels,
-                                   const rcti &rect);
+
+  // Duplicates rect including its buffer. Caller is responsible of recycling the duplicated
+  // TmpBuffer. If the duplicated PixelsRect is single elem, this
+  // single elem will be copied to fill the entire rect and be converted to a full buffer. So this
+  // method ensures that the returned buffer is never a single elem buffer.
+  // It ensures that it has no added pitch (row_jump) too, because host recycles should not have it
+  PixelsRect duplicate();
   /* */
 
 #ifdef WITH_CXX_GUARDEDALLOC

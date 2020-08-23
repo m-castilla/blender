@@ -38,11 +38,13 @@ ccl_kernel brightnessOp(
 
   CPU_LOOP_START(dst);
 
-  COORDS_TO_OFFSET(dst_coords);
+  COPY_COORDS(color, dst_coords);
+  COPY_COORDS(bright, dst_coords);
+  COPY_COORDS(contrast, dst_coords);
 
-  READ_IMG(color, dst_coords, color_pix);
-  READ_IMG(bright, dst_coords, bright_pix);
-  READ_IMG(contrast, dst_coords, contrast_pix);
+  READ_IMG4(color, color_pix);
+  READ_IMG1(bright, bright_pix);
+  READ_IMG1(contrast, contrast_pix);
 
   bright_value = bright_pix.x / 100.0f;
   contrast_value = contrast_pix.x;
@@ -75,7 +77,7 @@ ccl_kernel brightnessOp(
     color_pix.w = alpha;
   }
 
-  WRITE_IMG(dst, dst_coords, color_pix);
+  WRITE_IMG4(dst, color_pix);
 
   CPU_LOOP_END
 }
@@ -110,7 +112,7 @@ void BrightnessOperation::execPixels(ExecutionManager &man)
   auto contrast = getInputOperation(2)->getPixels(this, man);
   bool premultiply = this->m_use_premultiply;
   std::function<void(PixelsRect &, const WriteRectContext &)> cpu_write = std::bind(
-      CCL_NAMESPACE::brightnessOp, _1, color, bright, contrast, premultiply);
+      CCL::brightnessOp, _1, color, bright, contrast, premultiply);
   computeWriteSeek(man, cpu_write, "brightnessOp", [&](ComputeKernel *kernel) {
     kernel->addReadImgArgs(*color);
     kernel->addReadImgArgs(*bright);

@@ -17,7 +17,6 @@
  */
 
 #include "COM_ZCombineOperation.h"
-#include "BLI_utildefines.h"
 #include "COM_ComputeKernel.h"
 #include "COM_kernel_cpu.h"
 
@@ -44,18 +43,21 @@ ccl_kernel zCombineOp(
 
   CPU_LOOP_START(dst);
 
-  COORDS_TO_OFFSET(dst_coords);
+  COPY_COORDS(color1, dst_coords);
+  COPY_COORDS(z1, dst_coords);
+  COPY_COORDS(color2, dst_coords);
+  COPY_COORDS(z2, dst_coords);
 
-  READ_IMG(color1, dst_coords, color1_pix);
-  READ_IMG(z1, dst_coords, z1_pix);
-  READ_IMG(color2, dst_coords, color2_pix);
-  READ_IMG(z2, dst_coords, z2_pix);
+  READ_IMG4(color1, color1_pix);
+  READ_IMG1(z1, z1_pix);
+  READ_IMG4(color2, color2_pix);
+  READ_IMG1(z2, z2_pix);
 
   if (z1_pix.x < z2_pix.x) {
-    WRITE_IMG(dst, dst_coords, color1_pix);
+    WRITE_IMG4(dst, color1_pix);
   }
   else {
-    WRITE_IMG(dst, dst_coords, color2_pix);
+    WRITE_IMG4(dst, color2_pix);
   }
 
   CPU_LOOP_END;
@@ -69,7 +71,7 @@ void ZCombineOperation::execPixels(ExecutionManager &man)
   auto z1 = getInputOperation(1)->getPixels(this, man);
   auto color2 = getInputOperation(2)->getPixels(this, man);
   auto z2 = getInputOperation(3)->getPixels(this, man);
-  auto cpu_write = std::bind(CCL_NAMESPACE::zCombineOp, _1, color1, z1, color2, z2);
+  auto cpu_write = std::bind(CCL::zCombineOp, _1, color1, z1, color2, z2);
   computeWriteSeek(man, cpu_write, "zCombineOp", [&](ComputeKernel *kernel) {
     kernel->addReadImgArgs(*color1);
     kernel->addReadImgArgs(*z1);
@@ -91,17 +93,20 @@ ccl_kernel zCombineAlphaOp(
 
   CPU_LOOP_START(dst);
 
-  COORDS_TO_OFFSET(dst_coords);
+  COPY_COORDS(color1, dst_coords);
+  COPY_COORDS(z1, dst_coords);
+  COPY_COORDS(color2, dst_coords);
+  COPY_COORDS(z2, dst_coords);
 
-  READ_IMG(z1, dst_coords, z1_pix);
-  READ_IMG(z2, dst_coords, z2_pix);
+  READ_IMG1(z1, z1_pix);
+  READ_IMG1(z2, z2_pix);
   if (z1_pix.x <= z2_pix.x) {
-    READ_IMG(color1, dst_coords, color1_pix);
-    READ_IMG(color2, dst_coords, color2_pix);
+    READ_IMG4(color1, color1_pix);
+    READ_IMG4(color2, color2_pix);
   }
   else {
-    READ_IMG(color1, dst_coords, color2_pix);
-    READ_IMG(color2, dst_coords, color1_pix);
+    READ_IMG4(color1, color2_pix);
+    READ_IMG4(color2, color1_pix);
   }
 
   const float alpha1 = color1_pix.w;
@@ -110,7 +115,7 @@ ccl_kernel zCombineAlphaOp(
   color2_pix = alpha1 * color1_pix + alpha1_inv * color2_pix;
   color2_pix.w = fmaxf(alpha1, alpha2);
 
-  WRITE_IMG(dst, dst_coords, color2_pix);
+  WRITE_IMG(dst, color2_pix);
 
   CPU_LOOP_END;
 }
@@ -123,7 +128,7 @@ void ZCombineAlphaOperation::execPixels(ExecutionManager &man)
   auto z1 = getInputOperation(1)->getPixels(this, man);
   auto color2 = getInputOperation(2)->getPixels(this, man);
   auto z2 = getInputOperation(3)->getPixels(this, man);
-  auto cpu_write = std::bind(CCL_NAMESPACE::zCombineAlphaOp, _1, color1, z1, color2, z2);
+  auto cpu_write = std::bind(CCL::zCombineAlphaOp, _1, color1, z1, color2, z2);
   computeWriteSeek(man, cpu_write, "zCombineAlphaOp", [&](ComputeKernel *kernel) {
     kernel->addReadImgArgs(*color1);
     kernel->addReadImgArgs(*z1);
@@ -152,15 +157,17 @@ ccl_kernel zCombineMaskOp(CCL_WRITE(dst), CCL_READ(mask), CCL_READ(color1), CCL_
 
   CPU_LOOP_START(dst);
 
-  COORDS_TO_OFFSET(dst_coords);
+  COPY_COORDS(color1, dst_coords);
+  COPY_COORDS(mask, dst_coords);
+  COPY_COORDS(color2, dst_coords);
 
-  READ_IMG(mask, dst_coords, mask_pix);
-  READ_IMG(color1, dst_coords, color1_pix);
-  READ_IMG(color2, dst_coords, color2_pix);
+  READ_IMG1(mask, mask_pix);
+  READ_IMG4(color1, color1_pix);
+  READ_IMG4(color2, color2_pix);
 
   color2_pix = interp_f4f4(color1_pix, color2_pix, 1.0f - mask_pix.x);
 
-  WRITE_IMG(dst, dst_coords, color2_pix);
+  WRITE_IMG4(dst, color2_pix);
 
   CPU_LOOP_END
 }
@@ -172,7 +179,7 @@ void ZCombineMaskOperation::execPixels(ExecutionManager &man)
   auto mask = getInputOperation(0)->getPixels(this, man);
   auto color1 = getInputOperation(1)->getPixels(this, man);
   auto color2 = getInputOperation(2)->getPixels(this, man);
-  auto cpu_write = std::bind(CCL_NAMESPACE::zCombineMaskOp, _1, mask, color1, color2);
+  auto cpu_write = std::bind(CCL::zCombineMaskOp, _1, mask, color1, color2);
   computeWriteSeek(man, cpu_write, "zCombineMaskOp", [&](ComputeKernel *kernel) {
     kernel->addReadImgArgs(*mask);
     kernel->addReadImgArgs(*color1);
@@ -191,11 +198,13 @@ ccl_kernel zCombineMaskAlphaOp(CCL_WRITE(dst), CCL_READ(mask), CCL_READ(color1),
 
   CPU_LOOP_START(dst);
 
-  COORDS_TO_OFFSET(dst_coords);
+  COPY_COORDS(color1, dst_coords);
+  COPY_COORDS(mask, dst_coords);
+  COPY_COORDS(color2, dst_coords);
 
-  READ_IMG(mask, dst_coords, mask_pix);
-  READ_IMG(color1, dst_coords, color1_pix);
-  READ_IMG(color2, dst_coords, color2_pix);
+  READ_IMG1(mask, mask_pix);
+  READ_IMG4(color1, color1_pix);
+  READ_IMG4(color2, color2_pix);
 
   const float alpha1 = color1_pix.w;
   const float alpha2 = color2_pix.w;
@@ -204,7 +213,7 @@ ccl_kernel zCombineMaskAlphaOp(CCL_WRITE(dst), CCL_READ(mask), CCL_READ(color1),
   color2_pix = mfac * color1_pix + fac * color2_pix;
   color2_pix.w = fmaxf(alpha1, alpha2);
 
-  WRITE_IMG(dst, dst_coords, color2_pix);
+  WRITE_IMG(dst, color2_pix);
 
   CPU_LOOP_END
 }
@@ -216,7 +225,7 @@ void ZCombineMaskAlphaOperation::execPixels(ExecutionManager &man)
   auto mask = getInputOperation(0)->getPixels(this, man);
   auto color1 = getInputOperation(1)->getPixels(this, man);
   auto color2 = getInputOperation(2)->getPixels(this, man);
-  auto cpu_write = std::bind(CCL_NAMESPACE::zCombineMaskAlphaOp, _1, mask, color1, color2);
+  auto cpu_write = std::bind(CCL::zCombineMaskAlphaOp, _1, mask, color1, color2);
   computeWriteSeek(man, cpu_write, "zCombineMaskAlphaOp", [&](ComputeKernel *kernel) {
     kernel->addReadImgArgs(*mask);
     kernel->addReadImgArgs(*color1);

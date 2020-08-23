@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include "BLI_math.h"
 #include "COM_CurveBaseOperation.h"
 #include "COM_NodeOperation.h"
 #include "DNA_color_types.h"

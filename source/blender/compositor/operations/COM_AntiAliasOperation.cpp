@@ -17,12 +17,18 @@
  */
 
 #include "COM_AntiAliasOperation.h"
+<<<<<<< HEAD
 #include "BLI_math.h"
 #include "BLI_utildefines.h"
 
 #include "MEM_guardedalloc.h"
 
 #include "RE_render_ext.h"
+=======
+#include "COM_ComputeKernel.h"
+
+#include "COM_kernel_cpu.h"
+>>>>>>> 350d60887b8... - Added filter nodes: Bilateral Blur, Blur, Bokeh Blur, Defocus, Denoise, Despeckle, Dilate/Erode, Directional Blur and Filter
 
 /* An implementation of the Scale3X edge-extrapolation algorithm.
  *
@@ -105,15 +111,22 @@ static int extrapolate9(float *E0,
     }
     return 1;
   }
+<<<<<<< HEAD
 
   return 0;
 
+=======
+  else {
+    return 0;
+  }
+>>>>>>> 350d60887b8... - Added filter nodes: Bilateral Blur, Blur, Bokeh Blur, Defocus, Denoise, Despeckle, Dilate/Erode, Directional Blur and Filter
 #undef PEQ
 #undef PCPY
 }
 
 AntiAliasOperation::AntiAliasOperation() : NodeOperation()
 {
+<<<<<<< HEAD
   this->addInputSocket(COM_DT_VALUE);
   this->addOutputSocket(COM_DT_VALUE);
   this->m_valueReader = NULL;
@@ -198,4 +211,74 @@ bool AntiAliasOperation::determineDependingAreaOfInterest(rcti *input,
 void *AntiAliasOperation::initializeTileData(rcti *rect)
 {
   return getInputOperation(0)->initializeTileData(rect);
+=======
+  this->addInputSocket(SocketType::VALUE);
+  this->addOutputSocket(SocketType::VALUE);
+}
+
+void AntiAliasOperation::execPixels(ExecutionManager &man)
+{
+  auto input = getInputOperation(0)->getPixels(this, man);
+  auto cpu_write = [&](PixelsRect &dst, const WriteRectContext &ctx) {
+    int input_w = input->getWidth();
+    int input_h = input->getHeight();
+    READ_DECL(input);
+    WRITE_DECL(dst);
+    CPU_LOOP_START(dst);
+
+    COPY_COORDS(input, dst_coords);
+
+    if (input_coords.y < 0 || input_coords.y >= input_h || input_coords.x < 0 ||
+        input_coords.x >= input_w) {
+      dst_img.buffer[dst_offset] = 0.0f;
+    }
+    else {
+      const float *row_curr = &input_img.buffer[input_coords.y * input_w];
+      if (input_coords.x == 0 || input_coords.x == input_w - 1 || input_coords.y == 0 ||
+          input_coords.y == input_h - 1) {
+        dst_img.buffer[dst_offset] = row_curr[input_coords.x];
+      }
+      else {
+        const float *row_prev = &input_img.buffer[(input_coords.y - 1) * input_w],
+                    *row_next = &input_img.buffer[(input_coords.y + 1) * input_w];
+        float ninepix[9];
+        if (extrapolate9(&ninepix[0],
+                         &ninepix[1],
+                         &ninepix[2],
+                         &ninepix[3],
+                         &ninepix[4],
+                         &ninepix[5],
+                         &ninepix[6],
+                         &ninepix[7],
+                         &ninepix[8],
+                         &row_prev[input_coords.x - 1],
+                         &row_prev[input_coords.x],
+                         &row_prev[input_coords.x + 1],
+                         &row_curr[input_coords.x - 1],
+                         &row_curr[input_coords.x],
+                         &row_curr[input_coords.x + 1],
+                         &row_next[input_coords.x - 1],
+                         &row_next[input_coords.x],
+                         &row_next[input_coords.x + 1])) {
+          /* Some rounding magic to so make weighting correct with the
+           * original coefficients.
+           */
+          unsigned char result = ((3 * ninepix[0] + 5 * ninepix[1] + 3 * ninepix[2] +
+                                   5 * ninepix[3] + 6 * ninepix[4] + 5 * ninepix[5] +
+                                   3 * ninepix[6] + 5 * ninepix[7] + 3 * ninepix[8]) *
+                                      255.0f +
+                                  19.0f) /
+                                 38.0f;
+          dst_img.buffer[dst_offset] = result / 255.0f;
+        }
+        else {
+          dst_img.buffer[dst_offset] = row_curr[input_coords.x];
+        }
+      }
+    }
+
+    CPU_LOOP_END;
+  };
+  cpuWriteSeek(man, cpu_write);
+>>>>>>> 350d60887b8... - Added filter nodes: Bilateral Blur, Blur, Bokeh Blur, Defocus, Denoise, Despeckle, Dilate/Erode, Directional Blur and Filter
 }

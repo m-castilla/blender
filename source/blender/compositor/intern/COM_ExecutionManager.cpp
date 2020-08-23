@@ -44,6 +44,10 @@ OperationMode ExecutionManager::getOperationMode() const
 {
   return m_op_mode;
 }
+bool ExecutionManager::canExecPixels() const
+{
+  return !m_context.isBreaked() && m_op_mode == OperationMode::Exec;
+}
 
 void ExecutionManager::execWriteJob(
     NodeOperation *op,

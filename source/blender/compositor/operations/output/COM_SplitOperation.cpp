@@ -53,7 +53,7 @@ void SplitOperation::execPixels(ExecutionManager &man)
                                     this->m_splitPercentage * this->getHeight() / 100.0f;
 
   auto cpuWrite = [&](PixelsRect &dst, const WriteRectContext &ctx) {
-    rcti pix1_r = (rcti)dst, pix2_r = (rcti)dst;
+    auto pix1_r = dst, pix2_r = dst;
     if (m_xSplit) {
       pix1_r.xmin = std::max(dst.xmin, split_mark);
       pix2_r.xmax = std::min(dst.xmax, split_mark);

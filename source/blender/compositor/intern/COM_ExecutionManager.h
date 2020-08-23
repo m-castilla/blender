@@ -46,6 +46,7 @@ class ExecutionManager {
 
   void setOperationMode(OperationMode mode);
   OperationMode getOperationMode() const;
+  bool canExecPixels() const;
 
   void execWriteJob(NodeOperation *op,
                     TmpRectBuilder &write_rect_builder,

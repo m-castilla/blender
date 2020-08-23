@@ -60,12 +60,12 @@ ccl_kernel colorRampOp(CCL_WRITE(dst),
 
   CPU_LOOP_START(dst);
 
-  COORDS_TO_OFFSET(dst_coords);
+  COPY_COORDS(factor, dst_coords);
 
-  READ_IMG(factor, dst_coords, factor_pix);
+  READ_IMG(factor, factor_pix);
   float4 result = colorband_evaluate(
       factor_pix.x, n_bands, interp_type, hue_interp_type, color_mode, bands_colors, bands_pos);
-  WRITE_IMG(dst, dst_coords, result);
+  WRITE_IMG(dst, result);
 
   CPU_LOOP_END
 }
@@ -77,16 +77,16 @@ void ColorRampOperation::execPixels(ExecutionManager &man)
   auto factor = getInputOperation(0)->getPixels(this, man);
 
   int n_bands = m_colorBand->tot;
-  CCL_NAMESPACE::float4 *colors = new CCL_NAMESPACE::float4[n_bands];
+  CCL::float4 *colors = new CCL::float4[n_bands];
   float *positions = new float[n_bands];
   for (int i = 0; i < n_bands; i++) {
     CBData band = m_colorBand->data[i];
-    colors[i] = CCL_NAMESPACE::make_float4(band.r, band.g, band.b, band.a);
+    colors[i] = CCL::make_float4(band.r, band.g, band.b, band.a);
     positions[i] = band.pos;
   }
 
   std::function<void(PixelsRect &, const WriteRectContext &)> cpu_write = std::bind(
-      CCL_NAMESPACE::colorRampOp,
+      CCL::colorRampOp,
       _1,
       factor,
       n_bands,
@@ -101,7 +101,7 @@ void ColorRampOperation::execPixels(ExecutionManager &man)
     kernel->addIntArg(m_colorBand->ipotype);
     kernel->addIntArg(m_colorBand->ipotype_hue);
     kernel->addIntArg(m_colorBand->color_mode);
-    kernel->addFloat4CArrayArg((float *)colors, n_bands);
+    kernel->addFloat4CArrayArg(colors, n_bands);
     kernel->addFloatCArrayArg(positions, n_bands);
   });
 

@@ -21,8 +21,9 @@
 #include "BLI_utildefines.h"
 
 #include "COM_ExecutionManager.h"
-#include "COM_kernel_cpu_nocompat.h"
 #include "IMB_colormanagement.h"
+
+#include "COM_kernel_cpu.h"
 
 CalculateStandardDeviationOperation::CalculateStandardDeviationOperation()
     : CalculateMeanOperation(false)
@@ -40,7 +41,7 @@ void CalculateStandardDeviationOperation::execPixels(ExecutionManager &man)
   BLI_assert(((CalculateMeanOperation *)mean_op)->getSetting() == m_setting);
   auto src_color = color_op->getPixels(this, man);
   auto src_mean = mean_op->getPixels(this, man);
-  if (man.getOperationMode() == OperationMode::Exec && !isBreaked()) {
+  if (man.canExecPixels()) {
     BLI_assert(src_mean->is_single_elem);
     float mean = *src_mean->single_elem;
     int setting = m_setting;
@@ -48,11 +49,11 @@ void CalculateStandardDeviationOperation::execPixels(ExecutionManager &man)
       float sum = 0.0f;
       int n_pixels = 0;
       float value = 0.0f;
-      CPU_READ_DECL(src_color);
-      CCL_NAMESPACE::float4 src_color_pix;
-      CPU_WRITE_DECL(dst);
+      READ_DECL(src_color);
+      WRITE_DECL(dst);
       CPU_LOOP_START(dst);
-      CPU_READ_OFFSET(src_color, dst);
+      COPY_COORDS(src_color, dst_coords);
+
       if (src_color_img.buffer[src_color_offset + 3] > 0.0f) {
         switch (setting) {
             // combined channels luminance sum
@@ -73,8 +74,8 @@ void CalculateStandardDeviationOperation::execPixels(ExecutionManager &man)
             break;
             // yuv luminance sum
           case 5:
-            CPU_READ_IMG(src_color, src_color_offset, src_color_pix);
-            src_color_pix = CCL_NAMESPACE::rgb_to_yuv(src_color_pix);
+            READ_IMG(src_color, src_color_pix);
+            src_color_pix = CCL::rgb_to_yuv(src_color_pix);
             value = src_color_pix.x;
             break;
           default:

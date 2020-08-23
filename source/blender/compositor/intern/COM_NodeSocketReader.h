@@ -20,11 +20,11 @@
 #define __COM_NODESOCKETREADER_H__
 
 #include "BLI_assert.h"
-#include "COM_defines.h"
 #include "DNA_node_types.h"
-
 #include <string>
 #include <vector>
+
+#include "COM_defines.h"
 
 class NodeOperationInput;
 class NodeOperationOutput;
@@ -44,6 +44,7 @@ class NodeSocketReader {
   typedef std::vector<NodeOperationOutput *> Outputs;
 
  protected:
+  bool m_initialized;
   int m_width;
   int m_height;
   Inputs m_inputs;

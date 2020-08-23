@@ -125,7 +125,15 @@ ccl_device_inline int4 max(int4 a, int4 b)
 
 ccl_device_inline int4 clamp(const int4 &a, const int4 &mn, const int4 &mx)
 {
+
+#  if defined(__KERNEL_SSE__) && defined(__KERNEL_SSE41__)
   return min(max(a, mn), mx);
+#  else
+  return make_int4(clamp(a.x, mn.x, mx.x),
+                   clamp(a.y, mn.y, mx.y),
+                   clamp(a.z, mn.z, mx.z),
+                   clamp(a.w, mn.w, mx.w));
+#  endif
 }
 
 ccl_device_inline int4 select(const int4 &mask, const int4 &a, const int4 &b)

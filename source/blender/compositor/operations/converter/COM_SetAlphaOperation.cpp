@@ -38,12 +38,13 @@ ccl_kernel setAlphaOp(CCL_WRITE(dst), CCL_READ(color), CCL_READ(alpha))
 
   CPU_LOOP_START(dst);
 
-  COORDS_TO_OFFSET(dst_coords);
+  COPY_COORDS(color, dst_coords);
+  COPY_COORDS(alpha, dst_coords);
 
-  READ_IMG(color, dst_coords, color_pix);
-  READ_IMG(alpha, dst_coords, alpha_pix);
+  READ_IMG4(color, color_pix);
+  READ_IMG1(alpha, alpha_pix);
   color_pix.w = alpha_pix.x;
-  WRITE_IMG(dst, dst_coords, color_pix);
+  WRITE_IMG4(dst, color_pix);
 
   CPU_LOOP_END
 }
@@ -55,7 +56,7 @@ void SetAlphaOperation::execPixels(ExecutionManager &man)
   auto color = getInputOperation(0)->getPixels(this, man);
   auto alpha = getInputOperation(1)->getPixels(this, man);
   std::function<void(PixelsRect &, const WriteRectContext &)> cpu_write = std::bind(
-      CCL_NAMESPACE::setAlphaOp, _1, color, alpha);
+      CCL::setAlphaOp, _1, color, alpha);
   computeWriteSeek(man, cpu_write, "setAlphaOp", [&](ComputeKernel *kernel) {
     kernel->addReadImgArgs(*color);
     kernel->addReadImgArgs(*alpha);

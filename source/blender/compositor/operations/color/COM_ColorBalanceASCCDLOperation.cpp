@@ -23,7 +23,8 @@
 #include "COM_kernel_cpu.h"
 
 using namespace std::placeholders;
-ColorBalanceASCCDLOperation::ColorBalanceASCCDLOperation() : NodeOperation()
+ColorBalanceASCCDLOperation::ColorBalanceASCCDLOperation()
+    : NodeOperation(), m_offset(), m_power(), m_slope()
 {
   this->addInputSocket(SocketType::VALUE);
   this->addInputSocket(SocketType::COLOR);
@@ -49,18 +50,20 @@ ccl_kernel colorBalanceASCCDLOp(
 
   CPU_LOOP_START(dst);
 
-  COORDS_TO_OFFSET(dst_coords);
+  COPY_COORDS(value, dst_coords);
+  COPY_COORDS(color, dst_coords);
 
-  READ_IMG(value, dst_coords, value_pix);
-  READ_IMG(color, dst_coords, color_pix);
+  READ_IMG1(value, value_pix);
+  READ_IMG4(color, color_pix);
 
   const float fac = fminf(1.0f, value_pix.x);
   const float mfac = 1.0f - fac;
 
   float4 res = mfac * color_pix + fac * colorbalance_cdl(color_pix, offset, power, slope);
   res.w = color_pix.w;
+  res.w = color_pix.w;
 
-  WRITE_IMG(dst, dst_coords, res);
+  WRITE_IMG4(dst, res);
 
   CPU_LOOP_END
 }
@@ -72,16 +75,15 @@ void ColorBalanceASCCDLOperation::execPixels(ExecutionManager &man)
 {
   auto value = getInputOperation(0)->getPixels(this, man);
   auto color = getInputOperation(1)->getPixels(this, man);
-  auto offset = CCL_NAMESPACE::make_float4(m_offset[0], m_offset[1], m_offset[2], 1.0f);
-  auto power = CCL_NAMESPACE::make_float4(m_power[0], m_power[1], m_power[2], 1.0f);
-  auto slope = CCL_NAMESPACE::make_float4(m_slope[0], m_slope[1], m_slope[2], 1.0f);
-  auto cpu_write = std::bind(
-      CCL_NAMESPACE::colorBalanceASCCDLOp, _1, value, color, offset, power, slope);
+  auto offset = CCL::make_float4(m_offset[0], m_offset[1], m_offset[2], 1.0f);
+  auto power = CCL::make_float4(m_power[0], m_power[1], m_power[2], 1.0f);
+  auto slope = CCL::make_float4(m_slope[0], m_slope[1], m_slope[2], 1.0f);
+  auto cpu_write = std::bind(CCL::colorBalanceASCCDLOp, _1, value, color, offset, power, slope);
   computeWriteSeek(man, cpu_write, "colorBalanceASCCDLOp", [&](ComputeKernel *kernel) {
     kernel->addReadImgArgs(*value);
     kernel->addReadImgArgs(*color);
-    kernel->addFloat4Arg((float *)&offset);
-    kernel->addFloat4Arg((float *)&power);
-    kernel->addFloat4Arg((float *)&slope);
+    kernel->addFloat4Arg(offset);
+    kernel->addFloat4Arg(power);
+    kernel->addFloat4Arg(slope);
   });
 }

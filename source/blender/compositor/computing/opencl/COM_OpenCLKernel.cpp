@@ -20,6 +20,7 @@
 #include "BLI_assert.h"
 #include "BLI_rect.h"
 #include "COM_Buffer.h"
+#include "COM_BufferUtil.h"
 #include "COM_ComputeManager.h"
 #include "COM_OpenCLDevice.h"
 #include "COM_OpenCLManager.h"
@@ -53,6 +54,7 @@ OpenCLKernel::OpenCLKernel(OpenCLManager &man,
 
 OpenCLKernel::~OpenCLKernel()
 {
+  clearArgs();
   m_man.printIfError(clReleaseKernel(m_cl_kernel));
 }
 
@@ -99,6 +101,7 @@ void OpenCLKernel::initialize()
 
 void OpenCLKernel::reset(ComputeDevice *new_device)
 {
+  clearArgs();
   m_device = (OpenCLDevice *)new_device;
   m_args_count = 0;
   m_initialized = false;
@@ -112,23 +115,40 @@ void OpenCLKernel::clearArgs()
     clReleaseMemObject(buffer);
   }
   m_args_buffers.clear();
+
+  for (void *data : m_args_datas) {
+    MEM_freeN(data);
+  }
+  m_args_datas.clear();
 }
 
 void OpenCLKernel::addReadImgArgs(PixelsRect &pixels)
 {
-  cl_mem cl_img = pixels.is_single_elem ? m_device->getEmptyImg() :
+  cl_mem cl_img = pixels.is_single_elem ? m_device->getOneElemImg() :
                                           (cl_mem)pixels.tmp_buffer->device.buffer;
+  if (pixels.is_single_elem) {
+    size_t origin[3] = {0, 0, 0};
+    size_t size[3] = {1, 1, 1};
+    size_t row_bytes = BufferUtil::calcBufferRowBytes(1, pixels.getElemChs());
+    m_man.printIfError(clEnqueueWriteImage(m_device->getQueue(),
+                                           cl_img,
+                                           CL_FALSE,
+                                           origin,
+                                           size,
+                                           row_bytes,
+                                           0,
+                                           pixels.single_elem,
+                                           0,
+                                           NULL,
+                                           NULL));
+    m_work_enqueued = true;
+  }
+
   m_man.printIfError(clSetKernelArg(m_cl_kernel, m_args_count, sizeof(cl_mem), &cl_img));
   m_args_count++;
 
-  addBoolArg(pixels.is_single_elem);
-
-  // add single element argument
-  float float4_elem[4] = {0.0f, 0.0f, 0.0f, 0.0f};
-  if (pixels.is_single_elem) {
-    memcpy(&float4_elem, pixels.single_elem, pixels.single_elem_chs * sizeof(float));
-  }
-  addFloat4Arg(float4_elem);
+  int is_not_single = !pixels.is_single_elem;
+  addIntArg(is_not_single);
 }
 
 std::function<void(int, int)> OpenCLKernel::addWriteImgArgs(PixelsRect &pixels)
@@ -170,6 +190,17 @@ void OpenCLKernel::addBoolArg(bool value)
 {
   addIntArg(value);
 }
+
+void OpenCLKernel::addInt3Arg(const CCL::int3 &value)
+{
+  cl_int3 cl_i3;
+  cl_i3.x = value.x;
+  cl_i3.y = value.y;
+  cl_i3.z = value.z;
+  m_man.printIfError(clSetKernelArg(m_cl_kernel, m_args_count, sizeof(cl_int3), &cl_i3));
+  m_args_count++;
+}
+
 void OpenCLKernel::addFloatArg(float value)
 {
   cl_float cfloat = (cl_float)value;
@@ -177,38 +208,53 @@ void OpenCLKernel::addFloatArg(float value)
   m_args_count++;
 }
 
-void OpenCLKernel::addFloat2Arg(float *value)
+void OpenCLKernel::addFloat2Arg(const CCL::float2 &value)
 {
-  cl_float2 *cfloat2 = (cl_float2 *)value;
-  m_man.printIfError(clSetKernelArg(m_cl_kernel, m_args_count, sizeof(cl_float2), cfloat2));
+  cl_float2 cl_f2;
+  cl_f2.x = value.x;
+  cl_f2.y = value.y;
+  m_man.printIfError(clSetKernelArg(m_cl_kernel, m_args_count, sizeof(cl_float2), &cl_f2));
   m_args_count++;
 }
 
-void OpenCLKernel::addFloat3Arg(float *value)
+void OpenCLKernel::addFloat3Arg(const CCL::float3 &value)
 {
-  cl_float3 *cfloat3 = (cl_float3 *)value;
-  m_man.printIfError(clSetKernelArg(m_cl_kernel, m_args_count, sizeof(cl_float3), cfloat3));
+  cl_float3 cl_f3;
+  cl_f3.x = value.x;
+  cl_f3.y = value.y;
+  cl_f3.z = value.z;
+  m_man.printIfError(clSetKernelArg(m_cl_kernel, m_args_count, sizeof(cl_float3), &cl_f3));
   m_args_count++;
 }
 
-void OpenCLKernel::addFloat4Arg(float *value)
+void OpenCLKernel::addFloat4Arg(const CCL::float4 &value)
 {
-  cl_float4 *cfloat4 = (cl_float4 *)value;
-  m_man.printIfError(clSetKernelArg(m_cl_kernel, m_args_count, sizeof(cl_float4), cfloat4));
+  cl_float4 cl_f4;
+  cl_f4.x = value.x;
+  cl_f4.y = value.y;
+  cl_f4.z = value.z;
+  cl_f4.w = value.w;
+  m_man.printIfError(clSetKernelArg(m_cl_kernel, m_args_count, sizeof(cl_float4), &cl_f4));
   m_args_count++;
 }
 
-cl_mem OpenCLKernel::addReadOnlyBufferArg(void *data, size_t data_size)
+cl_mem OpenCLKernel::addReadOnlyBufferArg(void *data, int elem_size, int n_elems)
 {
   cl_int error;
+
+  // if there is no data, just fill buffer with 1 elem as size (some OpenCL implementations
+  // fail when passing null to kernels)
+  size_t data_size = data ? elem_size * n_elems : elem_size;
   cl_mem buffer = clCreateBuffer(
       m_platform.getContext(), CL_MEM_READ_ONLY, data_size, NULL, &error);
+  m_man.printIfError(error);
   m_args_buffers.push_back(buffer);
 
-  m_man.printIfError(error);
-  m_man.printIfError(clEnqueueWriteBuffer(
-      m_device->getQueue(), buffer, CL_FALSE, 0, data_size, data, 0, NULL, NULL));
-  m_work_enqueued = true;
+  if (data) {
+    m_man.printIfError(clEnqueueWriteBuffer(
+        m_device->getQueue(), buffer, CL_FALSE, 0, data_size, data, 0, NULL, NULL));
+    m_work_enqueued = true;
+  }
 
   m_man.printIfError(clSetKernelArg(m_cl_kernel, m_args_count, sizeof(cl_mem), &buffer));
   m_args_count++;
@@ -216,17 +262,51 @@ cl_mem OpenCLKernel::addReadOnlyBufferArg(void *data, size_t data_size)
   return buffer;
 }
 
-void OpenCLKernel::addFloat4CArrayArg(float *f4_array, int n_elems)
+void OpenCLKernel::addFloat3CArrayArg(const CCL::float3 *float3_array, int n_elems)
 {
-  addReadOnlyBufferArg(f4_array, sizeof(cl_float4) * n_elems);
+  cl_float3 *data = nullptr;
+  size_t elem_size = sizeof(cl_float3);
+  if (float3_array) {
+    size_t data_size = elem_size * n_elems;
+    data = (cl_float3 *)MEM_mallocN(data_size, __func__);
+    for (int i = 0; i < n_elems; i++) {
+      const CCL::float3 &f3 = float3_array[i];
+      cl_float4 &cl_f3 = data[i];
+      cl_f3.x = f3.x;
+      cl_f3.y = f3.y;
+      cl_f3.z = f3.z;
+    }
+    m_args_datas.push_back(data);
+  }
+  addReadOnlyBufferArg(data, elem_size, n_elems);
+}
+
+void OpenCLKernel::addFloat4CArrayArg(const CCL::float4 *float4_array, int n_elems)
+{
+  cl_float4 *data = nullptr;
+  size_t elem_size = sizeof(cl_float4);
+  if (float4_array) {
+    size_t data_size = elem_size * n_elems;
+    data = (cl_float4 *)MEM_mallocN(data_size, __func__);
+    for (int i = 0; i < n_elems; i++) {
+      const CCL::float4 &f4 = float4_array[i];
+      cl_float4 &cl_f4 = data[i];
+      cl_f4.x = f4.x;
+      cl_f4.y = f4.y;
+      cl_f4.z = f4.z;
+      cl_f4.w = f4.w;
+    }
+    m_args_datas.push_back(data);
+  }
+  addReadOnlyBufferArg(data, elem_size, n_elems);
 }
 
 void OpenCLKernel::addIntCArrayArg(int *int_array, int n_elems)
 {
-  addReadOnlyBufferArg(int_array, sizeof(cl_int) * n_elems);
+  addReadOnlyBufferArg(int_array, sizeof(cl_int), n_elems);
 }
 
 void OpenCLKernel::addFloatCArrayArg(float *float_array, int n_elems)
 {
-  addReadOnlyBufferArg(float_array, sizeof(cl_float) * n_elems);
+  addReadOnlyBufferArg(float_array, sizeof(cl_float), n_elems);
 }

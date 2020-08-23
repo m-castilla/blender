@@ -17,16 +17,14 @@
  */
 
 #include "COM_MovieClipOperation.h"
-
-#include "BLI_listbase.h"
-
 #include "BKE_image.h"
 #include "BKE_movieclip.h"
-
+#include "BLI_listbase.h"
 #include "COM_BufferUtil.h"
 #include "COM_PixelsUtil.h"
-#include "COM_kernel_cpu_nocompat.h"
 #include "IMB_imbuf.h"
+
+#include "COM_kernel_cpu.h"
 
 using namespace std::placeholders;
 
@@ -61,6 +59,7 @@ void MovieClipBaseOperation::initExecution()
       }
     }
   }
+  NodeOperation::initExecution();
 }
 
 void MovieClipBaseOperation::deinitExecution()
@@ -118,7 +117,7 @@ void MovieClipOperation::execPixels(ExecutionManager &man)
   auto cpuWrite = [&](PixelsRect &dst, const WriteRectContext &ctx) {
     if (m_movieClipBuffer == nullptr ||
         (m_movieClipBuffer->rect == nullptr && m_movieClipBuffer->rect_float == nullptr)) {
-      PixelsUtil::setRectElem(dst, (float *)&CCL_NAMESPACE::TRANSPARENT_PIXEL);
+      PixelsUtil::setRectElem(dst, (float *)&CCL::TRANSPARENT_PIXEL);
     }
     else if (m_movieClipBuffer->rect_float) {
       int n_channels = m_movieClipBuffer->channels == 0 ? 4 : m_movieClipBuffer->channels;
@@ -131,17 +130,15 @@ void MovieClipOperation::execPixels(ExecutionManager &man)
       int n_channels = m_movieClipBuffer->channels == 0 ? 4 : m_movieClipBuffer->channels;
       unsigned char *uchar_buf = (unsigned char *)m_movieClipBuffer->rect;
 
-      CPU_WRITE_DECL(dst);
+      WRITE_DECL(dst);
       CPU_LOOP_START(dst);
 
-      CPU_WRITE_OFFSET(dst);
-      int src_offset = m_width * (dst_start_y + write_offset_y) * n_channels +
-                       (dst_start_x + write_offset_x) * n_channels;
+      int src_offset = m_width * dst_coords.y * n_channels + dst_coords.x * n_channels;
 
-      CCL_NAMESPACE::float4 src_pixel = CCL_NAMESPACE::make_float4(uchar_buf[src_offset],
-                                                                   uchar_buf[src_offset + 1],
-                                                                   uchar_buf[src_offset + 2],
-                                                                   uchar_buf[src_offset + 3]);
+      CCL::float4 src_pixel = CCL::make_float4(uchar_buf[src_offset],
+                                               uchar_buf[src_offset + 1],
+                                               uchar_buf[src_offset + 2],
+                                               uchar_buf[src_offset + 3]);
       // normalize
       src_pixel /= 255.0f;
       memcpy(&dst_img.buffer[dst_offset], &src_pixel, sizeof(float) * 4);
@@ -180,12 +177,10 @@ void MovieClipAlphaOperation::execPixels(ExecutionManager &man)
       int n_channels = m_movieClipBuffer->channels == 0 ? 4 : m_movieClipBuffer->channels;
       unsigned char *uchar_buf = (unsigned char *)m_movieClipBuffer->rect;
 
-      CPU_WRITE_DECL(dst);
+      WRITE_DECL(dst);
       CPU_LOOP_START(dst);
 
-      CPU_WRITE_OFFSET(dst);
-      int src_offset = m_width * (dst_start_y + write_offset_y) * n_channels +
-                       (dst_start_x + write_offset_x) * n_channels;
+      int src_offset = m_width * dst_coords.y * n_channels + dst_coords.x * n_channels;
 
       // normalize to float
       dst_img.buffer[dst_offset] = uchar_buf[src_offset + 3] / 255.0f;

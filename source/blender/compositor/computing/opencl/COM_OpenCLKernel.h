@@ -19,6 +19,7 @@ class OpenCLKernel : public ComputeKernel {
   OpenCLManager &m_man;
   OpenCLDevice *m_device;
   std::vector<cl_mem> m_args_buffers;
+  std::vector<void *> m_args_datas;
 
   cl_kernel m_cl_kernel;
   size_t m_max_group_size;
@@ -50,17 +51,21 @@ class OpenCLKernel : public ComputeKernel {
   // returns a function to set the write image offset args. Call with (offset_x, offset_y)
   std::function<void(int, int)> addWriteImgArgs(PixelsRect &pixels);
   void addSamplerArg(PixelsSampler &sampler) override;
-  void addIntArg(int value) override;
   void addBoolArg(bool value) override;
+  void addIntArg(int value) override;
+  void addInt3Arg(const CCL::int3 &value) override;
   void addFloatArg(float value) override;
-  void addFloat2Arg(float *value) override;
-  void addFloat3Arg(float *value) override;
-  void addFloat4Arg(float *value) override;
-  // Add float4 constant (read only) array
-  void addFloat4CArrayArg(float *float4_array, int n_elems);
-  // Add int constant (read only) array
-  void addIntCArrayArg(int *int_array, int n_elems);
-  void addFloatCArrayArg(float *float_array, int n_elems);
+  void addFloat2Arg(const CCL::float2 &value) override;
+  void addFloat3Arg(const CCL::float3 &value) override;
+  void addFloat4Arg(const CCL::float4 &value) override;
+
+  /* Constant read only array args */
+  void addFloat3CArrayArg(const CCL::float3 *float3_array, int n_elems) override;
+  void addFloat4CArrayArg(const CCL::float4 *float4_array, int n_elems) override;
+  void addIntCArrayArg(int *int_array, int n_elems) override;
+  void addFloatCArrayArg(float *float_array, int n_elems) override;
+  /* */
+
   bool hasWorkEnqueued() override
   {
     return m_work_enqueued;
@@ -77,7 +82,7 @@ class OpenCLKernel : public ComputeKernel {
   }
 
  private:
-  cl_mem addReadOnlyBufferArg(void *data, size_t data_size);
+  cl_mem addReadOnlyBufferArg(void *data, int elem_size, int n_elems);
 };
 
 #endif

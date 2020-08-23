@@ -19,7 +19,6 @@
 #include "COM_MemoryCacheOperation.h"
 #include "BLI_assert.h"
 #include "COM_PixelsUtil.h"
-#include "COM_kernel_cpu_nocompat.h"
 
 MemoryCacheOperation::MemoryCacheOperation() : NodeOperation()
 {

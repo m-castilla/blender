@@ -17,9 +17,11 @@
  */
 
 #include "COM_BokehImageOperation.h"
+#include "BLI_math.h"
 #include "COM_ComputeKernel.h"
-#include "COM_kernel_cpu.h"
 #include "DNA_node_types.h"
+
+#include "COM_kernel_cpu.h"
 
 using namespace std::placeholders;
 
@@ -56,6 +58,7 @@ void BokehImageOperation::initExecution()
   while (this->m_flapRadAdd > (float)M_PI) {
     this->m_flapRadAdd -= (float)(M_PI * 2.0);
   }
+  NodeOperation::initExecution();
 }
 
 void BokehImageOperation::deinitExecution()
@@ -94,7 +97,7 @@ ccl_kernel bokehImageOp(CCL_WRITE(dst),
   WRITE_DECL(dst);
 
   CPU_LOOP_START(dst);
-  COORDS_TO_OFFSET(dst_coords);
+
   float2 dst_coordsf = make_float2(dst_coords.x, dst_coords.y);
 
   float insideBokehMax = bokehIsInside(
@@ -119,7 +122,7 @@ ccl_kernel bokehImageOp(CCL_WRITE(dst),
                           make_float4(insideBokehMax, insideBokehMed, insideBokehMin, alpha) :
                           make_float4(insideBokehMin, insideBokehMed, insideBokehMax, alpha);
 
-  WRITE_IMG(dst, dst_coords, result_pix);
+  WRITE_IMG(dst, result_pix);
 
   CPU_LOOP_END
 }
@@ -129,9 +132,9 @@ CCL_NAMESPACE_END
 
 void BokehImageOperation::execPixels(ExecutionManager &man)
 {
-  CCL_NAMESPACE::float2 center = CCL_NAMESPACE::make_float2(m_center[0], m_center[1]);
+  CCL::float2 center = CCL::make_float2(m_center[0], m_center[1]);
   std::function<void(PixelsRect &, const WriteRectContext &)> cpu_write = std::bind(
-      CCL_NAMESPACE::bokehImageOp,
+      CCL::bokehImageOp,
       _1,
       center,
       m_circularDistance,
@@ -141,7 +144,7 @@ void BokehImageOperation::execPixels(ExecutionManager &man)
       m_data->rounding,
       m_data->catadioptric);
   computeWriteSeek(man, cpu_write, "bokehImageOp", [&](ComputeKernel *kernel) {
-    kernel->addFloat2Arg((float *)&center);
+    kernel->addFloat2Arg(center);
     kernel->addFloatArg(m_circularDistance);
     kernel->addFloatArg(m_data->lensshift);
     kernel->addFloatArg(m_flapRad);

@@ -22,17 +22,11 @@
 
 class TranslateOperation : public NodeOperation {
  private:
-  NodeOperation *m_inputOperation;
-  NodeOperation *m_inputXOperation;
-  NodeOperation *m_inputYOperation;
   int m_wrappingType;
   bool m_relative;
 
  public:
   TranslateOperation();
-
-  void initExecution();
-  void deinitExecution();
 
   void setWrapping(int wrapping_type)
   {

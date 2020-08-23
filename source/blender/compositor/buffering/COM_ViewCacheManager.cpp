@@ -21,6 +21,7 @@
 #include "COM_PreviewOperation.h"
 #include "COM_ViewerOperation.h"
 #include "DNA_image_types.h"
+#include "MEM_guardedalloc.h"
 
 void ViewCacheManager::initialize()
 {

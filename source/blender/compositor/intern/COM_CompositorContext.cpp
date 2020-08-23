@@ -19,6 +19,7 @@
 #include "COM_CompositorContext.h"
 #include "BKE_node.h"
 #include "BKE_scene.h"
+#include "BLI_assert.h"
 #include "COM_defines.h"
 #include <stdio.h>
 

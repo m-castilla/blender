@@ -16,10 +16,11 @@
  * Copyright 2011, Blender Foundation.
  */
 
+#include "IMB_colormanagement.h"
+
 #include "COM_ColorCorrectionOperation.h"
 #include "COM_ComputeKernel.h"
-#include "COM_kernel_cpu_nocompat.h"
-#include "IMB_colormanagement.h"
+#include "COM_kernel_cpu.h"
 
 ColorCorrectionOperation::ColorCorrectionOperation() : NodeOperation()
 {
@@ -29,6 +30,7 @@ ColorCorrectionOperation::ColorCorrectionOperation() : NodeOperation()
   this->m_redChannelEnabled = true;
   this->m_greenChannelEnabled = true;
   this->m_blueChannelEnabled = true;
+  m_data = nullptr;
 }
 void ColorCorrectionOperation::hashParams()
 {
@@ -70,16 +72,16 @@ void ColorCorrectionOperation::execPixels(ExecutionManager &man)
   auto color = this->getInputOperation(0)->getPixels(this, man);
   auto mask = this->getInputOperation(1)->getPixels(this, man);
   auto cpu_write = [&](PixelsRect &dst, const WriteRectContext &ctx) {
-    CPU_READ_DECL(color);
-    CPU_READ_DECL(mask);
-    CPU_WRITE_DECL(dst);
+    READ_DECL(color);
+    READ_DECL(mask);
+    WRITE_DECL(dst);
     CPU_LOOP_START(dst);
 
-    CCL_NAMESPACE::int2 coords = {dst_start_x + write_offset_x, dst_start_y + write_offset_y};
-    CCL_NAMESPACE::float4 color_pix;
-    CCL_NAMESPACE::float4 mask_pix;
-    READ_IMG(color, coords, color_pix);
-    READ_IMG(mask, coords, mask_pix);
+    COPY_COORDS(mask, dst_coords);
+    COPY_COORDS(color, dst_coords);
+
+    READ_IMG4(color, color_pix);
+    READ_IMG1(mask, mask_pix);
 
     const float level = (color_pix.x + color_pix.y + color_pix.z) / 3.0f;
     float contrast = this->m_data->master.contrast;
@@ -134,11 +136,11 @@ void ColorCorrectionOperation::execPixels(ExecutionManager &man)
     float invgamma = 1.0f / gamma;
     float luma = IMB_colormanagement_get_luminance((float *)&color_pix);
 
-    CCL_NAMESPACE::float4 res = (luma + saturation * (color_pix - luma));
+    CCL::float4 res = (luma + saturation * (color_pix - luma));
     res = 0.5f + ((res - 0.5f) * contrast);
 
     /* Check for negative values to avoid nan. */
-    CCL_NAMESPACE::float4 pow_base = res * gain + lift;
+    CCL::float4 pow_base = res * gain + lift;
     res.x = (pow_base.x < 0.0f) ? res.x : powf(pow_base.x, invgamma);
     res.y = (pow_base.y < 0.0f) ? res.y : powf(pow_base.y, invgamma);
     res.z = (pow_base.z < 0.0f) ? res.z : powf(pow_base.z, invgamma);
@@ -157,7 +159,7 @@ void ColorCorrectionOperation::execPixels(ExecutionManager &man)
     }
     res.w = color_pix.w;
 
-    WRITE_IMG(dst, coords, res);
+    WRITE_IMG4(dst, res);
 
     CPU_LOOP_END;
   };

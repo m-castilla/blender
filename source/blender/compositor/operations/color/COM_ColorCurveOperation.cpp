@@ -19,7 +19,7 @@
 #include "COM_ColorCurveOperation.h"
 #include "BKE_colortools.h"
 #include "COM_ComputeKernel.h"
-#include "COM_kernel_cpu_nocompat.h"
+#include "COM_kernel_cpu.h"
 
 ColorCurveOperation::ColorCurveOperation() : CurveBaseOperation()
 {
@@ -45,18 +45,18 @@ void ColorCurveOperation::execPixels(ExecutionManager &man)
   auto white = getInputOperation(3)->getPixels(this, man);
 
   auto cpu_write = [&](PixelsRect &dst, const WriteRectContext &ctx) {
-    CPU_READ_DECL(color);
-    CPU_READ_DECL(factor);
-    CPU_READ_DECL(black);
-    CPU_READ_DECL(white);
-    CPU_WRITE_DECL(dst);
+    READ_DECL(color);
+    READ_DECL(factor);
+    READ_DECL(black);
+    READ_DECL(white);
+    WRITE_DECL(dst);
+
     CPU_LOOP_START(dst);
 
-    CPU_READ_OFFSET(color, dst);
-    CPU_READ_OFFSET(factor, dst);
-    CPU_READ_OFFSET(black, dst);
-    CPU_READ_OFFSET(white, dst);
-    CPU_WRITE_OFFSET(dst);
+    COPY_COORDS(color, dst_coords);
+    COPY_COORDS(factor, dst_coords);
+    COPY_COORDS(black, dst_coords);
+    COPY_COORDS(white, dst_coords);
 
     CurveMapping *cumap = this->m_curveMapping;
 
@@ -131,14 +131,14 @@ void ConstantLevelColorCurveOperation::execPixels(ExecutionManager &man)
   auto color = getInputOperation(1)->getPixels(this, man);
 
   auto cpu_write = [&](PixelsRect &dst, const WriteRectContext &ctx) {
-    CPU_READ_DECL(color);
-    CPU_READ_DECL(factor);
-    CPU_WRITE_DECL(dst);
+    READ_DECL(color);
+    READ_DECL(factor);
+    WRITE_DECL(dst);
+
     CPU_LOOP_START(dst);
 
-    CPU_READ_OFFSET(color, dst);
-    CPU_READ_OFFSET(factor, dst);
-    CPU_WRITE_OFFSET(dst);
+    COPY_COORDS(color, dst_coords);
+    COPY_COORDS(factor, dst_coords);
 
     float output[4];
     float fac = factor_img.buffer[factor_offset];

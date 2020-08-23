@@ -166,11 +166,6 @@ enum class ComDebugLevel {
 };
 const ComDebugLevel COM_DEBUG_LEVEL = ComDebugLevel::FULL;
 
-// chunk order
-#define COM_ORDER_OF_CHUNKS_DEFAULT OrderOfChunks::CENTER_OUT
-
-#define COM_RULE_OF_THIRDS_DIVIDER 100.0f
-
 #if COM_CURRENT_THREADING_MODEL == COM_TM_NOTHREAD
 #  if !(defined(DEBUG) || defined(COM_DEBUG))
 #    warning COM_CURRENT_THREADING_MODEL COM_TM_NOTHREAD is activated. Use only for debugging.

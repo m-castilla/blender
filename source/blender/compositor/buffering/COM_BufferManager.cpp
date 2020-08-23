@@ -215,7 +215,7 @@ BufferManager::ReadResult BufferManager::readSeek(NodeOperation *op, ExecutionMa
           reportWriteCompleted(op, reads, man);
         }
         reads->tmp_buffer = m_recycler->createTmpBuffer(
-            false, op->getWidth(), op->getHeight(), op->getOutputNChannels());
+            false, nullptr, op->getWidth(), op->getHeight(), op->getOutputNChannels());
         reads->tmp_buffer->host = cache->host;
         ASSERT_VALID_TMP_BUFFER(reads->tmp_buffer, cache->width, cache->height, cache->elem_chs);
       }
@@ -264,7 +264,7 @@ void BufferManager::writeSeek(NodeOperation *op,
         // returned on readSeek
         BLI_assert(cache->host.state == HostMemoryState::CLEARED);
         reads->tmp_buffer = m_recycler->createTmpBuffer(
-            false, op->getWidth(), op->getHeight(), op->getOutputNChannels());
+            false, nullptr, op->getWidth(), op->getHeight(), op->getOutputNChannels());
         reads->tmp_buffer->host = cache->host;
       }
       else if (op->getBufferType() == BufferType::CUSTOM) {
@@ -281,8 +281,7 @@ void BufferManager::writeSeek(NodeOperation *op,
         is_write_computed = false;
       }
       else if (op->getBufferType() == BufferType::TEMPORAL) {
-        reads->tmp_buffer = m_recycler->createTmpBuffer(
-            true, op->getWidth(), op->getHeight(), op->getOutputNChannels());
+        reads->tmp_buffer = m_recycler->createTmpBuffer(true);
       }
       else {
         BLI_assert(!"Non implemented BufferType");
@@ -339,7 +338,9 @@ bool BufferManager::prepareForWrite(bool is_write_computed, OpReads *reads)
 {
   bool work_enqueued = false;
   auto buf = reads->tmp_buffer;
-
+  int width = reads->readed_op->getWidth();
+  int height = reads->readed_op->getHeight();
+  int elem_chs = reads->readed_op->getOutputNChannels();
   bool host_ready = buf->host.state == HostMemoryState::CLEARED ||
                     buf->host.state == HostMemoryState::FILLED;
   bool host_empty = buf->host.state == HostMemoryState::NONE;
@@ -349,18 +350,12 @@ bool BufferManager::prepareForWrite(bool is_write_computed, OpReads *reads)
   if (reads->total_compute_reads > 0 && reads->total_cpu_reads > 0) {
     if (!host_ready) {
       BLI_assert(host_empty);
-      work_enqueued |= m_recycler->takeRecycle(BufferRecycleType::HOST_CLEAR,
-                                               buf,
-                                               reads->readed_op->getWidth(),
-                                               reads->readed_op->getHeight(),
-                                               buf->elem_chs);
+      work_enqueued |= m_recycler->takeRecycle(
+          BufferRecycleType::HOST_CLEAR, buf, width, height, elem_chs);
     }
     BLI_assert(device_empty);
-    work_enqueued |= m_recycler->takeRecycle(BufferRecycleType::DEVICE_CLEAR,
-                                             buf,
-                                             reads->readed_op->getWidth(),
-                                             reads->readed_op->getHeight(),
-                                             buf->elem_chs);
+    work_enqueued |= m_recycler->takeRecycle(
+        BufferRecycleType::DEVICE_CLEAR, buf, width, height, elem_chs);
   }
   else {
     BufferRecycleType recycle_type = BufferRecycleType::HOST_CLEAR;
@@ -403,11 +398,7 @@ bool BufferManager::prepareForWrite(bool is_write_computed, OpReads *reads)
     }
 
     if (take_recycle) {
-      work_enqueued |= m_recycler->takeRecycle(recycle_type,
-                                               buf,
-                                               reads->readed_op->getWidth(),
-                                               reads->readed_op->getHeight(),
-                                               buf->elem_chs);
+      work_enqueued |= m_recycler->takeRecycle(recycle_type, buf, width, height, elem_chs);
     }
   }
   return work_enqueued;
@@ -490,6 +481,9 @@ CacheBuffer *BufferManager::getCache(NodeOperation *op)
     cache->elem_chs = n_channels;
     HostBuffer &host = cache->host;
     host.brow_bytes = BufferUtil::calcBufferRowBytes(cache->width, n_channels);
+    host.bwidth = op->getWidth();
+    host.bheight = op->getHeight();
+    host.belem_chs = n_channels;
     host.buffer = BufferUtil::hostAlloc(cache->width, cache->height, n_channels);
     host.state = HostMemoryState::CLEARED;
 
@@ -514,11 +508,14 @@ bool BufferManager::hasBufferCache(NodeOperation *op)
 TmpBuffer *BufferManager::getCustomBuffer(NodeOperation *op)
 {
   BLI_assert(op->getBufferType() == BufferType::CUSTOM);
+  int elem_chs = op->getOutputNChannels();
   TmpBuffer *custom = m_recycler->createTmpBuffer(
-      false, op->getWidth(), op->getHeight(), op->getOutputNChannels());
+      false, op->getCustomBuffer(), op->getWidth(), op->getHeight(), elem_chs);
   HostBuffer &host = custom->host;
   host.brow_bytes = BufferUtil::calcBufferRowBytes(custom->width, custom->elem_chs);
-  host.buffer = op->getCustomBuffer();
+  host.bwidth = op->getWidth();
+  host.bheight = op->getHeight();
+  host.belem_chs = elem_chs;
   host.state = HostMemoryState::FILLED;
   if (host.buffer == nullptr) {
     BLI_assert(!"Operator is BufferType::CUSTOM but no custom buffer found. You may have forgotten to implement getCustomBuffer() or set the wrong BufferType");

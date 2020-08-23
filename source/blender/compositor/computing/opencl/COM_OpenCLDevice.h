@@ -41,7 +41,7 @@ class OpenCLDevice : public ComputeDevice {
   int m_max_img_w;
   int m_max_img_h;
   cl_image_format m_supported_formats;
-  cl_mem m_empty_img;
+  cl_mem m_one_elem_img;
 
  public:
   OpenCLDevice(OpenCLManager &man, OpenCLPlatform &platform, cl_device_id device_id);
@@ -99,7 +99,7 @@ class OpenCLDevice : public ComputeDevice {
     return m_max_img_h;
   }
 
-  cl_mem getEmptyImg();
+  cl_mem getOneElemImg();
   cl_command_queue getQueue()
   {
     return m_queue;

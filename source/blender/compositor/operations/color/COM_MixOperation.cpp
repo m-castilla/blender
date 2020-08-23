@@ -51,6 +51,7 @@ void MixBaseOperation::initExecution()
   this->m_input_value = this->getInputOperation(0);
   this->m_input_color1 = this->getInputOperation(1);
   this->m_input_color2 = this->getInputOperation(2);
+  NodeOperation::initExecution();
 }
 
 // void MixBaseOperation::determineResolution(int resolution[2], int preferredResolution[2])
@@ -82,6 +83,7 @@ void MixBaseOperation::deinitExecution()
   this->m_input_value = NULL;
   this->m_input_color1 = NULL;
   this->m_input_color2 = NULL;
+  NodeOperation::deinitExecution();
 }
 
 #define OPENCL_CODE
@@ -97,11 +99,13 @@ ccl_kernel mixBaseOp(
 
   CPU_LOOP_START(dst);
 
-  COORDS_TO_OFFSET(dst_coords);
+  COPY_COORDS(value, dst_coords);
+  COPY_COORDS(color1, dst_coords);
+  COPY_COORDS(color2, dst_coords);
 
-  READ_IMG(value, dst_coords, value_pix);
-  READ_IMG(color1, dst_coords, color1_pix);
-  READ_IMG(color2, dst_coords, color2_pix);
+  READ_IMG1(value, value_pix);
+  READ_IMG4(color1, color1_pix);
+  READ_IMG4(color2, color2_pix);
 
   if (alpha_multiply) {
     value_pix.x *= color2_pix.w;
@@ -109,7 +113,7 @@ ccl_kernel mixBaseOp(
   color2_pix = (1.0f - value_pix.x) * color1_pix + value_pix.x * color2_pix;
   color2_pix.w = color1_pix.w;
 
-  WRITE_IMG(dst, dst_coords, color2_pix);
+  WRITE_IMG(dst, color2_pix);
 
   CPU_LOOP_END
 }
@@ -122,8 +126,7 @@ void MixBaseOperation::execPixels(ExecutionManager &man)
   auto value = m_input_value->getPixels(this, man);
   auto color1 = m_input_color1->getPixels(this, man);
   auto color2 = m_input_color2->getPixels(this, man);
-  auto cpu_write = std::bind(
-      CCL_NAMESPACE::mixBaseOp, _1, value, color1, color2, m_valueAlphaMultiply);
+  auto cpu_write = std::bind(CCL::mixBaseOp, _1, value, color1, color2, m_valueAlphaMultiply);
   computeWriteSeek(man, cpu_write, "mixBaseOp", [&](ComputeKernel *kernel) {
     kernel->addReadImgArgs(*value);
     kernel->addReadImgArgs(*color1);
@@ -149,11 +152,13 @@ ccl_kernel mixAddOp(CCL_WRITE(dst),
 
   CPU_LOOP_START(dst);
 
-  COORDS_TO_OFFSET(dst_coords);
+  COPY_COORDS(value, dst_coords);
+  COPY_COORDS(color1, dst_coords);
+  COPY_COORDS(color2, dst_coords);
 
-  READ_IMG(value, dst_coords, value_pix);
-  READ_IMG(color1, dst_coords, color1_pix);
-  READ_IMG(color2, dst_coords, color2_pix);
+  READ_IMG1(value, value_pix);
+  READ_IMG4(color1, color1_pix);
+  READ_IMG4(color2, color2_pix);
 
   if (alpha_multiply) {
     value_pix.x *= color2_pix.w;
@@ -164,7 +169,7 @@ ccl_kernel mixAddOp(CCL_WRITE(dst),
     color2_pix = clamp_to_normal_f4(color2_pix);
   }
 
-  WRITE_IMG(dst, dst_coords, color2_pix);
+  WRITE_IMG(dst, color2_pix);
 
   CPU_LOOP_END
 }
@@ -178,7 +183,7 @@ void MixAddOperation::execPixels(ExecutionManager &man)
   auto color1 = m_input_color1->getPixels(this, man);
   auto color2 = m_input_color2->getPixels(this, man);
   auto cpu_write = std::bind(
-      CCL_NAMESPACE::mixAddOp, _1, value, color1, color2, m_valueAlphaMultiply, m_useClamp);
+      CCL::mixAddOp, _1, value, color1, color2, m_valueAlphaMultiply, m_useClamp);
   computeWriteSeek(man, cpu_write, "mixAddOp", [&](ComputeKernel *kernel) {
     kernel->addReadImgArgs(*value);
     kernel->addReadImgArgs(*color1);
@@ -205,11 +210,13 @@ ccl_kernel mixBlendOp(CCL_WRITE(dst),
 
   CPU_LOOP_START(dst);
 
-  COORDS_TO_OFFSET(dst_coords);
+  COPY_COORDS(value, dst_coords);
+  COPY_COORDS(color1, dst_coords);
+  COPY_COORDS(color2, dst_coords);
 
-  READ_IMG(value, dst_coords, value_pix);
-  READ_IMG(color1, dst_coords, color1_pix);
-  READ_IMG(color2, dst_coords, color2_pix);
+  READ_IMG1(value, value_pix);
+  READ_IMG4(color1, color1_pix);
+  READ_IMG4(color2, color2_pix);
 
   if (alpha_multiply) {
     value_pix.x *= color2_pix.w;
@@ -220,7 +227,7 @@ ccl_kernel mixBlendOp(CCL_WRITE(dst),
     color2_pix = clamp_to_normal_f4(color2_pix);
   }
 
-  WRITE_IMG(dst, dst_coords, color2_pix);
+  WRITE_IMG(dst, color2_pix);
 
   CPU_LOOP_END
 }
@@ -234,7 +241,7 @@ void MixBlendOperation::execPixels(ExecutionManager &man)
   auto color1 = m_input_color1->getPixels(this, man);
   auto color2 = m_input_color2->getPixels(this, man);
   auto cpu_write = std::bind(
-      CCL_NAMESPACE::mixBlendOp, _1, value, color1, color2, m_valueAlphaMultiply, m_useClamp);
+      CCL::mixBlendOp, _1, value, color1, color2, m_valueAlphaMultiply, m_useClamp);
   computeWriteSeek(man, cpu_write, "mixBlendOp", [&](ComputeKernel *kernel) {
     kernel->addReadImgArgs(*value);
     kernel->addReadImgArgs(*color1);
@@ -257,11 +264,13 @@ ccl_kernel mixColorBurnOp(
 
   CPU_LOOP_START(dst);
 
-  COORDS_TO_OFFSET(dst_coords);
+  COPY_COORDS(value, dst_coords);
+  COPY_COORDS(color1, dst_coords);
+  COPY_COORDS(color2, dst_coords);
 
-  READ_IMG(value, dst_coords, value_pix);
-  READ_IMG(color1, dst_coords, color1_pix);
-  READ_IMG(color2, dst_coords, color2_pix);
+  READ_IMG1(value, value_pix);
+  READ_IMG4(color1, color1_pix);
+  READ_IMG4(color2, color2_pix);
 
   if (alpha_multiply) {
     value_pix.x *= color2_pix.w;
@@ -275,7 +284,7 @@ ccl_kernel mixColorBurnOp(
   color2_pix.w = color1_pix.w;
   color2_pix = clamp_to_normal_f4(color2_pix);
 
-  WRITE_IMG(dst, dst_coords, color2_pix);
+  WRITE_IMG(dst, color2_pix);
 
   CPU_LOOP_END
 }
@@ -288,8 +297,7 @@ void MixColorBurnOperation::execPixels(ExecutionManager &man)
   auto value = m_input_value->getPixels(this, man);
   auto color1 = m_input_color1->getPixels(this, man);
   auto color2 = m_input_color2->getPixels(this, man);
-  auto cpu_write = std::bind(
-      CCL_NAMESPACE::mixColorBurnOp, _1, value, color1, color2, m_valueAlphaMultiply);
+  auto cpu_write = std::bind(CCL::mixColorBurnOp, _1, value, color1, color2, m_valueAlphaMultiply);
   computeWriteSeek(man, cpu_write, "mixColorBurnOp", [&](ComputeKernel *kernel) {
     kernel->addReadImgArgs(*value);
     kernel->addReadImgArgs(*color1);
@@ -315,11 +323,13 @@ ccl_kernel mixColorOp(CCL_WRITE(dst),
 
   CPU_LOOP_START(dst);
 
-  COORDS_TO_OFFSET(dst_coords);
+  COPY_COORDS(value, dst_coords);
+  COPY_COORDS(color1, dst_coords);
+  COPY_COORDS(color2, dst_coords);
 
-  READ_IMG(value, dst_coords, value_pix);
-  READ_IMG(color1, dst_coords, color1_pix);
-  READ_IMG(color2, dst_coords, color2_pix);
+  READ_IMG1(value, value_pix);
+  READ_IMG4(color1, color1_pix);
+  READ_IMG4(color2, color2_pix);
 
   if (alpha_multiply) {
     value_pix.x *= color2_pix.w;
@@ -341,7 +351,7 @@ ccl_kernel mixColorOp(CCL_WRITE(dst),
     color2_pix = clamp_to_normal_f4(color2_pix);
   }
 
-  WRITE_IMG(dst, dst_coords, color2_pix);
+  WRITE_IMG(dst, color2_pix);
 
   CPU_LOOP_END
 }
@@ -355,7 +365,7 @@ void MixColorOperation::execPixels(ExecutionManager &man)
   auto color1 = m_input_color1->getPixels(this, man);
   auto color2 = m_input_color2->getPixels(this, man);
   auto cpu_write = std::bind(
-      CCL_NAMESPACE::mixColorOp, _1, value, color1, color2, m_valueAlphaMultiply, m_useClamp);
+      CCL::mixColorOp, _1, value, color1, color2, m_valueAlphaMultiply, m_useClamp);
   computeWriteSeek(man, cpu_write, "mixColorOp", [&](ComputeKernel *kernel) {
     kernel->addReadImgArgs(*value);
     kernel->addReadImgArgs(*color1);
@@ -381,11 +391,13 @@ ccl_kernel mixDarkenOp(CCL_WRITE(dst),
 
   CPU_LOOP_START(dst);
 
-  COORDS_TO_OFFSET(dst_coords);
+  COPY_COORDS(value, dst_coords);
+  COPY_COORDS(color1, dst_coords);
+  COPY_COORDS(color2, dst_coords);
 
-  READ_IMG(value, dst_coords, value_pix);
-  READ_IMG(color1, dst_coords, color1_pix);
-  READ_IMG(color2, dst_coords, color2_pix);
+  READ_IMG1(value, value_pix);
+  READ_IMG4(color1, color1_pix);
+  READ_IMG4(color2, color2_pix);
 
   if (alpha_multiply) {
     value_pix.x *= color2_pix.w;
@@ -397,7 +409,7 @@ ccl_kernel mixDarkenOp(CCL_WRITE(dst),
     color2_pix = clamp_to_normal_f4(color2_pix);
   }
 
-  WRITE_IMG(dst, dst_coords, color2_pix);
+  WRITE_IMG(dst, color2_pix);
 
   CPU_LOOP_END
 }
@@ -410,7 +422,7 @@ void MixDarkenOperation::execPixels(ExecutionManager &man)
   auto color1 = m_input_color1->getPixels(this, man);
   auto color2 = m_input_color2->getPixels(this, man);
   auto cpu_write = std::bind(
-      CCL_NAMESPACE::mixDarkenOp, _1, value, color1, color2, m_valueAlphaMultiply, m_useClamp);
+      CCL::mixDarkenOp, _1, value, color1, color2, m_valueAlphaMultiply, m_useClamp);
   computeWriteSeek(man, cpu_write, "mixDarkenOp", [&](ComputeKernel *kernel) {
     kernel->addReadImgArgs(*value);
     kernel->addReadImgArgs(*color1);
@@ -436,11 +448,13 @@ ccl_kernel mixDifferenceOp(CCL_WRITE(dst),
 
   CPU_LOOP_START(dst);
 
-  COORDS_TO_OFFSET(dst_coords);
+  COPY_COORDS(value, dst_coords);
+  COPY_COORDS(color1, dst_coords);
+  COPY_COORDS(color2, dst_coords);
 
-  READ_IMG(value, dst_coords, value_pix);
-  READ_IMG(color1, dst_coords, color1_pix);
-  READ_IMG(color2, dst_coords, color2_pix);
+  READ_IMG1(value, value_pix);
+  READ_IMG4(color1, color1_pix);
+  READ_IMG4(color2, color2_pix);
 
   if (alpha_multiply) {
     value_pix.x *= color2_pix.w;
@@ -452,7 +466,7 @@ ccl_kernel mixDifferenceOp(CCL_WRITE(dst),
     color2_pix = clamp_to_normal_f4(color2_pix);
   }
 
-  WRITE_IMG(dst, dst_coords, color2_pix);
+  WRITE_IMG(dst, color2_pix);
 
   CPU_LOOP_END
 }
@@ -465,7 +479,7 @@ void MixDifferenceOperation::execPixels(ExecutionManager &man)
   auto color1 = m_input_color1->getPixels(this, man);
   auto color2 = m_input_color2->getPixels(this, man);
   auto cpu_write = std::bind(
-      CCL_NAMESPACE::mixDifferenceOp, _1, value, color1, color2, m_valueAlphaMultiply, m_useClamp);
+      CCL::mixDifferenceOp, _1, value, color1, color2, m_valueAlphaMultiply, m_useClamp);
   computeWriteSeek(man, cpu_write, "mixDifferenceOp", [&](ComputeKernel *kernel) {
     kernel->addReadImgArgs(*value);
     kernel->addReadImgArgs(*color1);
@@ -491,11 +505,13 @@ ccl_kernel mixDivideOp(CCL_WRITE(dst),
 
   CPU_LOOP_START(dst);
 
-  COORDS_TO_OFFSET(dst_coords);
+  COPY_COORDS(value, dst_coords);
+  COPY_COORDS(color1, dst_coords);
+  COPY_COORDS(color2, dst_coords);
 
-  READ_IMG(value, dst_coords, value_pix);
-  READ_IMG(color1, dst_coords, color1_pix);
-  READ_IMG(color2, dst_coords, color2_pix);
+  READ_IMG1(value, value_pix);
+  READ_IMG4(color1, color1_pix);
+  READ_IMG4(color2, color2_pix);
 
   if (alpha_multiply) {
     value_pix.x *= color2_pix.w;
@@ -510,7 +526,7 @@ ccl_kernel mixDivideOp(CCL_WRITE(dst),
     color2_pix = clamp_to_normal_f4(color2_pix);
   }
 
-  WRITE_IMG(dst, dst_coords, color2_pix);
+  WRITE_IMG(dst, color2_pix);
 
   CPU_LOOP_END
 }
@@ -523,7 +539,7 @@ void MixDivideOperation::execPixels(ExecutionManager &man)
   auto color1 = m_input_color1->getPixels(this, man);
   auto color2 = m_input_color2->getPixels(this, man);
   auto cpu_write = std::bind(
-      CCL_NAMESPACE::mixDivideOp, _1, value, color1, color2, m_valueAlphaMultiply, m_useClamp);
+      CCL::mixDivideOp, _1, value, color1, color2, m_valueAlphaMultiply, m_useClamp);
   computeWriteSeek(man, cpu_write, "mixDivideOp", [&](ComputeKernel *kernel) {
     kernel->addReadImgArgs(*value);
     kernel->addReadImgArgs(*color1);
@@ -549,11 +565,13 @@ ccl_kernel mixDodgeOp(CCL_WRITE(dst),
 
   CPU_LOOP_START(dst);
 
-  COORDS_TO_OFFSET(dst_coords);
+  COPY_COORDS(value, dst_coords);
+  COPY_COORDS(color1, dst_coords);
+  COPY_COORDS(color2, dst_coords);
 
-  READ_IMG(value, dst_coords, value_pix);
-  READ_IMG(color1, dst_coords, color1_pix);
-  READ_IMG(color2, dst_coords, color2_pix);
+  READ_IMG1(value, value_pix);
+  READ_IMG4(color1, color1_pix);
+  READ_IMG4(color2, color2_pix);
 
   if (alpha_multiply) {
     value_pix.x *= color2_pix.w;
@@ -612,7 +630,7 @@ ccl_kernel mixDodgeOp(CCL_WRITE(dst),
     color2_pix = clamp_to_normal_f4(color2_pix);
   }
 
-  WRITE_IMG(dst, dst_coords, color2_pix);
+  WRITE_IMG(dst, color2_pix);
 
   CPU_LOOP_END
 }
@@ -625,7 +643,7 @@ void MixDodgeOperation::execPixels(ExecutionManager &man)
   auto color1 = m_input_color1->getPixels(this, man);
   auto color2 = m_input_color2->getPixels(this, man);
   auto cpu_write = std::bind(
-      CCL_NAMESPACE::mixDodgeOp, _1, value, color1, color2, m_valueAlphaMultiply, m_useClamp);
+      CCL::mixDodgeOp, _1, value, color1, color2, m_valueAlphaMultiply, m_useClamp);
   computeWriteSeek(man, cpu_write, "mixDodgeOp", [&](ComputeKernel *kernel) {
     kernel->addReadImgArgs(*value);
     kernel->addReadImgArgs(*color1);
@@ -647,11 +665,13 @@ ccl_kernel mixGlareOp(
 
   CPU_LOOP_START(dst);
 
-  COORDS_TO_OFFSET(dst_coords);
+  COPY_COORDS(value, dst_coords);
+  COPY_COORDS(color1, dst_coords);
+  COPY_COORDS(color2, dst_coords);
 
-  READ_IMG(value, dst_coords, value_pix);
-  READ_IMG(color1, dst_coords, color1_pix);
-  READ_IMG(color2, dst_coords, color2_pix);
+  READ_IMG1(value, value_pix);
+  READ_IMG4(color1, color1_pix);
+  READ_IMG4(color2, color2_pix);
 
   float mf = 2.0f - 2.0f * fabsf(value_pix.x - 0.5f);
   float4 zero4 = make_float4_1(0.0f);
@@ -663,7 +683,7 @@ ccl_kernel mixGlareOp(
     color2_pix = clamp_to_normal_f4(color2_pix);
   }
 
-  WRITE_IMG(dst, dst_coords, color2_pix);
+  WRITE_IMG(dst, color2_pix);
 
   CPU_LOOP_END
 }
@@ -675,7 +695,7 @@ void MixGlareOperation::execPixels(ExecutionManager &man)
   auto value = m_input_value->getPixels(this, man);
   auto color1 = m_input_color1->getPixels(this, man);
   auto color2 = m_input_color2->getPixels(this, man);
-  auto cpu_write = std::bind(CCL_NAMESPACE::mixGlareOp, _1, value, color1, color2, m_useClamp);
+  auto cpu_write = std::bind(CCL::mixGlareOp, _1, value, color1, color2, m_useClamp);
   computeWriteSeek(man, cpu_write, "mixGlareOp", [&](ComputeKernel *kernel) {
     kernel->addReadImgArgs(*value);
     kernel->addReadImgArgs(*color1);
@@ -701,11 +721,13 @@ ccl_kernel mixHueOp(CCL_WRITE(dst),
 
   CPU_LOOP_START(dst);
 
-  COORDS_TO_OFFSET(dst_coords);
+  COPY_COORDS(value, dst_coords);
+  COPY_COORDS(color1, dst_coords);
+  COPY_COORDS(color2, dst_coords);
 
-  READ_IMG(value, dst_coords, value_pix);
-  READ_IMG(color1, dst_coords, color1_pix);
-  READ_IMG(color2, dst_coords, color2_pix);
+  READ_IMG1(value, value_pix);
+  READ_IMG4(color1, color1_pix);
+  READ_IMG4(color2, color2_pix);
 
   if (alpha_multiply) {
     value_pix.x *= color2_pix.w;
@@ -727,7 +749,7 @@ ccl_kernel mixHueOp(CCL_WRITE(dst),
     color2_pix = clamp_to_normal_f4(color2_pix);
   }
 
-  WRITE_IMG(dst, dst_coords, color2_pix);
+  WRITE_IMG(dst, color2_pix);
 
   CPU_LOOP_END
 }
@@ -741,7 +763,7 @@ void MixHueOperation::execPixels(ExecutionManager &man)
   auto color1 = m_input_color1->getPixels(this, man);
   auto color2 = m_input_color2->getPixels(this, man);
   auto cpu_write = std::bind(
-      CCL_NAMESPACE::mixHueOp, _1, value, color1, color2, m_valueAlphaMultiply, m_useClamp);
+      CCL::mixHueOp, _1, value, color1, color2, m_valueAlphaMultiply, m_useClamp);
   computeWriteSeek(man, cpu_write, "mixHueOp", [&](ComputeKernel *kernel) {
     kernel->addReadImgArgs(*value);
     kernel->addReadImgArgs(*color1);
@@ -767,11 +789,13 @@ ccl_kernel mixLightenOp(CCL_WRITE(dst),
 
   CPU_LOOP_START(dst);
 
-  COORDS_TO_OFFSET(dst_coords);
+  COPY_COORDS(value, dst_coords);
+  COPY_COORDS(color1, dst_coords);
+  COPY_COORDS(color2, dst_coords);
 
-  READ_IMG(value, dst_coords, value_pix);
-  READ_IMG(color1, dst_coords, color1_pix);
-  READ_IMG(color2, dst_coords, color2_pix);
+  READ_IMG1(value, value_pix);
+  READ_IMG4(color1, color1_pix);
+  READ_IMG4(color2, color2_pix);
 
   if (alpha_multiply) {
     value_pix.x *= color2_pix.w;
@@ -784,7 +808,7 @@ ccl_kernel mixLightenOp(CCL_WRITE(dst),
     color2_pix = clamp_to_normal_f4(color2_pix);
   }
 
-  WRITE_IMG(dst, dst_coords, color2_pix);
+  WRITE_IMG(dst, color2_pix);
 
   CPU_LOOP_END
 }
@@ -797,7 +821,7 @@ void MixLightenOperation::execPixels(ExecutionManager &man)
   auto color1 = m_input_color1->getPixels(this, man);
   auto color2 = m_input_color2->getPixels(this, man);
   auto cpu_write = std::bind(
-      CCL_NAMESPACE::mixLightenOp, _1, value, color1, color2, m_valueAlphaMultiply, m_useClamp);
+      CCL::mixLightenOp, _1, value, color1, color2, m_valueAlphaMultiply, m_useClamp);
   computeWriteSeek(man, cpu_write, "mixLightenOp", [&](ComputeKernel *kernel) {
     kernel->addReadImgArgs(*value);
     kernel->addReadImgArgs(*color1);
@@ -823,11 +847,13 @@ ccl_kernel mixLinearLightOp(CCL_WRITE(dst),
 
   CPU_LOOP_START(dst);
 
-  COORDS_TO_OFFSET(dst_coords);
+  COPY_COORDS(value, dst_coords);
+  COPY_COORDS(color1, dst_coords);
+  COPY_COORDS(color2, dst_coords);
 
-  READ_IMG(value, dst_coords, value_pix);
-  READ_IMG(color1, dst_coords, color1_pix);
-  READ_IMG(color2, dst_coords, color2_pix);
+  READ_IMG1(value, value_pix);
+  READ_IMG4(color1, color1_pix);
+  READ_IMG4(color2, color2_pix);
 
   if (alpha_multiply) {
     value_pix.x *= color2_pix.w;
@@ -857,7 +883,7 @@ ccl_kernel mixLinearLightOp(CCL_WRITE(dst),
     color2_pix = clamp_to_normal_f4(color2_pix);
   }
 
-  WRITE_IMG(dst, dst_coords, color2_pix);
+  WRITE_IMG(dst, color2_pix);
 
   CPU_LOOP_END
 }
@@ -869,13 +895,8 @@ void MixLinearLightOperation::execPixels(ExecutionManager &man)
   auto value = m_input_value->getPixels(this, man);
   auto color1 = m_input_color1->getPixels(this, man);
   auto color2 = m_input_color2->getPixels(this, man);
-  auto cpu_write = std::bind(CCL_NAMESPACE::mixLinearLightOp,
-                             _1,
-                             value,
-                             color1,
-                             color2,
-                             m_valueAlphaMultiply,
-                             m_useClamp);
+  auto cpu_write = std::bind(
+      CCL::mixLinearLightOp, _1, value, color1, color2, m_valueAlphaMultiply, m_useClamp);
   computeWriteSeek(man, cpu_write, "mixLinearLightOp", [&](ComputeKernel *kernel) {
     kernel->addReadImgArgs(*value);
     kernel->addReadImgArgs(*color1);
@@ -901,11 +922,13 @@ ccl_kernel mixMultiplyOp(CCL_WRITE(dst),
 
   CPU_LOOP_START(dst);
 
-  COORDS_TO_OFFSET(dst_coords);
+  COPY_COORDS(value, dst_coords);
+  COPY_COORDS(color1, dst_coords);
+  COPY_COORDS(color2, dst_coords);
 
-  READ_IMG(value, dst_coords, value_pix);
-  READ_IMG(color1, dst_coords, color1_pix);
-  READ_IMG(color2, dst_coords, color2_pix);
+  READ_IMG1(value, value_pix);
+  READ_IMG4(color1, color1_pix);
+  READ_IMG4(color2, color2_pix);
 
   if (alpha_multiply) {
     value_pix.x *= color2_pix.w;
@@ -917,7 +940,7 @@ ccl_kernel mixMultiplyOp(CCL_WRITE(dst),
     color2_pix = clamp_to_normal_f4(color2_pix);
   }
 
-  WRITE_IMG(dst, dst_coords, color2_pix);
+  WRITE_IMG(dst, color2_pix);
 
   CPU_LOOP_END
 }
@@ -930,7 +953,7 @@ void MixMultiplyOperation::execPixels(ExecutionManager &man)
   auto color1 = m_input_color1->getPixels(this, man);
   auto color2 = m_input_color2->getPixels(this, man);
   auto cpu_write = std::bind(
-      CCL_NAMESPACE::mixMultiplyOp, _1, value, color1, color2, m_valueAlphaMultiply, m_useClamp);
+      CCL::mixMultiplyOp, _1, value, color1, color2, m_valueAlphaMultiply, m_useClamp);
   computeWriteSeek(man, cpu_write, "mixMultiplyOp", [&](ComputeKernel *kernel) {
     kernel->addReadImgArgs(*value);
     kernel->addReadImgArgs(*color1);
@@ -956,11 +979,13 @@ ccl_kernel mixOverlayOp(CCL_WRITE(dst),
 
   CPU_LOOP_START(dst);
 
-  COORDS_TO_OFFSET(dst_coords);
+  COPY_COORDS(value, dst_coords);
+  COPY_COORDS(color1, dst_coords);
+  COPY_COORDS(color2, dst_coords);
 
-  READ_IMG(value, dst_coords, value_pix);
-  READ_IMG(color1, dst_coords, color1_pix);
-  READ_IMG(color2, dst_coords, color2_pix);
+  READ_IMG1(value, value_pix);
+  READ_IMG4(color1, color1_pix);
+  READ_IMG4(color2, color2_pix);
 
   if (alpha_multiply) {
     value_pix.x *= color2_pix.w;
@@ -992,7 +1017,7 @@ ccl_kernel mixOverlayOp(CCL_WRITE(dst),
     color2_pix = clamp_to_normal_f4(color2_pix);
   }
 
-  WRITE_IMG(dst, dst_coords, color2_pix);
+  WRITE_IMG(dst, color2_pix);
 
   CPU_LOOP_END
 }
@@ -1005,7 +1030,7 @@ void MixOverlayOperation::execPixels(ExecutionManager &man)
   auto color1 = m_input_color1->getPixels(this, man);
   auto color2 = m_input_color2->getPixels(this, man);
   auto cpu_write = std::bind(
-      CCL_NAMESPACE::mixOverlayOp, _1, value, color1, color2, m_valueAlphaMultiply, m_useClamp);
+      CCL::mixOverlayOp, _1, value, color1, color2, m_valueAlphaMultiply, m_useClamp);
   computeWriteSeek(man, cpu_write, "mixOverlayOp", [&](ComputeKernel *kernel) {
     kernel->addReadImgArgs(*value);
     kernel->addReadImgArgs(*color1);
@@ -1031,11 +1056,13 @@ ccl_kernel mixSaturationOp(CCL_WRITE(dst),
 
   CPU_LOOP_START(dst);
 
-  COORDS_TO_OFFSET(dst_coords);
+  COPY_COORDS(value, dst_coords);
+  COPY_COORDS(color1, dst_coords);
+  COPY_COORDS(color2, dst_coords);
 
-  READ_IMG(value, dst_coords, value_pix);
-  READ_IMG(color1, dst_coords, color1_pix);
-  READ_IMG(color2, dst_coords, color2_pix);
+  READ_IMG1(value, value_pix);
+  READ_IMG4(color1, color1_pix);
+  READ_IMG4(color2, color2_pix);
 
   if (alpha_multiply) {
     value_pix.x *= color2_pix.w;
@@ -1055,7 +1082,7 @@ ccl_kernel mixSaturationOp(CCL_WRITE(dst),
     color2_pix = clamp_to_normal_f4(color2_pix);
   }
 
-  WRITE_IMG(dst, dst_coords, color2_pix);
+  WRITE_IMG(dst, color2_pix);
 
   CPU_LOOP_END
 }
@@ -1068,7 +1095,7 @@ void MixSaturationOperation::execPixels(ExecutionManager &man)
   auto color1 = m_input_color1->getPixels(this, man);
   auto color2 = m_input_color2->getPixels(this, man);
   auto cpu_write = std::bind(
-      CCL_NAMESPACE::mixSaturationOp, _1, value, color1, color2, m_valueAlphaMultiply, m_useClamp);
+      CCL::mixSaturationOp, _1, value, color1, color2, m_valueAlphaMultiply, m_useClamp);
   computeWriteSeek(man, cpu_write, "mixSaturationOp", [&](ComputeKernel *kernel) {
     kernel->addReadImgArgs(*value);
     kernel->addReadImgArgs(*color1);
@@ -1094,11 +1121,13 @@ ccl_kernel mixScreenOp(CCL_WRITE(dst),
 
   CPU_LOOP_START(dst);
 
-  COORDS_TO_OFFSET(dst_coords);
+  COPY_COORDS(value, dst_coords);
+  COPY_COORDS(color1, dst_coords);
+  COPY_COORDS(color2, dst_coords);
 
-  READ_IMG(value, dst_coords, value_pix);
-  READ_IMG(color1, dst_coords, color1_pix);
-  READ_IMG(color2, dst_coords, color2_pix);
+  READ_IMG1(value, value_pix);
+  READ_IMG4(color1, color1_pix);
+  READ_IMG4(color2, color2_pix);
 
   if (alpha_multiply) {
     value_pix.x *= color2_pix.w;
@@ -1112,7 +1141,7 @@ ccl_kernel mixScreenOp(CCL_WRITE(dst),
     color2_pix = clamp_to_normal_f4(color2_pix);
   }
 
-  WRITE_IMG(dst, dst_coords, color2_pix);
+  WRITE_IMG(dst, color2_pix);
 
   CPU_LOOP_END
 }
@@ -1125,7 +1154,7 @@ void MixScreenOperation::execPixels(ExecutionManager &man)
   auto color1 = m_input_color1->getPixels(this, man);
   auto color2 = m_input_color2->getPixels(this, man);
   auto cpu_write = std::bind(
-      CCL_NAMESPACE::mixScreenOp, _1, value, color1, color2, m_valueAlphaMultiply, m_useClamp);
+      CCL::mixScreenOp, _1, value, color1, color2, m_valueAlphaMultiply, m_useClamp);
   computeWriteSeek(man, cpu_write, "mixScreenOp", [&](ComputeKernel *kernel) {
     kernel->addReadImgArgs(*value);
     kernel->addReadImgArgs(*color1);
@@ -1151,11 +1180,13 @@ ccl_kernel mixSoftLightOp(CCL_WRITE(dst),
 
   CPU_LOOP_START(dst);
 
-  COORDS_TO_OFFSET(dst_coords);
+  COPY_COORDS(value, dst_coords);
+  COPY_COORDS(color1, dst_coords);
+  COPY_COORDS(color2, dst_coords);
 
-  READ_IMG(value, dst_coords, value_pix);
-  READ_IMG(color1, dst_coords, color1_pix);
-  READ_IMG(color2, dst_coords, color2_pix);
+  READ_IMG1(value, value_pix);
+  READ_IMG4(color1, color1_pix);
+  READ_IMG4(color2, color2_pix);
 
   if (alpha_multiply) {
     value_pix.x *= color2_pix.w;
@@ -1172,7 +1203,7 @@ ccl_kernel mixSoftLightOp(CCL_WRITE(dst),
     color2_pix = clamp_to_normal_f4(color2_pix);
   }
 
-  WRITE_IMG(dst, dst_coords, color2_pix);
+  WRITE_IMG(dst, color2_pix);
 
   CPU_LOOP_END
 }
@@ -1185,7 +1216,7 @@ void MixSoftLightOperation::execPixels(ExecutionManager &man)
   auto color1 = m_input_color1->getPixels(this, man);
   auto color2 = m_input_color2->getPixels(this, man);
   auto cpu_write = std::bind(
-      CCL_NAMESPACE::mixSoftLightOp, _1, value, color1, color2, m_valueAlphaMultiply, m_useClamp);
+      CCL::mixSoftLightOp, _1, value, color1, color2, m_valueAlphaMultiply, m_useClamp);
   computeWriteSeek(man, cpu_write, "mixSoftLightOp", [&](ComputeKernel *kernel) {
     kernel->addReadImgArgs(*value);
     kernel->addReadImgArgs(*color1);
@@ -1211,11 +1242,13 @@ ccl_kernel mixSubstractOp(CCL_WRITE(dst),
 
   CPU_LOOP_START(dst);
 
-  COORDS_TO_OFFSET(dst_coords);
+  COPY_COORDS(value, dst_coords);
+  COPY_COORDS(color1, dst_coords);
+  COPY_COORDS(color2, dst_coords);
 
-  READ_IMG(value, dst_coords, value_pix);
-  READ_IMG(color1, dst_coords, color1_pix);
-  READ_IMG(color2, dst_coords, color2_pix);
+  READ_IMG1(value, value_pix);
+  READ_IMG4(color1, color1_pix);
+  READ_IMG4(color2, color2_pix);
 
   if (alpha_multiply) {
     value_pix.x *= color2_pix.w;
@@ -1228,7 +1261,7 @@ ccl_kernel mixSubstractOp(CCL_WRITE(dst),
     color2_pix = clamp_to_normal_f4(color2_pix);
   }
 
-  WRITE_IMG(dst, dst_coords, color2_pix);
+  WRITE_IMG(dst, color2_pix);
 
   CPU_LOOP_END
 }
@@ -1241,7 +1274,7 @@ void MixSubtractOperation::execPixels(ExecutionManager &man)
   auto color1 = m_input_color1->getPixels(this, man);
   auto color2 = m_input_color2->getPixels(this, man);
   auto cpu_write = std::bind(
-      CCL_NAMESPACE::mixSubstractOp, _1, value, color1, color2, m_valueAlphaMultiply, m_useClamp);
+      CCL::mixSubstractOp, _1, value, color1, color2, m_valueAlphaMultiply, m_useClamp);
   computeWriteSeek(man, cpu_write, "mixSubstractOp", [&](ComputeKernel *kernel) {
     kernel->addReadImgArgs(*value);
     kernel->addReadImgArgs(*color1);
@@ -1267,11 +1300,13 @@ ccl_kernel mixValueOp(CCL_WRITE(dst),
 
   CPU_LOOP_START(dst);
 
-  COORDS_TO_OFFSET(dst_coords);
+  COPY_COORDS(value, dst_coords);
+  COPY_COORDS(color1, dst_coords);
+  COPY_COORDS(color2, dst_coords);
 
-  READ_IMG(value, dst_coords, value_pix);
-  READ_IMG(color1, dst_coords, color1_pix);
-  READ_IMG(color2, dst_coords, color2_pix);
+  READ_IMG1(value, value_pix);
+  READ_IMG4(color1, color1_pix);
+  READ_IMG4(color2, color2_pix);
 
   if (alpha_multiply) {
     value_pix.x *= color2_pix.w;
@@ -1286,7 +1321,7 @@ ccl_kernel mixValueOp(CCL_WRITE(dst),
     color2_pix = clamp_to_normal_f4(color2_pix);
   }
 
-  WRITE_IMG(dst, dst_coords, color2_pix);
+  WRITE_IMG(dst, color2_pix);
 
   CPU_LOOP_END
 }
@@ -1299,7 +1334,7 @@ void MixValueOperation::execPixels(ExecutionManager &man)
   auto color1 = m_input_color1->getPixels(this, man);
   auto color2 = m_input_color2->getPixels(this, man);
   auto cpu_write = std::bind(
-      CCL_NAMESPACE::mixValueOp, _1, value, color1, color2, m_valueAlphaMultiply, m_useClamp);
+      CCL::mixValueOp, _1, value, color1, color2, m_valueAlphaMultiply, m_useClamp);
   computeWriteSeek(man, cpu_write, "mixValueOp", [&](ComputeKernel *kernel) {
     kernel->addReadImgArgs(*value);
     kernel->addReadImgArgs(*color1);

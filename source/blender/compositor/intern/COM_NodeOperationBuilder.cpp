@@ -34,6 +34,7 @@
 #include "COM_SocketProxyOperation.h"
 #include "COM_ViewerOperation.h"
 
+#include "BLI_math.h"
 #include "COM_NodeOperationBuilder.h" /* own include */
 #include <unordered_map>
 
@@ -97,11 +98,11 @@ void NodeOperationBuilder::convertToOperations()
 
   resolve_proxies();
 
-  add_operation_input_constants();
-
   add_datatype_conversions();
 
   determineResolutions();
+
+  add_operation_input_constants();
 
   /* links not available from here on */
   /* XXX make m_links a local variable to avoid confusion! */
@@ -348,12 +349,12 @@ void NodeOperationBuilder::add_operation_input_constants()
 void NodeOperationBuilder::add_input_constant_value(NodeOperationInput *input,
                                                     NodeInput *node_input)
 {
-  NodeOperation *node_op = nullptr;
+  NodeOperation *constant_op = nullptr;
   if (input->getSocketType() == SocketType::DYNAMIC) {
     auto op = new SetColorOperation();
     float color[4] = {0.0f, 0.0f, 0.0f, 0.0f};
     op->setChannels(color);
-    node_op = op;
+    constant_op = op;
   }
   else {
     switch (input->getDataType()) {
@@ -368,7 +369,7 @@ void NodeOperationBuilder::add_input_constant_value(NodeOperationInput *input,
 
         SetValueOperation *op = new SetValueOperation();
         op->setValue(value);
-        node_op = op;
+        constant_op = op;
         break;
       }
       case DataType::COLOR: {
@@ -382,7 +383,7 @@ void NodeOperationBuilder::add_input_constant_value(NodeOperationInput *input,
 
         SetColorOperation *op = new SetColorOperation();
         op->setChannels(value);
-        node_op = op;
+        constant_op = op;
         break;
       }
       case DataType::VECTOR: {
@@ -396,7 +397,7 @@ void NodeOperationBuilder::add_input_constant_value(NodeOperationInput *input,
 
         SetVectorOperation *op = new SetVectorOperation();
         op->setVector(value);
-        node_op = op;
+        constant_op = op;
         break;
       }
       default:
@@ -405,10 +406,13 @@ void NodeOperationBuilder::add_input_constant_value(NodeOperationInput *input,
     }
   }
 
-  // int resolution[2] = {input->getOperation()->getWidth(), input->getOperation()->getHeight()};
-  // node_op->setResolution(resolution);
-  addOperation(node_op);
-  addLink(node_op->getOutputSocket(), input);
+  auto input_op = input->getOperation();
+  if (input_op->isResolutionSet()) {
+    constant_op->setResolution(
+        input_op->getWidth(), input_op->getHeight(), ResolutionType::Determined);
+  }
+  addOperation(constant_op);
+  addLink(constant_op->getOutputSocket(), input);
 }
 
 void NodeOperationBuilder::resolve_proxies()

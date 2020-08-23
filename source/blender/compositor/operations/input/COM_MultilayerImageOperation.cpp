@@ -20,15 +20,17 @@
 
 #include "COM_BufferUtil.h"
 #include "COM_PixelsUtil.h"
-#include "COM_kernel_cpu_nocompat.h"
 #include "DNA_image_types.h"
 #include "IMB_imbuf.h"
 #include "IMB_imbuf_types.h"
+
+#include "COM_kernel_cpu.h"
 
 MultilayerBaseOperation::MultilayerBaseOperation(int passindex, int view) : BaseImageOperation()
 {
   this->m_passId = passindex;
   this->m_view = view;
+  m_renderlayer = nullptr;
 }
 
 ImBuf *MultilayerBaseOperation::getImBuf()
@@ -60,7 +62,7 @@ void MultilayerColorOperation::execPixels(ExecutionManager &man)
 {
   auto cpuWrite = [&](PixelsRect &dst, const WriteRectContext &ctx) {
     if (m_imageFloatBuffer == NULL) {
-      PixelsUtil::setRectElem(dst, (float *)&CCL_NAMESPACE::TRANSPARENT_PIXEL);
+      PixelsUtil::setRectElem(dst, (float *)&CCL::TRANSPARENT_PIXEL);
     }
     else {
       auto buf = BufferUtil::createUnmanagedTmpBuffer(
@@ -76,7 +78,7 @@ void MultilayerValueOperation::execPixels(ExecutionManager &man)
 {
   auto cpuWrite = [&](PixelsRect &dst, const WriteRectContext &ctx) {
     if (m_imageFloatBuffer == NULL) {
-      PixelsUtil::setRectElem(dst, (float *)&CCL_NAMESPACE::TRANSPARENT_PIXEL);
+      PixelsUtil::setRectElem(dst, (float *)&CCL::TRANSPARENT_PIXEL);
     }
     else {
       auto buf = BufferUtil::createUnmanagedTmpBuffer(
@@ -92,7 +94,7 @@ void MultilayerVectorOperation::execPixels(ExecutionManager &man)
 {
   auto cpuWrite = [&](PixelsRect &dst, const WriteRectContext &ctx) {
     if (m_imageFloatBuffer == NULL) {
-      PixelsUtil::setRectElem(dst, (float *)&CCL_NAMESPACE::TRANSPARENT_PIXEL);
+      PixelsUtil::setRectElem(dst, (float *)&CCL::TRANSPARENT_PIXEL);
     }
     else {
       auto buf = BufferUtil::createUnmanagedTmpBuffer(

@@ -17,8 +17,10 @@
  */
 
 #include "COM_Bmp.h"
+#include "BLI_assert.h"
 #include "COM_Pixels.h"
 #include "COM_Rect.h"
+#include "MEM_guardedalloc.h"
 
 const int fileHeaderSize = 14;
 const int infoHeaderSize = 40;
@@ -96,7 +98,7 @@ void COM_Bmp::generateBitmapImage(PixelsRect &rect, std::string filename)
   int height = rect.ymax - rect.ymin;
 
   int buffer_size = read.elem_chs * width * height;
-  unsigned char *img = (unsigned char *)malloc(buffer_size);
+  unsigned char *img = (unsigned char *)MEM_mallocN(buffer_size, __func__);
 
   /*Convert float buffer to unsigned char*/
   int img_offset = 0;
@@ -123,6 +125,7 @@ void COM_Bmp::generateBitmapImage(PixelsRect &rect, std::string filename)
   }
 
   generateBitmapImage(img, width, height, read.elem_chs, filename);
+  MEM_freeN(img);
 }
 
 void COM_Bmp::generateBitmapImage(

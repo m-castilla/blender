@@ -49,10 +49,11 @@ ccl_kernel invertOp(
 
   CPU_LOOP_START(dst);
 
-  COORDS_TO_OFFSET(dst_coords);
+  COPY_COORDS(factor, dst_coords);
+  COPY_COORDS(color, dst_coords);
 
-  READ_IMG(factor, dst_coords, factor_pix);
-  READ_IMG(color, dst_coords, color_pix);
+  READ_IMG1(factor, factor_pix);
+  READ_IMG4(color, color_pix);
 
   const float value = factor_pix.x;
   const float inv_value = 1.0f - value;
@@ -68,7 +69,7 @@ ccl_kernel invertOp(
     color_pix.w = alpha;
   }
 
-  WRITE_IMG(dst, dst_coords, color_pix);
+  WRITE_IMG(dst, color_pix);
 
   CPU_LOOP_END;
 }
@@ -80,7 +81,7 @@ void InvertOperation::execPixels(ExecutionManager &man)
 {
   auto value = getInputOperation(0)->getPixels(this, man);
   auto color = getInputOperation(1)->getPixels(this, man);
-  auto cpu_write = std::bind(CCL_NAMESPACE::invertOp, _1, value, color, m_color, m_alpha);
+  auto cpu_write = std::bind(CCL::invertOp, _1, value, color, m_color, m_alpha);
   computeWriteSeek(man, cpu_write, "invertOp", [&](ComputeKernel *kernel) {
     kernel->addReadImgArgs(*value);
     kernel->addReadImgArgs(*color);

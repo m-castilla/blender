@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include "BLI_math.h"
 #include "COM_NodeOperation.h"
 
 /**

@@ -22,10 +22,6 @@
 
 #include "BKE_node.h"
 
-//#include "COM_BilateralBlurNode.h"
-//#include "COM_BlurNode.h"
-//#include "COM_BokehBlurNode.h"
-
 //#include "COM_BoxMaskNode.h"
 //#include "COM_ChannelMatteNode.h"
 //#include "COM_ChromaMatteNode.h"
@@ -35,21 +31,15 @@
 //#include "COM_CornerPinNode.h"
 //#include "COM_CropNode.h"
 //#include "COM_CryptomatteNode.h"
-//#include "COM_DefocusNode.h"
-//#include "COM_DenoiseNode.h"
-//#include "COM_DespeckleNode.h"
+
 //#include "COM_DifferenceMatteNode.h"
-//#include "COM_DilateErodeNode.h"
-//#include "COM_DirectionalBlurNode.h"
 //#include "COM_DisplaceNode.h"
 //#include "COM_DistanceMatteNode.h"
 //#include "COM_DoubleEdgeMaskNode.h"
 //#include "COM_EllipseMaskNode.h"
 //#include "COM_ExecutionSystem.h"
-//#include "COM_FilterNode.h"
 //#include "COM_FlipNode.h"
 //#include "COM_GammaNode.h"
-//#include "COM_GlareNode.h"
 
 //#include "COM_InpaintNode.h"
 
@@ -74,10 +64,12 @@
 //#include "COM_SunBeamsNode.h"
 
 //#include "COM_TransformNode.h"
-//#include "COM_VectorBlurNode.h"
 //#include "COM_VectorCurveNode.h"
 
 #include "COM_AlphaOverNode.h"
+#include "COM_BilateralBlurNode.h"
+#include "COM_BlurNode.h"
+#include "COM_BokehBlurNode.h"
 #include "COM_BokehImageNode.h"
 #include "COM_BrightnessNode.h"
 #include "COM_ColorBalanceNode.h"
@@ -91,7 +83,14 @@
 #include "COM_ConvertAlphaNode.h"
 #include "COM_ConvertOperation.h"
 #include "COM_Converter.h"
+#include "COM_DefocusNode.h"
+#include "COM_DenoiseNode.h"
+#include "COM_DespeckleNode.h"
+#include "COM_DilateErodeNode.h"
+#include "COM_DirectionalBlurNode.h"
+#include "COM_FilterNode.h"
 #include "COM_GammaNode.h"
+#include "COM_GlareNode.h"
 #include "COM_GlobalManager.h"
 #include "COM_HueSaturationValueCorrectNode.h"
 #include "COM_HueSaturationValueNode.h"
@@ -126,6 +125,8 @@
 #include "COM_ViewLevelsNode.h"
 #include "COM_ViewerNode.h"
 #include "COM_ZCombineNode.h"
+
+//#include "COM_VectorBlurNode.h"
 
 Node *Converter::convert(bNode *b_node)
 {
@@ -293,6 +294,39 @@ Node *Converter::convert(bNode *b_node)
       break;
       /* */
 
+      /*Filter Nodes*/
+    case CMP_NODE_FILTER:
+      node = new FilterNode(b_node);
+      break;
+    case CMP_NODE_DBLUR:
+      node = new DirectionalBlurNode(b_node);
+      break;
+    case CMP_NODE_GLARE:
+      node = new GlareNode(b_node);
+      break;
+    case CMP_NODE_BLUR:
+      node = new BlurNode(b_node);
+      break;
+    case CMP_NODE_BOKEHBLUR:
+      node = new BokehBlurNode(b_node);
+      break;
+    case CMP_NODE_DILATEERODE:
+      node = new DilateErodeNode(b_node);
+      break;
+    case CMP_NODE_DESPECKLE:
+      node = new DespeckleNode(b_node);
+      break;
+    case CMP_NODE_DENOISE:
+      node = new DenoiseNode(b_node);
+      break;
+    case CMP_NODE_BILATERALBLUR:
+      node = new BilateralBlurNode(b_node);
+      break;
+    case CMP_NODE_DEFOCUS:
+      node = new DefocusNode(b_node);
+      break;
+      /* */
+
       /* handled by the NodeGraph */
     case NODE_GROUP:
     case NODE_GROUP_INPUT:
@@ -308,9 +342,7 @@ Node *Converter::convert(bNode *b_node)
     case CMP_NODE_FLIP:
       node = new FlipNode(b_node);
       break;
-    case CMP_NODE_FILTER:
-      node = new FilterNode(b_node);
-      break;
+
 
       // case CMP_NODE_NORMAL:
       //  node = new NormalNode(b_node);
@@ -352,29 +384,11 @@ Node *Converter::convert(bNode *b_node)
       // case CMP_NODE_CHANNEL_MATTE:
       //  node = new ChannelMatteNode(b_node);
       //  break;
-      // case CMP_NODE_BLUR:
-      //  node = new BlurNode(b_node);
-      //  break;
-      // case CMP_NODE_BOKEHBLUR:
-      //  node = new BokehBlurNode(b_node);
-      //  break;
-      // case CMP_NODE_DILATEERODE:
-      //  node = new DilateErodeNode(b_node);
-      //  break;
       // case CMP_NODE_INPAINT:
       //  node = new InpaintNode(b_node);
       //  break;
-      // case CMP_NODE_DESPECKLE:
-      //  node = new DespeckleNode(b_node);
-      //  break;
       // case CMP_NODE_LENSDIST:
       //  node = new LensDistortionNode(b_node);
-      //  break;
-      // case CMP_NODE_DBLUR:
-      //  node = new DirectionalBlurNode(b_node);
-      //  break;
-      // case CMP_NODE_GLARE:
-      //  node = new GlareNode(b_node);
       //  break;
       // case CMP_NODE_COLOR_SPILL:
       //  node = new ColorSpillNode(b_node);
@@ -391,17 +405,12 @@ Node *Converter::convert(bNode *b_node)
       // case CMP_NODE_STABILIZE2D:
       //  node = new Stabilize2dNode(b_node);
       //  break;
-      // case CMP_NODE_BILATERALBLUR:
-      //  node = new BilateralBlurNode(b_node);
-      //  break;
+
       // case CMP_NODE_VECBLUR:
       //  node = new VectorBlurNode(b_node);
       //  break;
       // case CMP_NODE_MOVIEDISTORTION:
       //  node = new MovieDistortionNode(b_node);
-      //  break;
-      // case CMP_NODE_DEFOCUS:
-      //  node = new DefocusNode(b_node);
       //  break;
       // case CMP_NODE_DOUBLEEDGEMASK:
       //  node = new DoubleEdgeMaskNode(b_node);
@@ -430,9 +439,6 @@ Node *Converter::convert(bNode *b_node)
       //  break;
       // case CMP_NODE_CRYPTOMATTE:
       //  node = new CryptomatteNode(b_node);
-      //  break;
-      // case CMP_NODE_DENOISE:
-      //  node = new DenoiseNode(b_node);
       //  break;
   }
   return node;
