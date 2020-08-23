@@ -45,17 +45,19 @@ ccl_kernel alphaOverMixedOp(
 
   CPU_LOOP_START(dst);
 
-  COORDS_TO_OFFSET(dst_coords);
+  COPY_COORDS(value, dst_coords);
+  COPY_COORDS(color, dst_coords);
+  COPY_COORDS(over_color, dst_coords);
 
-  READ_IMG(value, dst_coords, value_pix);
-  READ_IMG(color, dst_coords, color_pix);
-  READ_IMG(over_color, dst_coords, over_color_pix);
+  READ_IMG1(value, value_pix);
+  READ_IMG4(color, color_pix);
+  READ_IMG4(over_color, over_color_pix);
 
   if (over_color_pix.w <= 0.0f) {
-    WRITE_IMG(dst, dst_coords, color_pix);
+    WRITE_IMG4(dst, color_pix);
   }
   else if (value_pix.x == 1.0f && over_color_pix.w >= 1.0f) {
-    WRITE_IMG(dst, dst_coords, over_color_pix);
+    WRITE_IMG4(dst, over_color_pix);
   }
   else {
     float addfac = 1.0f - x_factor + over_color_pix.w * x_factor;
@@ -66,7 +68,7 @@ ccl_kernel alphaOverMixedOp(
     color_pix = mul_color + premul * over_color_pix;
     color_pix.w = mul_color.w + value_pix.x * over_color_pix.w;
 
-    WRITE_IMG(dst, dst_coords, color_pix);
+    WRITE_IMG4(dst, color_pix);
   }
 
   CPU_LOOP_END
@@ -80,7 +82,7 @@ void AlphaOverMixedOperation::execPixels(ExecutionManager &man)
   auto value = m_input_value->getPixels(this, man);
   auto color1 = m_input_color1->getPixels(this, man);
   auto color2 = m_input_color2->getPixels(this, man);
-  auto cpu_write = std::bind(CCL_NAMESPACE::alphaOverMixedOp, _1, value, color1, color2, m_x);
+  auto cpu_write = std::bind(CCL::alphaOverMixedOp, _1, value, color1, color2, m_x);
   computeWriteSeek(man, cpu_write, "alphaOverMixedOp", [&](ComputeKernel *kernel) {
     kernel->addReadImgArgs(*value);
     kernel->addReadImgArgs(*color1);

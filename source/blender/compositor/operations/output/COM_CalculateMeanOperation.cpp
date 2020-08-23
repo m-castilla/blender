@@ -19,9 +19,9 @@
 #include "COM_CalculateMeanOperation.h"
 #include "BLI_math.h"
 #include "BLI_utildefines.h"
-
-#include "COM_kernel_cpu_nocompat.h"
 #include "IMB_colormanagement.h"
+
+#include "COM_kernel_cpu.h"
 
 CalculateMeanOperation::CalculateMeanOperation(bool add_sockets) : NodeOperation()
 {
@@ -48,11 +48,11 @@ void CalculateMeanOperation::execPixels(ExecutionManager &man)
   auto cpu_write = [&](PixelsRect &dst, const WriteRectContext &ctx) {
     float sum = 0;
     int n_pixels = 0;
-    CPU_READ_DECL(src);
-    CCL_NAMESPACE::float4 src_pix;
-    CPU_WRITE_DECL(dst);
+    READ_DECL(src);
+    WRITE_DECL(dst);
     CPU_LOOP_START(dst);
-    CPU_READ_OFFSET(src, dst);
+    COPY_COORDS(src, dst_coords);
+
     if (src_img.buffer[src_offset + 3] > 0.0f) {
       switch (setting) {
           // combined channels luminance
@@ -73,8 +73,8 @@ void CalculateMeanOperation::execPixels(ExecutionManager &man)
           break;
           // yuv luminance sum
         case 5:
-          CPU_READ_IMG(src, src_offset, src_pix);
-          src_pix = CCL_NAMESPACE::rgb_to_yuv(src_pix);
+          READ_IMG(src, src_pix);
+          src_pix = CCL::rgb_to_yuv(src_pix);
           sum += src_pix.x;
           break;
         default:

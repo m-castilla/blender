@@ -156,33 +156,37 @@
 #include "kernel_util/COM_kernel_types.h"
 
 /* Kernel function signature macros*/
-#define CCL_READ(image) \
-  __read_only image2d_t image, const BOOL image##_single, const float4 image##_single_elem
+#define CCL_READ(image) __read_only image2d_t image, const int image##_is_not_single
 #define CCL_WRITE(image) \
   __write_only image2d_t image, const int image##_start_x, const int image##_start_y
 #define CCL_SAMPLER(sampler) const sampler_t sampler
 /* END of OpenCL kernel function signature macros*/
 
-#define READ_DECL(src) float4 src##_pix;
-#define SAMPLE_DECL(src) float4 src##_pix;
-#define WRITE_DECL(dst) \
-  int2 dst##_coords; \
-  int write_offset_x = get_global_id(0), write_offset_y = get_global_id(1);
+#define READ_DECL(src) \
+  float4 src##_pix; \
+  int2 src##_coords; \
+  float2 src##_coordsf;
 
-#define COORDS_TO_OFFSET(coords) \
-  (coords).x = dst##_start_x + write_offset_x; \
-  (coords).y = dst##_start_y + write_offset_y;
+#define WRITE_DECL(dst) \
+  int2 dst##_coords = make_int2(dst##_start_x + get_global_id(0), dst##_start_y + get_global_id(1)));
 
 /*src_img must be a image2d_t , coords must be int2*/
-#define READ_IMG(src, coords, result) \
-  result = src##_single ? src##_single_elem : read_imagef(src, coords);
+#define READ_IMG(src, result) read_imagef(src, src##_coords *src##_is_not_single);
+
+#define READ_IMG1(src, result) READ_IMG(src, result);
+#define READ_IMG3(src, result) READ_IMG(src, result);
+#define READ_IMG4(src, result) READ_IMG(src, result);
 
 /*src_img must be a image2d_t, sampler must be sampler_t, coords must be float2*/
-#define SAMPLE_IMG(src, coords, sampler, result) \
-  result = src##_single ? src##_single_elem : read_imagef(src, sampler, coords);
+#define SAMPLE_IMG(src, sampler, result) \
+  result = read_imagef(src, sampler, src##_coordsf * src##_is_not_single);
 
 /*dst_img must be a image2d_t , coords must be int2, pixel must be float4*/
-#define WRITE_IMG(dst, coords, pixel) write_imagef(dst, coords, pixel);
+#define WRITE_IMG(dst, pixel) write_imagef(dst, dst##_coords, pixel);
+
+#define WRITE_IMG1(dst, pixel) WRITE_IMG(dst, pixel);
+#define WRITE_IMG3(dst, pixel) WRITE_IMG(dst, pixel);
+#define WRITE_IMG4(dst, pixel) WRITE_IMG(dst, pixel);
 
 /*CPU op loop*/
 
@@ -191,5 +195,49 @@
 #define CPU_LOOP_END
 
 /*END of CPU op loop*/
+
+#define SET_COORDS(src, x_, y_) \
+  src##_coords.x = (x_); \
+  src##_coords.y = (y_);
+
+#define SET_SAMPLE_COORDS(src, x_, y_) \
+  src##_coordsf.x = (x_); \
+  src##_coordsf.y = (y_);
+
+#define COPY_COORDS(to, from) to##_coords = from##_coords;
+
+#define COPY_SAMPLE_COORDS(to, from) to##_coordsf = from##_coordsf;
+
+#define UPDATE_COORDS_X(src, x_) src##_coords.x = x_;
+
+#define UPDATE_SAMPLE_COORDS_X(src, x_) src##_coordsf.x = x_;
+
+#define UPDATE_COORDS_Y(src, y_) src##_coords.y = y_;
+
+#define UPDATE_SAMPLE_COORDS_Y(src, y_) src##_coordsf.y = y_;
+
+#define INCR1_COORDS_X(src) src##_coords.x++;
+
+#define INCR1_SAMPLE_COORDS_X(src) src##_coordsf.x++;
+
+#define INCR1_COORDS_Y(src) src##_coords.y++;
+
+#define INCR1_SAMPLE_COORDS_Y(src) src##_coordsf.y++;
+
+#define DECR1_COORDS_X(src) src##_coords.x--;
+
+#define DECR1_SAMPLE_COORDS_X(src) src##_coordsf.x--;
+
+#define DECR1_COORDS_Y(src) src##_coords.y--;
+
+#define DECR1_SAMPLE_COORDS_Y(src) src##_coordsf.y--;
+
+#define INCR_COORDS_X(src, incr) src##_coords.x += incr;
+
+#define INCR_SAMPLE_COORDS_X(src, incr) src##_coordsf.x += incr;
+
+#define INCR_COORDS_Y(src, incr) src##_coords.y += incr;
+
+#define INCR_SAMPLE_COORDS_Y(src, incr) src##_coordsf.y += incr;
 
 #endif

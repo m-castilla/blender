@@ -20,8 +20,8 @@
 
 #include "COM_NodeOperation.h"
 #include "DNA_node_types.h"
-#include <mutex>
 #include <condition_variable>
+#include <mutex>
 
 /**
  * \brief temporarily storage during execution of Tonemap
@@ -87,7 +87,7 @@ class TonemapOperation : public NodeOperation {
   {
     return false;
   }
-  virtual void hashParams();
+  virtual void hashParams() override;
   virtual void execPixels(ExecutionManager &man) override;
 };
 

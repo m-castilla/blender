@@ -19,6 +19,7 @@
 #ifndef __COM_BUFFERMANAGER_H__
 #define __COM_BUFFERMANAGER_H__
 
+#include "COM_BufferRecycler.h"
 #include "COM_ReadsOptimizer.h"
 #include "COM_Rect.h"
 #include "DNA_vec_types.h"
@@ -81,6 +82,11 @@ class BufferManager {
 
   const std::unordered_map<OpKey, std::vector<ReaderReads *>> *getReadersReads(
       ExecutionManager &man);
+
+  BufferRecycler *recycler()
+  {
+    return m_recycler.get();
+  }
 
   ~BufferManager();
 

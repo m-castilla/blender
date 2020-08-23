@@ -66,6 +66,7 @@ void CompositorOperation::initExecution()
     this->m_depthBuffer = (float *)MEM_mallocN(
         (size_t)this->getWidth() * this->getHeight() * sizeof(float), "CompositorOperation");
   }
+  NodeOperation::initExecution();
 }
 
 void CompositorOperation::deinitExecution()
@@ -123,6 +124,7 @@ void CompositorOperation::deinitExecution()
 
   this->m_outputBuffer = NULL;
   this->m_depthBuffer = NULL;
+  NodeOperation::deinitExecution();
 }
 
 void CompositorOperation::execPixels(ExecutionManager &man)

@@ -92,10 +92,6 @@ class ViewerOperation : public NodeOperation {
   {
     this->m_centerY = centerY;
   }
-  void setChunkOrder(OrderOfChunks tileOrder)
-  {
-    this->m_chunkOrder = tileOrder;
-  }
   float getCenterX() const
   {
     return this->m_centerX;
@@ -103,10 +99,6 @@ class ViewerOperation : public NodeOperation {
   float getCenterY() const
   {
     return this->m_centerY;
-  }
-  OrderOfChunks getChunkOrder() const
-  {
-    return this->m_chunkOrder;
   }
   bool isViewerOperation() const
   {

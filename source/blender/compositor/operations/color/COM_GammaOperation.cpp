@@ -38,17 +38,18 @@ ccl_kernel gammaOp(CCL_WRITE(dst), CCL_READ(color), CCL_READ(gamma))
 
   CPU_LOOP_START(dst);
 
-  COORDS_TO_OFFSET(dst_coords);
+  COPY_COORDS(gamma, dst_coords);
+  COPY_COORDS(color, dst_coords);
 
-  READ_IMG(gamma, dst_coords, gamma_pix);
-  READ_IMG(color, dst_coords, color_pix);
+  READ_IMG(gamma, gamma_pix);
+  READ_IMG(color, color_pix);
 
   /* check for negative to avoid nan's */
   color_pix.x = color_pix.x > 0.0f ? powf(color_pix.x, gamma_pix.x) : color_pix.x;
   color_pix.y = color_pix.y > 0.0f ? powf(color_pix.y, gamma_pix.x) : color_pix.y;
   color_pix.z = color_pix.z > 0.0f ? powf(color_pix.z, gamma_pix.x) : color_pix.z;
 
-  WRITE_IMG(dst, dst_coords, color_pix);
+  WRITE_IMG(dst, color_pix);
 
   CPU_LOOP_END
 }
@@ -60,7 +61,7 @@ void GammaOperation::execPixels(ExecutionManager &man)
 {
   auto color = getInputOperation(0)->getPixels(this, man);
   auto gamma = getInputOperation(1)->getPixels(this, man);
-  auto cpu_write = std::bind(CCL_NAMESPACE::gammaOp, _1, color, gamma);
+  auto cpu_write = std::bind(CCL::gammaOp, _1, color, gamma);
   computeWriteSeek(man, cpu_write, "gammaOp", [&](ComputeKernel *kernel) {
     kernel->addReadImgArgs(*color);
     kernel->addReadImgArgs(*gamma);

@@ -36,29 +36,29 @@ ccl_kernel scaleVariableOp(CCL_WRITE(dst),
                            float center_y,
                            BOOL relative)
 {
-  SAMPLE_DECL(color);
+  READ_DECL(color);
   READ_DECL(x_input);
   READ_DECL(y_input);
   WRITE_DECL(dst);
 
   CPU_LOOP_START(dst);
 
-  COORDS_TO_OFFSET(dst_coords);
+  COPY_COORDS(x_input, dst_coords);
+  COPY_COORDS(y_input, dst_coords);
 
-  READ_IMG(x_input, dst_coords, x_input_pix);
-  READ_IMG(y_input, dst_coords, y_input_pix);
+  READ_IMG1(x_input, x_input_pix);
+  READ_IMG1(y_input, y_input_pix);
 
-  float2 color_coords;
   if (relative) {
-    color_coords.x = center_x + (dst_coords.x - center_x) / x_input_pix.x;
-    color_coords.y = center_y + (dst_coords.y - center_y) / y_input_pix.x;
+    color_coordsf.x = center_x + (dst_coords.x - center_x) / x_input_pix.x;
+    color_coordsf.y = center_y + (dst_coords.y - center_y) / y_input_pix.x;
   }
   else {
-    color_coords.x = center_x + (dst_coords.x - center_x) / (x_input_pix.x / color_width);
-    color_coords.y = center_y + (dst_coords.y - center_y) / (y_input_pix.x / color_height);
+    color_coordsf.x = center_x + (dst_coords.x - center_x) / (x_input_pix.x / color_width);
+    color_coordsf.y = center_y + (dst_coords.y - center_y) / (y_input_pix.x / color_height);
   }
-  SAMPLE_IMG(color, color_coords, sampler, color_pix);
-  WRITE_IMG(dst, dst_coords, color_pix);
+  SAMPLE_IMG(color, sampler, color_pix);
+  WRITE_IMG(dst, color_pix);
 
   CPU_LOOP_END
 }
@@ -72,25 +72,22 @@ ccl_kernel scaleFixedOp(CCL_WRITE(dst),
                         float scale_rel_x,
                         float scale_rel_y)
 {
-  SAMPLE_DECL(input);
+  READ_DECL(input);
   WRITE_DECL(dst);
 
   CPU_LOOP_START(dst);
 
-  COORDS_TO_OFFSET(dst_coords);
-
-  float2 input_coords;
   if (has_scale_offset) {
-    input_coords.x = ((dst_coords.x - scale_offset_x) * scale_rel_x);
-    input_coords.y = ((dst_coords.y - scale_offset_y) * scale_rel_y);
+    input_coordsf.x = ((dst_coords.x - scale_offset_x) * scale_rel_x);
+    input_coordsf.y = ((dst_coords.y - scale_offset_y) * scale_rel_y);
   }
   else {
-    input_coords.x = dst_coords.x * scale_rel_x;
-    input_coords.y = dst_coords.y * scale_rel_y;
+    input_coordsf.x = dst_coords.x * scale_rel_x;
+    input_coordsf.y = dst_coords.y * scale_rel_y;
   }
 
-  SAMPLE_IMG(input, input_coords, sampler, input_pix);
-  WRITE_IMG(dst, dst_coords, input_pix);
+  SAMPLE_IMG(input, sampler, input_pix);
+  WRITE_IMG(dst, input_pix);
 
   CPU_LOOP_END
 }
@@ -148,7 +145,7 @@ void ScaleOperation::execPixels(ExecutionManager &man)
   auto y_input = m_inputYOperation->getPixels(this, man);
 
   std::function<void(PixelsRect &, const WriteRectContext &)> cpu_write = std::bind(
-      CCL_NAMESPACE::scaleVariableOp,
+      CCL::scaleVariableOp,
       _1,
       color_input,
       x_input,
@@ -280,15 +277,7 @@ void ScaleFixedSizeOperation::execPixels(ExecutionManager &man)
   auto input = m_inputOperation->getPixels(this, man);
 
   std::function<void(PixelsRect &, const WriteRectContext &)> cpu_write = std::bind(
-      CCL_NAMESPACE::scaleFixedOp,
-      _1,
-      input,
-      m_sampler,
-      m_is_offset,
-      m_offsetX,
-      m_offsetY,
-      m_relX,
-      m_relY);
+      CCL::scaleFixedOp, _1, input, m_sampler, m_is_offset, m_offsetX, m_offsetY, m_relX, m_relY);
   computeWriteSeek(man, cpu_write, "scaleFixedOp", [&](ComputeKernel *kernel) {
     kernel->addReadImgArgs(*input);
     kernel->addSamplerArg(m_sampler);

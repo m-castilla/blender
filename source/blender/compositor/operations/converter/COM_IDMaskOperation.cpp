@@ -25,6 +25,7 @@ IDMaskOperation::IDMaskOperation() : NodeOperation()
 {
   this->addInputSocket(SocketType::VALUE);
   this->addOutputSocket(SocketType::VALUE);
+  m_objectIndex = -1;
 }
 
 void IDMaskOperation::hashParams()
@@ -42,11 +43,11 @@ ccl_kernel idMaskOp(CCL_WRITE(dst), CCL_READ(input), const int obj_index)
 
   CPU_LOOP_START(dst);
 
-  COORDS_TO_OFFSET(dst_coords);
+  COPY_COORDS(input, dst_coords);
 
-  READ_IMG(input, dst_coords, input_pix);
+  READ_IMG1(input, input_pix);
   input_pix.x = (roundf(input_pix.x) == obj_index) ? 1.0f : 0.0f;
-  WRITE_IMG(dst, dst_coords, input_pix);
+  WRITE_IMG1(dst, input_pix);
 
   CPU_LOOP_END
 }
@@ -57,7 +58,7 @@ void IDMaskOperation::execPixels(ExecutionManager &man)
 {
   auto input = getInputOperation(0)->getPixels(this, man);
   std::function<void(PixelsRect &, const WriteRectContext &)> cpu_write = std::bind(
-      CCL_NAMESPACE::idMaskOp, _1, input, m_objectIndex);
+      CCL::idMaskOp, _1, input, m_objectIndex);
   computeWriteSeek(man, cpu_write, "idMaskOp", [&](ComputeKernel *kernel) {
     kernel->addReadImgArgs(*input);
     kernel->addIntArg(m_objectIndex);

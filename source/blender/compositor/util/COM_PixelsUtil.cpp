@@ -72,8 +72,8 @@ void PixelsUtil::copyEqualRects(PixelsRect &wr1, PixelsRect &rr1)
       memcpy(w1.start, r1.start, (w1.end - w1.start) * sizeof(float));
     }
     else {
-      float *__restrict w1_cur = w1.start;
-      float *__restrict r1_cur = r1.start;
+      float *w1_cur = w1.start;
+      float *r1_cur = r1.start;
       while (w1_cur < w1.end) {
         memcpy(w1_cur, r1_cur, r1.row_bytes);
         w1_cur += w1.brow_chs;
@@ -99,8 +99,8 @@ void PixelsUtil::copyEqualRectsNChannels(PixelsRect &wr1, PixelsRect &rr1, int n
     PixelsImg r1 = rr1.pixelsImg();
     size_t elem_bytes = n_channels * sizeof(float);
     BLI_assert(w1.elem_bytes >= elem_bytes && r1.elem_bytes >= elem_bytes);
-    float *__restrict w1_cur = w1.start;
-    float *__restrict r1_cur = r1.start;
+    float *w1_cur = w1.start;
+    float *r1_cur = r1.start;
     float *w1_row_end = w1.start + w1.row_chs;
     while (w1_cur < w1.end) {
       while (w1_cur < w1_row_end) {
@@ -131,8 +131,8 @@ void PixelsUtil::copyEqualRectsChannel(PixelsRect &wr1,
     PixelsImg c1 = cr1.pixelsImg();
     BLI_assert(w1.row_elems == c1.row_elems && w1.elem_chs > wr_channel &&
                c1.elem_chs > cr_channel);
-    float *__restrict w1_cur = w1.start + wr_channel;
-    float *__restrict c1_cur = c1.start + cr_channel;
+    float *w1_cur = w1.start + wr_channel;
+    float *c1_cur = c1.start + cr_channel;
     float *w1_row_end = w1.start + w1.row_chs;
     while (w1_cur < w1.end) {
       while (w1_cur < w1_row_end) {
@@ -154,7 +154,7 @@ void PixelsUtil::setRectChannel(PixelsRect &wr1, int channel, float channel_valu
   BLI_assert(!wr1.is_single_elem);
   PixelsImg w1 = wr1.pixelsImg();
   BLI_assert(w1.elem_chs > channel);
-  float *__restrict w1_cur = w1.start + channel;
+  float *w1_cur = w1.start + channel;
   float *w1_row_end = w1.start + w1.row_chs;
   while (w1_cur < w1.end) {
     while (w1_cur < w1_row_end) {
@@ -184,7 +184,7 @@ void PixelsUtil::setRectElem(PixelsRect &wr1, const float *elem, int n_channels)
   PixelsImg w1 = wr1.pixelsImg();
   BLI_assert(w1.elem_bytes >= sizeof(float) && w1.elem_bytes % sizeof(float) == 0);
   BLI_assert(w1.elem_chs >= n_channels);
-  float *__restrict w1_cur = w1.start;
+  float *w1_cur = w1.start;
   float *w1_row_end = w1.start + w1.row_chs;
   size_t chs_bytes = n_channels * sizeof(float);
   while (w1_cur < w1.end) {
