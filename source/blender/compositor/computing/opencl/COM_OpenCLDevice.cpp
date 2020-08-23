@@ -1,4 +1,5 @@
 ﻿#include "COM_OpenCLDevice.h"
+#include "BLI_assert.h"
 #include "COM_BufferUtil.h"
 #include "COM_OpenCLKernel.h"
 #include "COM_OpenCLManager.h"
@@ -29,7 +30,7 @@ OpenCLDevice::OpenCLDevice(OpenCLManager &man, OpenCLPlatform &platform, cl_devi
       m_max_img_w(0),
       m_max_img_h(0),
       m_supported_formats(),
-      m_empty_img(nullptr)
+      m_one_elem_img(nullptr)
 {
 }
 
@@ -40,8 +41,8 @@ OpenCLDevice::~OpenCLDevice()
   m_man.printIfError(CLEW_GET_FUN(__clewReleaseDevice)(m_device_id));
 
   m_man.printIfError(clReleaseCommandQueue(m_queue));
-  if (m_empty_img) {
-    memDeviceFree(m_empty_img);
+  if (m_one_elem_img) {
+    memDeviceFree(m_one_elem_img);
   }
 }
 
@@ -331,10 +332,10 @@ void OpenCLDevice::enqueueWork(cl_command_queue cl_queue,
   }
 }
 
-cl_mem OpenCLDevice::getEmptyImg()
+cl_mem OpenCLDevice::getOneElemImg()
 {
-  if (!m_empty_img) {
-    m_empty_img = (cl_mem)memDeviceAlloc(MemoryAccess::READ, 1, 1, 1, false);
+  if (!m_one_elem_img) {
+    m_one_elem_img = (cl_mem)memDeviceAlloc(MemoryAccess::READ, 1, 1, 1, false);
   }
-  return m_empty_img;
+  return m_one_elem_img;
 }

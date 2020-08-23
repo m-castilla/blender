@@ -51,8 +51,8 @@
 #  define ccl_maybe_unused __attribute__((used))
 #endif /* _WIN32 && !FREE_WINDOWS */
 
-#define CCL_NAMESPACE ccl
-#define CCL_NAMESPACE_BEGIN namespace CCL_NAMESPACE {
+#define CCL ccl
+#define CCL_NAMESPACE_BEGIN namespace CCL {
 #define CCL_NAMESPACE_END }
 
 CCL_NAMESPACE_BEGIN
@@ -62,171 +62,232 @@ CCL_NAMESPACE_BEGIN
 #define kernel_assert(cond) assert(cond)
 
 CCL_NAMESPACE_END
+
 #include "kernel_util/COM_kernel_algo.h"
 #include "kernel_util/COM_kernel_color.h"
 #include "kernel_util/COM_kernel_defines.h"
 #include "kernel_util/COM_kernel_geom.h"
 #include "kernel_util/COM_kernel_math.h"
+#include "kernel_util/COM_kernel_sampling.h"
 #include "kernel_util/COM_kernel_types.h"
-
-CCL_NAMESPACE_BEGIN
 
 /* Kernel function signature macros*/
 #define CCL_READ(src) std::shared_ptr<PixelsRect> src
 #define CCL_WRITE(dst) PixelsRect &dst
-#define CCL_SAMPLER(sampler) PixelsSampler sampler
+#define CCL_SAMPLER(sampler) const PixelsSampler sampler
 /* END of OpenCL kernel function signature macros*/
 
 #define READ_DECL(src) \
   PixelsImg src##_img = src->pixelsImg(); \
-  float4 src##_pix; \
-  bool src##_single = src->is_single_elem;
-
-#define SAMPLE_DECL(src) \
-  PixelsImg src##_img = src->pixelsImg(); \
-  float4 src##_pix; \
-  bool src##_single = src->is_single_elem;
+  CCL::float4 src##_pix; \
+  size_t src##_offset; \
+  CCL::int2 src##_coords; \
+  CCL::float2 src##_coordsf; \
+  (void)src##_pix; \
+  (void)src##_offset; \
+  (void)src##_coords; \
+  (void)src##_coordsf;
 
 #define WRITE_DECL(dst) \
   PixelsImg dst##_img = dst.pixelsImg(); \
-  int dst##_start_x = dst##_img.start_x; \
-  int dst##_start_y = dst##_img.start_y; \
-  int2 dst##_coords; \
-  int write_offset_x, write_offset_y;
-
-#define COORDS_TO_OFFSET(coords) \
-  coords.x = dst##_start_x + write_offset_x; \
-  coords.y = dst##_start_y + write_offset_y;
+  CCL::int2 dst##_coords = CCL::make_int2(dst##_img.start_x, dst##_img.start_y); \
+  size_t dst##_offset; \
+  kernel_assert(dst##_img.elem_chs_incr > 0 && dst##_img.brow_chs_incr > 0);
 
 /*CPU op loop*/
 #define CPU_LOOP_START(dst) \
-  write_offset_x = 0; \
-  write_offset_y = 0; \
-  while (write_offset_y < dst##_img.col_elems) { \
-    while (write_offset_x < dst##_img.row_elems) {
+  while (dst##_coords.y < dst##_img.end_y) { \
+    dst##_offset = dst##_img.brow_chs_incr * dst##_coords.y + \
+                   dst##_coords.x * dst##_img.elem_chs_incr; \
+    while (dst##_coords.x < dst##_img.end_x) {
 
 #define CPU_LOOP_END \
-  ++write_offset_x; \
+  ++dst##_coords.x; \
+  dst##_offset += dst##_img.elem_chs_incr; \
   } \
-  write_offset_x = 0; \
-  ++write_offset_y; \
+  dst##_coords.x = dst##_img.start_x; \
+  ++dst##_coords.y; \
   }
 /*END of CPU op loop*/
 
-#define READ_IMG(src, coords, result) \
-  if (src##_single) { \
-    switch (src##_img.elem_chs) { \
-      case 4: \
-        result.w = src##_img.buffer[3]; \
-      case 3: \
-        result.z = src##_img.buffer[2]; \
-        result.y = src##_img.buffer[1]; \
-      case 1: \
-        result.x = src##_img.buffer[0]; \
-        break; \
-      default: \
-        kernel_assert(!"invalid elem_chs"); \
-        break; \
-    } \
+#define SET_COORDS(src, x_, y_) \
+  src##_coords.x = (x_); \
+  src##_coords.y = (y_); \
+  src##_offset = src##_img.brow_chs_incr * src##_coords.y + \
+                 src##_coords.x * src##_img.elem_chs_incr;
+
+#define SET_SAMPLE_COORDS(src, x_, y_) \
+  src##_coordsf.x = (x_); \
+  src##_coordsf.y = (y_);
+
+#define COPY_COORDS(to, coords) \
+  to##_coords = coords; \
+  to##_offset = to##_img.brow_chs_incr * to##_coords.y + to##_coords.x * to##_img.elem_chs_incr;
+
+#define COPY_SAMPLE_COORDS(to, coords) to##_coordsf = coords;
+
+#define UPDATE_COORDS_X(src, x_) \
+  src##_offset += (x_ - (size_t)src##_coords.x) * src##_img.elem_chs_incr; \
+  src##_coords.x = x_; \
+  kernel_assert(src##_offset == src##_img.brow_chs_incr * src##_coords.y + \
+                                    src##_coords.x * src##_img.elem_chs_incr);
+
+#define UPDATE_SAMPLE_COORDS_X(src, x_) src##_coordsf.x = x_;
+
+#define UPDATE_COORDS_Y(src, y_) \
+  src##_offset += (y_ - (size_t)src##_coords.y) * src##_img.brow_chs_incr; \
+  src##_coords.y = y_; \
+  kernel_assert(src##_offset == src##_img.brow_chs_incr * src##_coords.y + \
+                                    src##_coords.x * src##_img.elem_chs_incr);
+
+#define UPDATE_SAMPLE_COORDS_Y(src, y_) src##_coordsf.y = y_;
+
+#define INCR1_COORDS_X(src) \
+  src##_offset += src##_img.elem_chs_incr; \
+  src##_coords.x++; \
+  kernel_assert(src##_offset == src##_img.brow_chs_incr * src##_coords.y + \
+                                    src##_coords.x * src##_img.elem_chs_incr);
+
+#define INCR1_SAMPLE_COORDS_X(src) src##_coordsf.x++;
+
+#define INCR1_COORDS_Y(src) \
+  src##_offset += src##_img.brow_chs_incr; \
+  src##_coords.y++; \
+  kernel_assert(src##_offset == src##_img.brow_chs_incr * src##_coords.y + \
+                                    src##_coords.x * src##_img.elem_chs_incr);
+
+#define INCR1_SAMPLE_COORDS_Y(src) src##_coordsf.y++;
+
+#define DECR1_COORDS_X(src) \
+  src##_offset -= src##_img.elem_chs_incr; \
+  src##_coords.x--; \
+  kernel_assert(src##_coords.x >= src##_img.start_x && src##_coords.x < src##_img.end_x); \
+  kernel_assert(src##_offset == src##_img.brow_chs_incr * src##_coords.y + \
+                                    src##_coords.x * src##_img.elem_chs_incr);
+
+#define DECR1_SAMPLE_COORDS_X(src) src##_coordsf.x--;
+
+#define DECR1_COORDS_Y(src) \
+  src##_offset -= src##_img.brow_chs_incr; \
+  src##_coords.y--; \
+  kernel_assert(src##_offset == src##_img.brow_chs_incr * src##_coords.y + \
+                                    src##_coords.x * src##_img.elem_chs_incr);
+
+#define DECR1_SAMPLE_COORDS_Y(src) src##_coordsf.y--;
+
+#define INCR_COORDS_X(src, incr) \
+  src##_offset += src##_img.elem_chs_incr * incr; \
+  src##_coords.x += incr; \
+  kernel_assert(src##_offset == src##_img.brow_chs_incr * src##_coords.y + \
+                                    src##_coords.x * src##_img.elem_chs_incr);
+
+#define INCR_SAMPLE_COORDS_X(src, incr) src##_coordsf.x += incr;
+
+#define INCR_COORDS_Y(src, incr) \
+  src##_offset += src##_img.brow_chs_incr * incr; \
+  src##_coords.y += incr; \
+  kernel_assert(src##_offset == src##_img.brow_chs_incr * src##_coords.y + \
+                                    src##_coords.x * src##_img.elem_chs_incr);
+
+#define INCR_SAMPLE_COORDS_Y(src, incr) src##_coordsf.y += incr;
+
+#define READ_IMG1(src, result) \
+  result.x = src##_img.buffer[src##_offset]; \
+  kernel_assert(src##_coords.x >= src##_img.start_x && src##_coords.x < src##_img.end_x); \
+  kernel_assert(src##_coords.y >= src##_img.start_y && src##_coords.y < src##_img.end_y); \
+  kernel_assert(src##_offset >= (src##_img.brow_chs_incr * src##_img.start_y + \
+                                 src##_img.start_x * src##_img.elem_chs_incr) && \
+                src##_offset <= (src##_img.brow_chs_incr * ((size_t)src##_img.end_y - 1) + \
+                                 ((size_t)src##_img.end_x - 1) * src##_img.elem_chs_incr));
+
+#define READ_IMG3(src, result) \
+  result = CCL::make_float4(src##_img.buffer[src##_offset], \
+                            src##_img.buffer[src##_offset + 1], \
+                            src##_img.buffer[src##_offset + 2], \
+                            0.0f); \
+  kernel_assert(src##_coords.x >= src##_img.start_x && src##_coords.x < src##_img.end_x); \
+  kernel_assert(src##_coords.y >= src##_img.start_y && src##_coords.y < src##_img.end_y); \
+  kernel_assert(src##_offset >= (src##_img.brow_chs_incr * src##_img.start_y + \
+                                 src##_img.start_x * src##_img.elem_chs_incr) && \
+                src##_offset <= (src##_img.brow_chs_incr * ((size_t)src##_img.end_y - 1) + \
+                                 ((size_t)src##_img.end_x - 1) * src##_img.elem_chs_incr));
+
+#define READ_IMG4(src, result) \
+  result = CCL::make_float4(src##_img.buffer[src##_offset], \
+                            src##_img.buffer[src##_offset + 1], \
+                            src##_img.buffer[src##_offset + 2], \
+                            src##_img.buffer[src##_offset + 3]); \
+  kernel_assert(src##_coords.x >= src##_img.start_x && src##_coords.x < src##_img.end_x); \
+  kernel_assert(src##_coords.y >= src##_img.start_y && src##_coords.y < src##_img.end_y); \
+  kernel_assert(src##_offset >= (src##_img.brow_chs_incr * src##_img.start_y + \
+                                 src##_img.start_x * src##_img.elem_chs_incr) && \
+                src##_offset <= (src##_img.brow_chs_incr * ((size_t)src##_img.end_y - 1) + \
+                                 ((size_t)src##_img.end_x - 1) * src##_img.elem_chs_incr));
+
+#define WRITE_IMG1(dst, pixel) \
+  dst##_img.buffer[dst##_offset] = pixel.x; \
+  kernel_assert(dst##_coords.x >= dst##_img.start_x && dst##_coords.x < dst##_img.end_x); \
+  kernel_assert(dst##_coords.y >= dst##_img.start_y && dst##_coords.y < dst##_img.end_y); \
+  kernel_assert(dst##_offset >= (dst##_img.brow_chs_incr * dst##_img.start_y + \
+                                 dst##_img.start_x * dst##_img.elem_chs_incr) && \
+                dst##_offset <= (dst##_img.brow_chs_incr * ((size_t)dst##_img.end_y - 1) + \
+                                 ((size_t)dst##_img.end_x - 1) * dst##_img.elem_chs_incr));
+#define WRITE_IMG3(dst, pixel) \
+  dst##_img.buffer[dst##_offset] = pixel.x; \
+  dst##_img.buffer[dst##_offset + 1] = pixel.y; \
+  dst##_img.buffer[dst##_offset + 2] = pixel.z; \
+  kernel_assert(dst##_coords.x >= dst##_img.start_x && dst##_coords.x < dst##_img.end_x); \
+  kernel_assert(dst##_coords.y >= dst##_img.start_y && dst##_coords.y < dst##_img.end_y); \
+  kernel_assert(dst##_offset >= (dst##_img.brow_chs_incr * dst##_img.start_y + \
+                                 dst##_img.start_x * dst##_img.elem_chs_incr) && \
+                dst##_offset <= (dst##_img.brow_chs_incr * ((size_t)dst##_img.end_y - 1) + \
+                                 ((size_t)dst##_img.end_x - 1) * dst##_img.elem_chs_incr));
+
+#ifdef __KERNEL_SSE__
+#  define WRITE_IMG4(dst, pixel) \
+    _mm_store_ps(&dst##_img.buffer[dst##_offset], pixel.m128); \
+    kernel_assert(dst##_coords.x >= dst##_img.start_x && dst##_coords.x < dst##_img.end_x); \
+    kernel_assert(dst##_coords.y >= dst##_img.start_y && dst##_coords.y < dst##_img.end_y); \
+    kernel_assert(dst##_offset >= (dst##_img.brow_chs_incr * dst##_img.start_y + \
+                                   dst##_img.start_x * dst##_img.elem_chs_incr) && \
+                  dst##_offset <= (dst##_img.brow_chs_incr * ((size_t)dst##_img.end_y - 1) + \
+                                   ((size_t)dst##_img.end_x - 1) * dst##_img.elem_chs_incr));
+#else
+#  define WRITE_IMG4(dst, pixel) \
+    dst##_img.buffer[dst##_offset] = pixel.x; \
+    dst##_img.buffer[dst##_offset + 1] = pixel.y; \
+    dst##_img.buffer[dst##_offset + 2] = pixel.z; \
+    dst##_img.buffer[dst##_offset + 3] = pixel.w; \
+    kernel_assert(dst##_coords.x >= dst##_img.start_x && dst##_coords.x < dst##_img.end_x); \
+    kernel_assert(dst##_coords.y >= dst##_img.start_y && dst##_coords.y < dst##_img.end_y); \
+    kernel_assert(dst##_offset >= (dst##_img.brow_chs_incr * dst##_img.start_y + \
+                                   dst##_img.start_x * dst##_img.elem_chs_incr) && \
+                  dst##_offset <= (dst##_img.brow_chs_incr * ((size_t)dst##_img.end_y - 1) + \
+                                   ((size_t)dst##_img.end_x - 1) * dst##_img.elem_chs_incr));
+#endif
+
+#define READ_IMG(src, pixel) \
+  if (src##_img.elem_chs == 4) { \
+    READ_IMG4(src, pixel); \
+  } \
+  else if (src##_img.elem_chs == 1) { \
+    READ_IMG1(src, pixel); \
   } \
   else { \
-    switch (src##_img.elem_chs) { \
-      case 4: { \
-        size_t src##_offset_tmp__ = src##_img.brow_chs * (coords).y + (coords).x * (size_t)4; \
-        result.x = src##_img.buffer[src##_offset_tmp__]; \
-        result.y = src##_img.buffer[src##_offset_tmp__ + 1]; \
-        result.z = src##_img.buffer[src##_offset_tmp__ + 2]; \
-        result.w = src##_img.buffer[src##_offset_tmp__ + 3]; \
-        break; \
-      } \
-      case 3: { \
-        size_t src##_offset_tmp__ = src##_img.brow_chs * (coords).y + (coords).x * (size_t)3; \
-        result.x = src##_img.buffer[src##_offset_tmp__]; \
-        result.y = src##_img.buffer[src##_offset_tmp__ + 1]; \
-        result.z = src##_img.buffer[src##_offset_tmp__ + 2]; \
-        break; \
-      } \
-      case 1: \
-        result.x = \
-            src##_img.buffer[(size_t)src##_img.brow_chs * (coords).y + (size_t)(coords).x]; \
-        break; \
-      default: \
-        kernel_assert(!"invalid elem_chs"); \
-        break; \
-    } \
+    READ_IMG3(src, pixel); \
   }
 
-/*Read pixel from image*/
-//#define READ_IMG(src, coords, result) \
-//  memcpy( \
-//      &(result), \
-//      (src##_single ? \
-//           src##_img.buffer : \
-//           &src##_img.buffer[src##_img.brow_chs * (coords).y + (coords).x * src##_img.elem_chs]), \
-//      src##_img.elem_bytes);
-
-#define SAMPLE_IMG(src, coords, sampler, result) \
-  if (src##_single) { \
-    switch (src##_img.elem_chs) { \
-      case 4: \
-        result.w = src##_img.buffer[3]; \
-      case 3: \
-        result.z = src##_img.buffer[2]; \
-        result.y = src##_img.buffer[1]; \
-      case 1: \
-        result.x = src##_img.buffer[0]; \
-        break; \
-      default: \
-        kernel_assert(!"invalid elem_chs"); \
-        break; \
-    } \
+#define WRITE_IMG(dst, pixel) \
+  if (dst##_img.elem_chs == 4) { \
+    WRITE_IMG4(dst, pixel); \
+  } \
+  else if (dst##_img.elem_chs == 1) { \
+    WRITE_IMG1(dst, pixel); \
   } \
   else { \
-    src##_img.sample((float *)&result, sampler, (coords).x, (coords).y); \
+    WRITE_IMG3(dst, pixel); \
   }
 
-/* sampler must be a PixelsSampler, coords can be either float2 or int2, src_img may have any
- * number of channels*/
-//#define SAMPLE_IMG(src, coords, sampler, result) \
-//  if (src##_single) { \
-//    memcpy(&(result), src##_img.buffer, src##_img.elem_bytes); \
-//  } \
-//  else { \
-//    src##_img.sample((float *)&result, sampler, (coords).x, (coords).y); \
-//  }
-
-#define WRITE_IMG(dst, coords, pixel) \
-  switch (dst##_img.elem_chs) { \
-    case 4: { \
-      size_t dst##_offset_tmp__ = dst##_img.brow_chs * (coords).y + (coords).x * (size_t)4; \
-      dst##_img.buffer[dst##_offset_tmp__] = pixel.x; \
-      dst##_img.buffer[dst##_offset_tmp__ + 1] = pixel.y; \
-      dst##_img.buffer[dst##_offset_tmp__ + 2] = pixel.z; \
-      dst##_img.buffer[dst##_offset_tmp__ + 3] = pixel.w; \
-      break; \
-    } \
-    case 3: { \
-      size_t dst##_offset_tmp__ = dst##_img.brow_chs * (coords).y + (coords).x * (size_t)3; \
-      dst##_img.buffer[dst##_offset_tmp__] = pixel.x; \
-      dst##_img.buffer[dst##_offset_tmp__ + 1] = pixel.y; \
-      dst##_img.buffer[dst##_offset_tmp__ + 2] = pixel.z; \
-      break; \
-    } \
-    case 1: \
-      dst##_img.buffer[dst##_img.brow_chs * (coords).y + (size_t)(coords).x] = pixel.x; \
-      break; \
-\
-    default: \
-      kernel_assert(!"invalid elem_chs"); \
-      break; \
-  }
-
-/* Write pixel to image */
-//#define WRITE_IMG(dst, coords, pixel) \
-//  memcpy(&dst##_img.buffer[dst##_img.brow_chs * (coords).y + (coords).x * dst##_img.elem_chs], \
-//         &(pixel), \
-//         dst##_img.elem_bytes);
-
-CCL_NAMESPACE_END
+#define SAMPLE_IMG(src, sampler, result) CCL::sample(src##_img, result, sampler, src##_coordsf);
 
 #endif

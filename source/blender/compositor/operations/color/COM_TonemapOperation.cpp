@@ -20,7 +20,7 @@
 #include "BLI_math.h"
 #include "BLI_utildefines.h"
 #include "COM_ComputeKernel.h"
-#include "COM_kernel_cpu_nocompat.h"
+#include "COM_kernel_cpu.h"
 #include "IMB_colormanagement.h"
 
 TonemapOperation::TonemapOperation() : NodeOperation()
@@ -36,6 +36,7 @@ void TonemapOperation::initExecution()
 {
   m_avg = new AvgLogLum{0, 0, 0, {0, 0, 0, 0}, 0};
   m_sum = new SumLogLum{0, 0, {0, 0, 0, 0}, 0, 0};
+  NodeOperation::initExecution();
 }
 
 void TonemapOperation::deinitExecution()
@@ -48,6 +49,7 @@ void TonemapOperation::deinitExecution()
     delete m_sum;
     m_sum = nullptr;
   }
+  NodeOperation::deinitExecution();
 }
 
 void TonemapOperation::hashParams()
@@ -67,8 +69,8 @@ void TonemapOperation::calcAverage(std::shared_ptr<PixelsRect> color,
                                    PixelsRect &dst,
                                    const WriteRectContext &ctx)
 {
-  CPU_READ_DECL(color);
-  CPU_WRITE_DECL(dst);
+  READ_DECL(color);
+  WRITE_DECL(dst);
 
   /* Calculate average */
   float lsum = 0.0f;
@@ -78,13 +80,15 @@ void TonemapOperation::calcAverage(std::shared_ptr<PixelsRect> color,
   float *color_buf = color_img.buffer;
 
   CPU_LOOP_START(dst);
-  CPU_READ_OFFSET(color, dst);
+
+  COPY_COORDS(color, dst_coords);
   float L = IMB_colormanagement_get_luminance(&color_buf[color_offset]);
   Lav += L;
   add_v3_v3(cav, &color_buf[color_offset]);
   lsum += logf(MAX2(L, 0.0f) + 1e-5f);
   maxl = (L > maxl) ? L : maxl;
   minl = (L < minl) ? L : minl;
+
   CPU_LOOP_END;
 
   m_mutex.lock();
@@ -118,21 +122,18 @@ void TonemapOperation::execPixels(ExecutionManager &man)
       calcAverage(color, dst, ctx);
     }
     else {
-      CPU_READ_DECL(color);
-      CPU_WRITE_DECL(dst);
-      CCL_NAMESPACE::float4 color_pix;
-      CCL_NAMESPACE::int2 coords;
+      READ_DECL(color);
+      WRITE_DECL(dst);
 
       CPU_LOOP_START(dst);
 
-      coords.x = dst_start_x + write_offset_x;
-      coords.y = dst_start_y + write_offset_y;
+      COPY_COORDS(color, dst_coords);
 
-      READ_IMG(color, coords, color_pix);
+      READ_IMG4(color, color_pix);
 
       const float alpha = color_pix.w;
       color_pix *= m_avg->al;
-      CCL_NAMESPACE::float4 c_offset = color_pix + m_tone->offset;
+      CCL::float4 c_offset = color_pix + m_tone->offset;
 
       color_pix.x /= c_offset.x == 0.0f ? 1.0f : c_offset.x;
       color_pix.y /= c_offset.y == 0.0f ? 1.0f : c_offset.y;
@@ -146,7 +147,7 @@ void TonemapOperation::execPixels(ExecutionManager &man)
       }
       color_pix.w = alpha;
 
-      WRITE_IMG(dst, coords, color_pix);
+      WRITE_IMG(dst, color_pix);
 
       CPU_LOOP_END;
     }
@@ -166,17 +167,14 @@ void PhotoreceptorTonemapOperation::execPixels(ExecutionManager &man)
       const float m = (m_tone->m > 0.0f) ? m_tone->m : (0.3f + 0.7f * powf(m_avg->auto_key, 1.4f));
       const float ic = 1.0f - m_tone->c, ia = 1.0f - m_tone->a;
 
-      CPU_READ_DECL(color);
-      CPU_WRITE_DECL(dst);
-      CCL_NAMESPACE::float4 color_pix;
-      CCL_NAMESPACE::int2 coords;
+      READ_DECL(color);
+      WRITE_DECL(dst);
 
       CPU_LOOP_START(dst);
 
-      coords.x = dst_start_x + write_offset_x;
-      coords.y = dst_start_y + write_offset_y;
+      COPY_COORDS(color, dst_coords);
 
-      READ_IMG(color, coords, color_pix);
+      READ_IMG(color, color_pix);
 
       const float alpha = color_pix.w;
 
@@ -196,7 +194,7 @@ void PhotoreceptorTonemapOperation::execPixels(ExecutionManager &man)
 
       color_pix.w = alpha;
 
-      WRITE_IMG(dst, coords, color_pix);
+      WRITE_IMG(dst, color_pix);
 
       CPU_LOOP_END;
     }

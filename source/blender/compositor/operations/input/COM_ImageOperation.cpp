@@ -17,11 +17,11 @@
  */
 
 #include "COM_ImageOperation.h"
-
 #include "BKE_image.h"
 #include "BKE_scene.h"
+#include "COM_BufferUtil.h"
+#include "COM_PixelsUtil.h"
 #include "DNA_image_types.h"
-
 #include "IMB_colormanagement.h"
 #include "IMB_imbuf.h"
 #include "IMB_imbuf_types.h"
@@ -29,9 +29,7 @@
 #include "RE_render_ext.h"
 #include "RE_shader_ext.h"
 
-#include "COM_BufferUtil.h"
-#include "COM_PixelsUtil.h"
-#include "COM_kernel_cpu_nocompat.h"
+#include "COM_kernel_cpu.h"
 
 BaseImageOperation::BaseImageOperation() : NodeOperation()
 {
@@ -95,6 +93,7 @@ void BaseImageOperation::initExecution()
     this->m_imageheight = stackbuf->y;
     this->m_numberOfChannels = stackbuf->channels;
   }
+  NodeOperation::initExecution();
 }
 
 void BaseImageOperation::deinitExecution()
@@ -137,9 +136,10 @@ void BaseImageOperation::hashParams()
 
 void ImageOperation::execPixels(ExecutionManager &man)
 {
+  float norm_mult = 1.0 / 255.0;
   auto cpuWrite = [&](PixelsRect &dst, const WriteRectContext &ctx) {
     if (m_imageFloatBuffer == nullptr && m_imageByteBuffer == nullptr) {
-      PixelsUtil::setRectElem(dst, (float *)&CCL_NAMESPACE::TRANSPARENT_PIXEL);
+      PixelsUtil::setRectElem(dst, (float *)&CCL::TRANSPARENT_PIXEL);
     }
     else if (m_imageFloatBuffer) {
       auto buf = BufferUtil::createUnmanagedTmpBuffer(
@@ -148,27 +148,37 @@ void ImageOperation::execPixels(ExecutionManager &man)
       PixelsUtil::copyEqualRectsNChannels(dst, src_rect, m_numberOfChannels);
     }
     else {
+      int n_channels = m_numberOfChannels;
+      size_t n_channels_sz = m_numberOfChannels;
+      size_t width = m_width;
       unsigned char *uchar_buf = (unsigned char *)m_imageByteBuffer;
+      CCL::float4 src_pixel;
+      size_t src_offset;
 
-      CPU_WRITE_DECL(dst);
+      WRITE_DECL(dst);
       CPU_LOOP_START(dst);
 
-      CPU_WRITE_OFFSET(dst);
-      int src_offset = m_width * (dst_start_y + write_offset_y) * m_numberOfChannels +
-                       (dst_start_x + write_offset_x) * m_numberOfChannels;
+      src_offset = n_channels == dst_img.elem_chs ?
+                       dst_offset :
+                       width * dst_coords.y * n_channels_sz + dst_coords.x * n_channels_sz;
 
-      CCL_NAMESPACE::float4 src_pixel = CCL_NAMESPACE::make_float4(uchar_buf[src_offset],
-                                                                   uchar_buf[src_offset + 1],
-                                                                   uchar_buf[src_offset + 2],
-                                                                   uchar_buf[src_offset + 3]);
+      src_pixel = CCL::make_float4(uchar_buf[src_offset],
+                                   uchar_buf[src_offset + 1],
+                                   uchar_buf[src_offset + 2],
+                                   uchar_buf[src_offset + 3]);
       // normalize
-      src_pixel /= 255.0f;
-      memcpy(&dst_img.buffer[dst_offset], &src_pixel, sizeof(float) * COM_NUM_CHANNELS_COLOR);
+      src_pixel *= norm_mult;
 
-      IMB_colormanagement_colorspace_to_scene_linear_v4(
-          &dst_img.buffer[dst_offset], false, m_buffer->rect_colorspace);
+      WRITE_IMG(dst, src_pixel);
 
       CPU_LOOP_END;
+
+      IMB_colormanagement_colorspace_to_scene_linear(dst_img.start,
+                                                     dst_img.row_elems,
+                                                     dst_img.col_elems,
+                                                     dst_img.elem_chs,
+                                                     m_buffer->rect_colorspace,
+                                                     false);
     }
   };
 
@@ -194,12 +204,11 @@ void ImageAlphaOperation::execPixels(ExecutionManager &man)
     }
     else {
       unsigned char *uchar_buf = (unsigned char *)m_imageByteBuffer;
-      CPU_WRITE_DECL(dst);
+      WRITE_DECL(dst);
       CPU_LOOP_START(dst);
 
-      CPU_WRITE_OFFSET(dst);
-      int src_offset = m_width * (dst_start_y + write_offset_y) * m_numberOfChannels +
-                       (dst_start_x + write_offset_x) * m_numberOfChannels;
+      int src_offset = m_width * dst_coords.y * m_numberOfChannels +
+                       dst_coords.x * m_numberOfChannels;
 
       // normalize to float
       dst_img.buffer[dst_offset] = uchar_buf[src_offset + 3] / 255.0f;

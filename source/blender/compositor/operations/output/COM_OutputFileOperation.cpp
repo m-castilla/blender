@@ -153,6 +153,7 @@ OutputSingleLayerOperation::OutputSingleLayerOperation(
 void OutputSingleLayerOperation::initExecution()
 {
   this->m_outputBuffer = init_buffer(this->getWidth(), this->getHeight(), m_datatype);
+  NodeOperation::initExecution();
 }
 
 void OutputSingleLayerOperation::execPixels(ExecutionManager &man)
@@ -206,6 +207,7 @@ void OutputSingleLayerOperation::deinitExecution()
     IMB_freeImBuf(ibuf);
   }
   this->m_outputBuffer = NULL;
+  NodeOperation::deinitExecution();
 }
 
 /******************************* MultiLayer *******************************/

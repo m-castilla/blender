@@ -44,12 +44,15 @@ ccl_kernel changeHsvOp(
 
   CPU_LOOP_START(dst);
 
-  COORDS_TO_OFFSET(dst_coords);
+  COPY_COORDS(value, dst_coords);
+  COPY_COORDS(color, dst_coords);
+  COPY_COORDS(hue, dst_coords);
+  COPY_COORDS(sat, dst_coords);
 
-  READ_IMG(value, dst_coords, value_pix);
-  READ_IMG(color, dst_coords, color_pix);
-  READ_IMG(hue, dst_coords, hue_pix);
-  READ_IMG(sat, dst_coords, sat_pix);
+  READ_IMG1(value, value_pix);
+  READ_IMG4(color, color_pix);
+  READ_IMG1(hue, hue_pix);
+  READ_IMG1(sat, sat_pix);
 
   color_pix.x += (hue_pix.x - 0.5f);
   if (color_pix.x > 1.0f) {
@@ -61,7 +64,7 @@ ccl_kernel changeHsvOp(
   color_pix.y *= sat_pix.x;
   color_pix.z *= value_pix.x;
 
-  WRITE_IMG(dst, dst_coords, color_pix);
+  WRITE_IMG4(dst, color_pix);
 
   CPU_LOOP_END
 }
@@ -75,7 +78,7 @@ void ChangeHSVOperation::execPixels(ExecutionManager &man)
   auto hue = getInputOperation(1)->getPixels(this, man);
   auto sat = getInputOperation(2)->getPixels(this, man);
   auto value = getInputOperation(3)->getPixels(this, man);
-  auto cpu_write = std::bind(CCL_NAMESPACE::changeHsvOp, _1, color, hue, sat, value);
+  auto cpu_write = std::bind(CCL::changeHsvOp, _1, color, hue, sat, value);
   computeWriteSeek(man, cpu_write, "changeHsvOp", [&](ComputeKernel *kernel) {
     kernel->addReadImgArgs(*color);
     kernel->addReadImgArgs(*hue);

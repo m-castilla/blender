@@ -57,21 +57,30 @@ ccl_device_inline int3 max(int3 a, int3 b)
 #  endif
 }
 
-ccl_device_inline int3 clamp(const int3 &a, int mn, int mx)
+ccl_device_inline int3 clamp(const int3 &a, const int mn, const int mx)
 {
-#  ifdef __KERNEL_SSE__
+#  if defined(__KERNEL_SSE__) && defined(__KERNEL_SSE41__)
   return min(max(a, make_int3_1(mn)), make_int3_1(mx));
 #  else
   return make_int3(clamp(a.x, mn, mx), clamp(a.y, mn, mx), clamp(a.z, mn, mx));
 #  endif
 }
 
-ccl_device_inline int3 clamp(const int3 &a, int3 &mn, int mx)
+ccl_device_inline int3 clamp(const int3 &a, const int3 &mn, const int mx)
 {
-#  ifdef __KERNEL_SSE__
+#  if defined(__KERNEL_SSE__) && defined(__KERNEL_SSE41__)
   return min(max(a, mn), make_int3_1(mx));
 #  else
   return make_int3(clamp(a.x, mn.x, mx), clamp(a.y, mn.y, mx), clamp(a.z, mn.z, mx));
+#  endif
+}
+
+ccl_device_inline int3 clamp(const int3 &a, const int3 &mn, const int3 &mx)
+{
+#  if defined(__KERNEL_SSE__) && defined(__KERNEL_SSE41__)
+  return min(max(a, mn), mx);
+#  else
+  return make_int3(clamp(a.x, mn.x, mx.x), clamp(a.y, mn.y, mx.y), clamp(a.z, mn.z, mx.z));
 #  endif
 }
 

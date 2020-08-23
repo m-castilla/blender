@@ -79,6 +79,7 @@ void PreviewOperation::initExecution()
   m_preview->xsize = getWidth();
   m_preview->ysize = getHeight();
 
+  NodeOperation::initExecution();
   bool has_cache = GlobalMan->ViewCacheMan->getPreviewCache(this) != nullptr;
   if (has_cache) {
     m_needs_write = false;
@@ -119,6 +120,7 @@ void PreviewOperation::deinitExecution()
   this->m_preview->rect = preview_buffer;
 
   this->m_outputBuffer = nullptr;
+  NodeOperation::deinitExecution();
 }
 
 void PreviewOperation::execPixels(ExecutionManager &man)

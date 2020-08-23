@@ -64,6 +64,7 @@ void RenderLayersProg::initExecution()
     RE_ReleaseResult(re);
     re = NULL;
   }
+  NodeOperation::initExecution();
 }
 
 void RenderLayersProg::hashParams()

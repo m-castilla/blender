@@ -47,6 +47,9 @@ CCL_NAMESPACE_BEGIN
 #ifndef M_LN_2PI_F
 #  define M_LN_2PI_F (1.8378770664093454f) /* ln(2*pi) */
 #endif
+#ifndef M_SQRT1_2_F
+#  define M_SQRT1_2_F (0.707106781186547524401f) /* 1/sqrt(2)  */
+#endif
 
 /* Multiplication */
 #ifndef M_2PI_F
@@ -78,12 +81,12 @@ CCL_NAMESPACE_BEGIN
 
 #ifdef _WIN32
 #  ifndef __KERNEL_OPENCL__
-ccl_device_inline float fmaxf(float a, float b)
+ccl_device_inline float fmaxf(const float a, const float b)
 {
   return (a > b) ? a : b;
 }
 
-ccl_device_inline float fminf(float a, float b)
+ccl_device_inline float fminf(const float a, const float b)
 {
   return (a < b) ? a : b;
 }
@@ -767,7 +770,7 @@ ccl_device_inline float compare_floats(const float a,
 
 ccl_device_inline float clamp_to_normal(const float a)
 {
-  return min(max(a, 0.0f), 1.0f);
+  return fminf(fmaxf(a, 0.0f), 1.0f);
 }
 
 ccl_device_inline float4 interp_f4f4(const float4 a, const float4 b, const float t)
