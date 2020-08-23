@@ -17,17 +17,15 @@
  */
 
 #include "COM_TrackPositionOperation.h"
-
-#include "MEM_guardedalloc.h"
-
-#include "BLI_listbase.h"
-
 #include "BKE_movieclip.h"
 #include "BKE_node.h"
 #include "BKE_tracking.h"
+#include "BLI_listbase.h"
+#include "BLI_math.h"
 #include "COM_PixelsUtil.h"
+#include "MEM_guardedalloc.h"
 
-TrackPositionOperation::TrackPositionOperation() : NodeOperation()
+TrackPositionOperation::TrackPositionOperation() : NodeOperation(), m_markerPos(), m_relativePos()
 {
   this->addOutputSocket(SocketType::VALUE);
   this->m_movieClip = NULL;
@@ -56,8 +54,9 @@ void TrackPositionOperation::initExecution()
 
   tracking = &this->m_movieClip->tracking;
 
+  int movie_width, movie_height;
   BKE_movieclip_user_set_frame(&user, this->m_framenumber);
-  BKE_movieclip_get_size(this->m_movieClip, &user, &this->m_width, &this->m_height);
+  BKE_movieclip_get_size(this->m_movieClip, &user, &movie_width, &movie_height);
 
   object = BKE_tracking_object_get_named(tracking, this->m_trackingObjectName);
   if (object) {
@@ -113,11 +112,13 @@ void TrackPositionOperation::initExecution()
       // calc single element (pixel) result
       m_pix_result = this->m_markerPos[this->m_axis] - this->m_relativePos[this->m_axis];
       if (this->m_axis == 0) {
-        m_pix_result *= this->m_width;
+        m_pix_result *= movie_width;
       }
       else {
-        m_pix_result *= this->m_height;
+        m_pix_result *= movie_height;
       }
     }
   }
+
+  NodeOperation::initExecution();
 }

@@ -18,14 +18,15 @@
 
 #pragma once
 
-#include "COM_MathUtil.h"
-#include "COM_NodeSocketReader.h"
-#include "COM_Pixels.h"
-#include "COM_Rect.h"
 #include "clew.h"
 #include <string>
 #include <utility>
 #include <vector>
+
+#include "COM_MathUtil.h"
+#include "COM_NodeSocketReader.h"
+#include "COM_Pixels.h"
+#include "COM_Rect.h"
 
 class ExecutionManager;
 class ComputeKernel;
@@ -53,21 +54,11 @@ class NodeOperation : public NodeSocketReader {
   size_t m_op_hash;
   bool m_exec_pixels_optimized;
   bool base_hash_params_called;
-  int m_current_tree_level;
-  int m_max_tree_level;
 
  public:
   virtual ~NodeOperation();
 
   const OpKey &getKey();
-  inline int getCurrentTreeLevel()
-  {
-    return m_current_tree_level;
-  }
-  inline int getMaxTreeLevel()
-  {
-    return m_max_tree_level;
-  }
   /**
    * \brief Subclases implementing it must call their base method at the end.
    *

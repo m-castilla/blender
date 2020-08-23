@@ -16,10 +16,17 @@
  * Copyright 2011, Blender Foundation.
  */
 
+<<<<<<< HEAD
 #pragma once
 
 #include "COM_NodeOperation.h"
 #include "DNA_node_types.h"
+=======
+#ifndef __COM_ANTIALIASOPERATION_H__
+#define __COM_ANTIALIASOPERATION_H__
+
+#include "COM_NodeOperation.h"
+>>>>>>> 350d60887b8... - Added filter nodes: Bilateral Blur, Blur, Bokeh Blur, Defocus, Denoise, Despeckle, Dilate/Erode, Directional Blur and Filter
 
 /**
  * \brief AntiAlias operations
@@ -27,6 +34,7 @@
  * \ingroup operation
  */
 class AntiAliasOperation : public NodeOperation {
+<<<<<<< HEAD
  protected:
   /**
    * \brief Cached reference to the reader
@@ -56,3 +64,17 @@ class AntiAliasOperation : public NodeOperation {
                                         ReadBufferOperation *readOperation,
                                         rcti *output);
 };
+=======
+ public:
+  AntiAliasOperation();
+
+  bool canCompute() const override
+  {
+    return false;
+  }
+
+ protected:
+  void execPixels(ExecutionManager &man) override;
+};
+#endif
+>>>>>>> 350d60887b8... - Added filter nodes: Bilateral Blur, Blur, Bokeh Blur, Defocus, Denoise, Despeckle, Dilate/Erode, Directional Blur and Filter

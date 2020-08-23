@@ -1,6 +1,7 @@
 #ifndef __COM_COMPUTEKERNEL_H__
 #define __COM_COMPUTEKERNEL_H__
 
+#include "COM_kernel_cpu.h"
 #include <string>
 
 class PixelsRect;
@@ -19,18 +20,21 @@ class ComputeKernel {
   virtual void clearArgs() = 0;
   virtual void addReadImgArgs(PixelsRect &pixels) = 0;
   virtual void addSamplerArg(PixelsSampler &sampler) = 0;
-  virtual void addIntArg(int value) = 0;
   virtual void addBoolArg(bool value) = 0;
+  virtual void addIntArg(int value) = 0;
+  virtual void addInt3Arg(const CCL::int3 &value) = 0;
   virtual void addFloatArg(float value) = 0;
-  virtual void addFloat2Arg(float *value) = 0;
-  virtual void addFloat3Arg(float *value) = 0;
-  virtual void addFloat4Arg(float *value) = 0;
-  // Add constant float4 (read only) array
-  virtual void addFloat4CArrayArg(float *value, int n_elems) = 0;
-  // Add constant int (read only) array
+  virtual void addFloat2Arg(const CCL::float2 &value) = 0;
+  virtual void addFloat3Arg(const CCL::float3 &value) = 0;
+  virtual void addFloat4Arg(const CCL::float4 &value) = 0;
+
+  /* Constant read only array args */
+  virtual void addFloat3CArrayArg(const CCL::float3 *float3_array, int n_elems) = 0;
+  virtual void addFloat4CArrayArg(const CCL::float4 *carray, int n_elems) = 0;
   virtual void addIntCArrayArg(int *value, int n_elems) = 0;
-  // Add constant float (read only) array
   virtual void addFloatCArrayArg(float *float_array, int n_elems) = 0;
+  /* */
+
   virtual bool hasWorkEnqueued() = 0;
 
  protected:

@@ -20,16 +20,12 @@
 
 #include "COM_defines.h"
 
-typedef enum QualityHelper {
-  COM_QH_INCREASE,
-  COM_QH_MULTIPLY,
-} QualityHelper;
+enum class QualityHelper { INCREASE, MULTIPLY };
 
 class QualityStepHelper {
  private:
   CompositorQuality m_quality;
   int m_step;
-  int m_offsetadd;
 
  protected:
   /**
@@ -41,9 +37,9 @@ class QualityStepHelper {
   {
     return this->m_step;
   }
-  inline int getOffsetAdd() const
+  inline CompositorQuality getQuality() const
   {
-    return this->m_offsetadd;
+    return this->m_quality;
   }
 
  public:

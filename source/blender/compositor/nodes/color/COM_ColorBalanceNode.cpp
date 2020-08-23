@@ -18,6 +18,7 @@
 
 #include "COM_ColorBalanceNode.h"
 #include "BKE_node.h"
+#include "BLI_math.h"
 #include "COM_ColorBalanceASCCDLOperation.h"
 #include "COM_ColorBalanceLGGOperation.h"
 #include "COM_ExecutionSystem.h"

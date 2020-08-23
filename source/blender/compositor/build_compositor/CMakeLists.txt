@@ -153,6 +153,8 @@ set(SRC
   ${CMP_BASE}/computing/COM_kernel_cpu_nocompat.h
   ${CMP_BASE}/computing/COM_kernel_opencl.h
   ${CMP_BASE}/computing/kernel_util/COM_kernel_algo.h
+  # ${CMP_BASE}/computing/kernel_util/COM_kernel_buffer.cpp
+  # ${CMP_BASE}/computing/kernel_util/COM_kernel_buffer.h
   ${CMP_BASE}/computing/kernel_util/COM_kernel_defines.h
   ${CMP_BASE}/computing/kernel_util/COM_kernel_color.h
   ${CMP_BASE}/computing/kernel_util/COM_kernel_geom.h
@@ -164,6 +166,7 @@ set(SRC
   ${CMP_BASE}/computing/kernel_util/COM_kernel_math_int3.h
   ${CMP_BASE}/computing/kernel_util/COM_kernel_math_int4.h
   ${CMP_BASE}/computing/kernel_util/COM_kernel_optimization.h
+  ${CMP_BASE}/computing/kernel_util/COM_kernel_sampling.h
   ${CMP_BASE}/computing/kernel_util/COM_kernel_simd.h
   ${CMP_BASE}/computing/kernel_util/COM_kernel_simd.cpp
   ${CMP_BASE}/computing/kernel_util/COM_kernel_types.h
@@ -282,11 +285,43 @@ set(SRC
   ${CMP_NODES}/converter/COM_SwitchViewNode.cpp
   ${CMP_NODES}/converter/COM_SwitchViewNode.h
 
+  # filter nodes
+  ${CMP_NODES}/filter/COM_BilateralBlurNode.cpp
+  ${CMP_NODES}/filter/COM_BilateralBlurNode.h
+  ${CMP_NODES}/filter/COM_BlurNode.cpp
+  ${CMP_NODES}/filter/COM_BlurNode.h
+  ${CMP_NODES}/filter/COM_BokehBlurNode.cpp
+  ${CMP_NODES}/filter/COM_BokehBlurNode.h
+  ${CMP_NODES}/filter/COM_DefocusNode.cpp
+  ${CMP_NODES}/filter/COM_DefocusNode.h
+  ${CMP_NODES}/filter/COM_DenoiseNode.cpp
+  ${CMP_NODES}/filter/COM_DenoiseNode.h
+  ${CMP_NODES}/filter/COM_DespeckleNode.cpp
+  ${CMP_NODES}/filter/COM_DespeckleNode.h
+  ${CMP_NODES}/filter/COM_DilateErodeNode.cpp
+  ${CMP_NODES}/filter/COM_DilateErodeNode.h
+  ${CMP_NODES}/filter/COM_DirectionalBlurNode.cpp
+  ${CMP_NODES}/filter/COM_DirectionalBlurNode.h
+  ${CMP_NODES}/filter/COM_FilterNode.cpp
+  ${CMP_NODES}/filter/COM_FilterNode.h
+  ${CMP_NODES}/filter/COM_GlareNode.cpp
+  ${CMP_NODES}/filter/COM_GlareNode.h
+  # ${CMP_NODES}/filter/COM_InpaintNode.cpp
+  # ${CMP_NODES}/filter/COM_InpaintNode.h
+  # ${CMP_NODES}/filter/COM_PixelateNode.cpp
+  # ${CMP_NODES}/filter/COM_PixelateNode.h
+  # ${CMP_NODES}/filter/COM_SunBeamsNode.cpp
+  # ${CMP_NODES}/filter/COM_SunBeamsNode.h
+  # ${CMP_NODES}/filter/COM_VectorBlurNode.cpp
+  # ${CMP_NODES}/filter/COM_VectorBlurNode.h
+
   # layout nodes
   ${CMP_NODES}/layout/COM_SwitchNode.cpp
   ${CMP_NODES}/layout/COM_SwitchNode.h
 
   # Internal operations
+  ${CMP_OPS}/COM_AntiAliasOperation.cpp
+  ${CMP_OPS}/COM_AntiAliasOperation.h
   ${CMP_OPS}/COM_SocketProxyOperation.cpp
   ${CMP_OPS}/COM_SocketProxyOperation.h
   ${CMP_OPS}/COM_CurveBaseOperation.cpp
@@ -297,6 +332,8 @@ set(SRC
   ${CMP_OPS}/COM_SetValueOperation.h
   ${CMP_OPS}/COM_SetVectorOperation.cpp
   ${CMP_OPS}/COM_SetVectorOperation.h
+  ${CMP_OPS}/COM_QualityStepHelper.cpp
+  ${CMP_OPS}/COM_QualityStepHelper.h
 
   # input operations
   ${CMP_OPS}/input/COM_BokehImageOperation.cpp
@@ -343,8 +380,6 @@ set(SRC
   ${CMP_OPS}/color/COM_AlphaOverMixedOperation.h
   ${CMP_OPS}/color/COM_AlphaOverPremultiplyOperation.cpp
   ${CMP_OPS}/color/COM_AlphaOverPremultiplyOperation.h
-  ${CMP_OPS}/color/COM_AntiAliasOperation.cpp
-  ${CMP_OPS}/color/COM_AntiAliasOperation.h
   ${CMP_OPS}/color/COM_BrightnessOperation.cpp
   ${CMP_OPS}/color/COM_BrightnessOperation.h
   ${CMP_OPS}/color/COM_ChangeHSVOperation.cpp
@@ -370,12 +405,6 @@ set(SRC
   ${CMP_OPS}/color/COM_ZCombineOperation.cpp
   ${CMP_OPS}/color/COM_ZCombineOperation.h
 
-  # distort operation
-  ${CMP_OPS}/distort/COM_ScaleOperation.cpp
-  ${CMP_OPS}/distort/COM_ScaleOperation.h
-  ${CMP_OPS}/distort/COM_TranslateOperation.cpp
-  ${CMP_OPS}/distort/COM_TranslateOperation.h
-
   # converter operations
   ${CMP_OPS}/converter/COM_ColorRampOperation.cpp
   ${CMP_OPS}/converter/COM_ColorRampOperation.h
@@ -387,6 +416,76 @@ set(SRC
   ${CMP_OPS}/converter/COM_MathBaseOperation.h
   ${CMP_OPS}/converter/COM_SetAlphaOperation.cpp
   ${CMP_OPS}/converter/COM_SetAlphaOperation.h
+
+  # filter operations
+  ${CMP_OPS}/filter/COM_BilateralBlurOperation.cpp
+  ${CMP_OPS}/filter/COM_BilateralBlurOperation.h
+  ${CMP_OPS}/filter/COM_BlurBaseOperation.cpp
+  ${CMP_OPS}/filter/COM_BlurBaseOperation.h
+  ${CMP_OPS}/filter/COM_BokehBlurOperation.cpp
+  ${CMP_OPS}/filter/COM_BokehBlurOperation.h
+  ${CMP_OPS}/filter/COM_ConvertDepthToRadiusOperation.cpp
+  ${CMP_OPS}/filter/COM_ConvertDepthToRadiusOperation.h
+  ${CMP_OPS}/filter/COM_ConvolutionEdgeFilterOperation.cpp
+  ${CMP_OPS}/filter/COM_ConvolutionEdgeFilterOperation.h
+  ${CMP_OPS}/filter/COM_ConvolutionFilterOperation.cpp
+  ${CMP_OPS}/filter/COM_ConvolutionFilterOperation.h
+  ${CMP_OPS}/filter/COM_DenoiseOperation.cpp
+  ${CMP_OPS}/filter/COM_DenoiseOperation.h
+  ${CMP_OPS}/filter/COM_DespeckleOperation.cpp
+  ${CMP_OPS}/filter/COM_DespeckleOperation.h
+  ${CMP_OPS}/filter/COM_DilateErodeOperation.cpp
+  ${CMP_OPS}/filter/COM_DilateErodeOperation.h
+  ${CMP_OPS}/filter/COM_DirectionalBlurOperation.cpp
+  ${CMP_OPS}/filter/COM_DirectionalBlurOperation.h
+  ${CMP_OPS}/filter/COM_FastGaussianBlurOperation.cpp
+  ${CMP_OPS}/filter/COM_FastGaussianBlurOperation.h
+  ${CMP_OPS}/filter/COM_GammaCorrectOperation.cpp
+  ${CMP_OPS}/filter/COM_GammaCorrectOperation.h
+  ${CMP_OPS}/filter/COM_GaussianBlurBaseOperation.cpp
+  ${CMP_OPS}/filter/COM_GaussianBlurBaseOperation.h
+  ${CMP_OPS}/filter/COM_GaussianAlphaXBlurOperation.cpp
+  ${CMP_OPS}/filter/COM_GaussianAlphaXBlurOperation.h
+  ${CMP_OPS}/filter/COM_GaussianAlphaYBlurOperation.cpp
+  ${CMP_OPS}/filter/COM_GaussianAlphaYBlurOperation.h
+  ${CMP_OPS}/filter/COM_GaussianBokehBlurOperation.cpp
+  ${CMP_OPS}/filter/COM_GaussianBokehBlurOperation.h
+  ${CMP_OPS}/filter/COM_GaussianXBlurOperation.cpp
+  ${CMP_OPS}/filter/COM_GaussianXBlurOperation.h
+  ${CMP_OPS}/filter/COM_GaussianYBlurOperation.cpp
+  ${CMP_OPS}/filter/COM_GaussianYBlurOperation.h
+  ${CMP_OPS}/filter/COM_GlareBaseOperation.cpp
+  ${CMP_OPS}/filter/COM_GlareBaseOperation.h
+  ${CMP_OPS}/filter/COM_GlareFogGlowOperation.cpp
+  ${CMP_OPS}/filter/COM_GlareFogGlowOperation.h
+  ${CMP_OPS}/filter/COM_GlareGhostOperation.cpp
+  ${CMP_OPS}/filter/COM_GlareGhostOperation.h
+  ${CMP_OPS}/filter/COM_GlareSimpleStarOperation.cpp
+  ${CMP_OPS}/filter/COM_GlareSimpleStarOperation.h
+  ${CMP_OPS}/filter/COM_GlareStreaksOperation.cpp
+  ${CMP_OPS}/filter/COM_GlareStreaksOperation.h
+  ${CMP_OPS}/filter/COM_GlareThresholdOperation.cpp
+  ${CMP_OPS}/filter/COM_GlareThresholdOperation.h
+  # ${CMP_OPS}/filter/COM_InpaintOperation.cpp
+  # ${CMP_OPS}/filter/COM_InpaintOperation.h
+  # ${CMP_OPS}/filter/COM_KeyingBlurOperation.cpp
+  # ${CMP_OPS}/filter/COM_KeyingBlurOperation.h
+  # ${CMP_OPS}/filter/COM_PixelateOperation.cpp
+  # ${CMP_OPS}/filter/COM_PixelateOperation.h
+  # ${CMP_OPS}/filter/COM_SunBeamsOperation.cpp
+  # ${CMP_OPS}/filter/COM_SunBeamsOperation.h
+  ${CMP_OPS}/filter/COM_VariableSizeBokehBlurOperation.cpp
+  ${CMP_OPS}/filter/COM_VariableSizeBokehBlurOperation.h
+  # ${CMP_OPS}/filter/COM_VectorBlurOperation.cpp
+  # ${CMP_OPS}/filter/COM_VectorBlurOperation.h
+
+  # distort operations
+  ${CMP_OPS}/distort/COM_ScaleOperation.cpp
+  ${CMP_OPS}/distort/COM_ScaleOperation.h
+  ${CMP_OPS}/distort/COM_TranslateOperation.cpp
+  ${CMP_OPS}/distort/COM_TranslateOperation.h
+
+
 )
 
 source_group(TREE ${CMP_BASE} FILES ${SRC})

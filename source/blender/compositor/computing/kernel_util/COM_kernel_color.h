@@ -22,22 +22,22 @@ CCL_NAMESPACE_BEGIN
 
 /* **************** ColorBand ********************* */
 /* colormode */
-#define COLBAND_BLEND_RGB 0
-#define COLBAND_BLEND_HSV 1
-#define COLBAND_BLEND_HSL 2
+#define CCL_COLBAND_BLEND_RGB 0
+#define CCL_COLBAND_BLEND_HSV 1
+#define CCL_COLBAND_BLEND_HSL 2
 
 /* interpolation */
-#define COLBAND_INTERP_LINEAR 0
-#define COLBAND_INTERP_EASE 1
-#define COLBAND_INTERP_B_SPLINE 2
-#define COLBAND_INTERP_CARDINAL 3
-#define COLBAND_INTERP_CONSTANT 4
+#define CCL_COLBAND_INTERP_LINEAR 0
+#define CCL_COLBAND_INTERP_EASE 1
+#define CCL_COLBAND_INTERP_B_SPLINE 2
+#define CCL_COLBAND_INTERP_CARDINAL 3
+#define CCL_COLBAND_INTERP_CONSTANT 4
 
 /* color interpolation */
-#define COLBAND_HUE_NEAR 0
-#define COLBAND_HUE_FAR 1
-#define COLBAND_HUE_CW 2
-#define COLBAND_HUE_CCW 3
+#define CCL_COLBAND_HUE_NEAR 0
+#define CCL_COLBAND_HUE_FAR 1
+#define CCL_COLBAND_HUE_CW 2
+#define CCL_COLBAND_HUE_CCW 3
 /* **************** END of ColorBand ********************* */
 
 ccl_constant float4 BLACK_PIXEL = make_float4(0, 0, 0, 1);
@@ -255,8 +255,13 @@ ccl_device_inline float linearrgb_to_srgb(const float c)
   }
 }
 
-/**  COLORBAND **/
+ccl_device_inline int color_diff_threshold(const float4 a, const float4 b, const float threshold)
+{
+  return ((fabsf(a.x - b.x) > threshold) || (fabsf(a.y - b.y) > threshold) ||
+          (fabsf(a.z - b.z) > threshold));
+}
 
+/**  COLORBAND **/
 ccl_device_inline float colorband_hue_interp(
     const int ipotype_hue, const float mfac, const float fac, float h1, float h2)
 {
@@ -273,7 +278,7 @@ ccl_device_inline float colorband_hue_interp(
   kernel_assert(h2 >= 0.0f && h2 < 1.0f);
 
   switch (ipotype_hue) {
-    case COLBAND_HUE_NEAR: {
+    case CCL_COLBAND_HUE_NEAR: {
       if ((h1 < h2) && (h2 - h1) > +0.5f) {
         mode = 1;
       }
@@ -285,7 +290,7 @@ ccl_device_inline float colorband_hue_interp(
       }
       break;
     }
-    case COLBAND_HUE_FAR: {
+    case CCL_COLBAND_HUE_FAR: {
       /* Do full loop in Hue space in case both stops are the same... */
       if (h1 == h2) {
         mode = 1;
@@ -301,7 +306,7 @@ ccl_device_inline float colorband_hue_interp(
       }
       break;
     }
-    case COLBAND_HUE_CCW: {
+    case CCL_COLBAND_HUE_CCW: {
       if (h1 > h2) {
         mode = 2;
       }
@@ -310,7 +315,7 @@ ccl_device_inline float colorband_hue_interp(
       }
       break;
     }
-    case COLBAND_HUE_CW: {
+    case CCL_COLBAND_HUE_CW: {
       if (h1 < h2) {
         mode = 1;
       }
@@ -363,14 +368,14 @@ ccl_device_inline float4 colorband_evaluate(const float input_factor,
   /* Note: when ipotype >= COLBAND_INTERP_B_SPLINE,
    * we cannot do early-out with a constant color before first color stop and after last one,
    * because interpolation starts before and ends after those... */
-  ipotype = (color_mode == COLBAND_BLEND_RGB) ? interp_type : COLBAND_INTERP_LINEAR;
+  ipotype = (color_mode == CCL_COLBAND_BLEND_RGB) ? interp_type : CCL_COLBAND_INTERP_LINEAR;
 
   if (n_bands == 1) {
     return bands_colors[cbd1];
   }
   else if ((input_factor <= bands_pos[cbd1]) &&
-           (ipotype == COLBAND_INTERP_LINEAR || ipotype == COLBAND_INTERP_EASE ||
-            ipotype == COLBAND_INTERP_CONSTANT)) {
+           (ipotype == CCL_COLBAND_INTERP_LINEAR || ipotype == CCL_COLBAND_INTERP_EASE ||
+            ipotype == CCL_COLBAND_INTERP_CONSTANT)) {
     /* We are before first color stop. */
     return bands_colors[cbd1];
   }
@@ -407,12 +412,12 @@ ccl_device_inline float4 colorband_evaluate(const float input_factor,
     }
 
     if ((pos_idx == n_bands) &&
-        (ipotype == COLBAND_INTERP_LINEAR || ipotype == COLBAND_INTERP_EASE ||
-         ipotype == COLBAND_INTERP_CONSTANT)) {
+        (ipotype == CCL_COLBAND_INTERP_LINEAR || ipotype == CCL_COLBAND_INTERP_EASE ||
+         ipotype == CCL_COLBAND_INTERP_CONSTANT)) {
       /* We are after last color stop. */
       return bands_colors[cbd2];
     }
-    else if (ipotype == COLBAND_INTERP_CONSTANT) {
+    else if (ipotype == CCL_COLBAND_INTERP_CONSTANT) {
       /* constant */
       return bands_colors[cbd2];
     }
@@ -427,7 +432,7 @@ ccl_device_inline float4 colorband_evaluate(const float input_factor,
         fac = (pos_idx != n_bands) ? 0.0f : 1.0f;
       }
 
-      if (ipotype == COLBAND_INTERP_B_SPLINE || ipotype == COLBAND_INTERP_CARDINAL) {
+      if (ipotype == CCL_COLBAND_INTERP_B_SPLINE || ipotype == CCL_COLBAND_INTERP_CARDINAL) {
         /* ipo from right to left: 3 2 1 0 */
         float t[4];
 
@@ -446,7 +451,7 @@ ccl_device_inline float4 colorband_evaluate(const float input_factor,
 
         fac = clamp(fac, 0.0f, 1.0f);
 
-        if (ipotype == COLBAND_INTERP_CARDINAL) {
+        if (ipotype == CCL_COLBAND_INTERP_CARDINAL) {
           key_curve_position_weights(fac, t, KEY_CARDINAL);
         }
         else {
@@ -459,13 +464,13 @@ ccl_device_inline float4 colorband_evaluate(const float input_factor,
         return result;
       }
       else {
-        if (ipotype == COLBAND_INTERP_EASE) {
+        if (ipotype == CCL_COLBAND_INTERP_EASE) {
           const float fac2 = fac * fac;
           fac = 3.0f * fac2 - 2.0f * fac2 * fac;
         }
         const float mfac = 1.0f - fac;
 
-        if (UNLIKELY(color_mode == COLBAND_BLEND_HSV)) {
+        if (UNLIKELY(color_mode == CCL_COLBAND_BLEND_HSV)) {
           float4 col1 = rgb_to_hsv(bands_colors[cbd1]);
           float4 col2 = rgb_to_hsv(bands_colors[cbd2]);
           float4 result;
@@ -477,7 +482,7 @@ ccl_device_inline float4 colorband_evaluate(const float input_factor,
 
           return hsv_to_rgb(result);
         }
-        else if (UNLIKELY(color_mode == COLBAND_BLEND_HSL)) {
+        else if (UNLIKELY(color_mode == CCL_COLBAND_BLEND_HSL)) {
           float4 col1 = rgb_to_hsl(bands_colors[cbd1]);
           float4 col2 = rgb_to_hsl(bands_colors[cbd2]);
           float4 result;
@@ -490,7 +495,7 @@ ccl_device_inline float4 colorband_evaluate(const float input_factor,
           return hsl_to_rgb(result);
         }
         else {
-          /* COLBAND_BLEND_RGB */
+          /* CCL_COLBAND_BLEND_RGB */
           return mfac * bands_colors[cbd1] + fac * bands_colors[cbd2];
         }
       }

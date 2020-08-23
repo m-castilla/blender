@@ -33,6 +33,7 @@
 #include "WM_api.h"
 #include "WM_types.h"
 
+#include "COM_ExecutionManager.h"
 #include "COM_GlobalManager.h"
 #include "COM_PixelsUtil.h"
 #include "IMB_colormanagement.h"
@@ -62,11 +63,12 @@ ViewerOperation::ViewerOperation() : NodeOperation()
 
 void ViewerOperation::initExecution()
 {
-  m_needs_write = GlobalMan->ViewCacheMan->viewerNeedsUpdate(this);
   m_doDepthBuffer = getInputSocket(2)->hasUserLink();
   if (isActiveViewerOutput()) {
     initImage();
   }
+  NodeOperation::initExecution();
+  m_needs_write = GlobalMan->ViewCacheMan->viewerNeedsUpdate(this);
 }
 
 void ViewerOperation::deinitExecution()
@@ -76,6 +78,7 @@ void ViewerOperation::deinitExecution()
   if (!isBreaked() && m_needs_write) {
     GlobalMan->ViewCacheMan->reportViewerWrite(this);
   }
+  NodeOperation::deinitExecution();
 }
 
 bool ViewerOperation::isOutputOperation(bool /*rendering*/) const
@@ -115,10 +118,13 @@ void ViewerOperation::execPixels(ExecutionManager &man)
       PixelsRect alpha_rect = src_alpha->toRect(dst);
       PixelsUtil::copyEqualRectsChannel(img_dst, 3, alpha_rect, 0);
     }
-
-    updateImage(&dst);
   };
   cpuWriteSeek(man, cpuWrite);
+
+  if (!man.isBreaked()) {
+    rcti rect = {0, getWidth(), 0, getHeight()};
+    updateImage(&rect);
+  }
 }
 
 void ViewerOperation::initImage()

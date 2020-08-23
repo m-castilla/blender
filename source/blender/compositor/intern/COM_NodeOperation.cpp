@@ -38,9 +38,7 @@ NodeOperation::NodeOperation()
       m_op_hash_calculated(false),
       m_op_hash(0),
       m_exec_pixels_optimized(false),
-      base_hash_params_called(false),
-      m_current_tree_level(0),
-      m_max_tree_level(0)
+      base_hash_params_called(false)
 {
 }
 
@@ -108,6 +106,8 @@ bool NodeOperation::isComputed(ExecutionManager &man) const
 const OpKey &NodeOperation::getKey()
 {
   if (!m_key_calculated) {
+    // getKey should been called until operation is initialized
+    BLI_assert(m_initialized);
     hashParams();
     m_key.op_width = m_width;
     m_key.op_height = m_height;
@@ -157,7 +157,7 @@ void NodeOperation::computeWriteSeek(
   if (check_call) {
     BLI_assert(this->canCompute());
   }
-  if (!isBreaked() && man.getOperationMode() == OperationMode::Exec) {
+  if (man.canExecPixels()) {
     GlobalMan->BufferMan->writeSeek(this,
                                     man,
                                     std::bind(&ExecutionManager::execWriteJob,
@@ -181,12 +181,6 @@ std::shared_ptr<PixelsRect> NodeOperation::getPixels(NodeOperation *reader_op,
 {
   if (!isBreaked()) {
     if (man.getOperationMode() == OperationMode::Optimize) {
-      BLI_assert(reader_op != nullptr || getNumberOfOutputSockets() == 0);
-      m_current_tree_level = reader_op == nullptr ? 0 : reader_op->getCurrentTreeLevel() + 1;
-      if (m_current_tree_level > m_max_tree_level) {
-        m_max_tree_level = m_current_tree_level;
-      }
-
       if (!m_exec_pixels_optimized && !GlobalMan->hasAnyKindOfCache(this)) {
         execPixels(man);
         m_exec_pixels_optimized = true;

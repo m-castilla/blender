@@ -7,6 +7,11 @@
 
 CCL_NAMESPACE_BEGIN
 
+ccl_device_inline float finv_test(const float f, const bool test)
+{
+  return (LIKELY(test == false)) ? f : 1.0f - f;
+}
+
 /* BokehImageOperation */
 
 /**
@@ -75,7 +80,6 @@ ccl_device_inline float bokehIsInside(const float c_distance,
 /* END of BokehImageOperation */
 
 /* ColorBalanceASCCDLOperation */
-
 ccl_device_inline float4 colorbalance_cdl(const float4 in,
                                           const float4 offset,
                                           const float4 power,

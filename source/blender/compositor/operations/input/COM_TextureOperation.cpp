@@ -19,12 +19,13 @@
 #include "COM_TextureOperation.h"
 #include "COM_ExecutionManager.h"
 #include "COM_WorkScheduler.h"
-#include "COM_kernel_cpu_nocompat.h"
 
 #include "BKE_image.h"
 #include "BKE_node.h"
 
 #include "BLI_listbase.h"
+
+#include "COM_kernel_cpu.h"
 
 TextureBaseOperation::TextureBaseOperation() : NodeOperation()
 {
@@ -106,24 +107,20 @@ void TextureBaseOperation::writePixels(ExecutionManager &man, bool is_alpha_only
 
   auto cpu_write = [&](PixelsRect &dst, const WriteRectContext &ctx) {
     TexResult texres = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0, NULL};
-    CCL_NAMESPACE::float4 size_pix;
-    CCL_NAMESPACE::float4 offset_pix;
-    CCL_NAMESPACE::float4 texture_vec;
+    CCL::float4 texture_vec;
     int retval;
 
-    CPU_READ_DECL(size);
-    CPU_READ_DECL(offset);
-    CPU_WRITE_DECL(dst);
+    READ_DECL(size);
+    READ_DECL(offset);
+    WRITE_DECL(dst);
 
     CPU_LOOP_START(dst);
 
-    CPU_READ_OFFSET(size, dst);
-    CPU_READ_OFFSET(offset, dst);
-    int dst_x = dst_start_x + write_offset_x;
-    int dst_y = dst_start_y + write_offset_y;
+    COPY_COORDS(size, dst_coords);
+    COPY_COORDS(offset, dst_coords);
 
-    float u = (dst_x - cx) / width * 2;
-    float v = (dst_y - cy) / height * 2;
+    float u = (dst_coords.x - cx) / width * 2;
+    float v = (dst_coords.y - cy) / height * 2;
 
     /* When no interpolation/filtering happens in multitex() force nearest interpolation.
      * We do it here because (a) we can't easily say multitex() that we want nearest
@@ -135,8 +132,8 @@ void TextureBaseOperation::writePixels(ExecutionManager &man, bool is_alpha_only
       v += 0.5f / cy;
     }
 
-    CPU_READ_IMG(size, size_offset, size_pix);
-    CPU_READ_IMG(offset, offset_offset, offset_pix);
+    READ_IMG3(size, size_pix);
+    READ_IMG3(offset, offset_pix);
 
     offset_pix.x += u;
     offset_pix.y += v;
@@ -154,19 +151,18 @@ void TextureBaseOperation::writePixels(ExecutionManager &man, bool is_alpha_only
                           m_sceneColorManage,
                           false);
 
-    CPU_WRITE_OFFSET(dst);
     if (is_alpha_only) {
-      CPU_WRITE_IMG(dst, dst_offset, (texres.talpha ? texres.ta : texres.tin));
+      dst_img.buffer[dst_offset] = texres.talpha ? texres.ta : texres.tin;
     }
     else {
       if ((retval & TEX_RGB)) {
-        texture_vec = CCL_NAMESPACE::make_float4(
+        texture_vec = CCL::make_float4(
             texres.tr, texres.tg, texres.tb, texres.talpha ? texres.ta : texres.tin);
       }
       else {
-        texture_vec = CCL_NAMESPACE::make_float4_1(texres.talpha ? texres.ta : texres.tin);
+        texture_vec = CCL::make_float4_1(texres.talpha ? texres.ta : texres.tin);
       }
-      CPU_WRITE_IMG(dst, dst_offset, texture_vec);
+      WRITE_IMG(dst, texture_vec);
     }
 
     CPU_LOOP_END;

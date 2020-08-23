@@ -17,13 +17,11 @@
  */
 
 #include "COM_MaskOperation.h"
-
+#include "BKE_mask.h"
+#include "BLI_listbase.h"
 #include "MEM_guardedalloc.h"
 
-#include "BLI_listbase.h"
-
-#include "BKE_mask.h"
-#include "COM_kernel_cpu_nocompat.h"
+#include "COM_kernel_cpu.h"
 
 MaskOperation::MaskOperation() : NodeOperation()
 {
@@ -96,6 +94,7 @@ void MaskOperation::initExecution()
       MEM_freeN(mask_temp);
     }
   }
+  NodeOperation::initExecution();
 }
 
 void MaskOperation::deinitExecution()
@@ -151,15 +150,13 @@ void MaskOperation::hashParams()
 void MaskOperation::execPixels(ExecutionManager &man)
 {
   auto cpu_write = [&](PixelsRect &dst, const WriteRectContext &ctx) {
-    CPU_WRITE_DECL(dst);
+    WRITE_DECL(dst);
 
     CPU_LOOP_START(dst);
 
-    int dst_x = dst_start_x + write_offset_x;
-    int dst_y = dst_start_y + write_offset_y;
     const float xy[2] = {
-        (dst_x * m_maskWidthInv) + m_mask_px_ofs[0],
-        (dst_y * m_maskHeightInv) + m_mask_px_ofs[1],
+        (dst_coords.x * m_maskWidthInv) + m_mask_px_ofs[0],
+        (dst_coords.y * m_maskHeightInv) + m_mask_px_ofs[1],
     };
 
     float result = 0.0f;
@@ -178,8 +175,8 @@ void MaskOperation::execPixels(ExecutionManager &man)
       /* until we get better falloff */
       result /= this->m_rasterMaskHandleTot;
     }
-    CPU_WRITE_OFFSET(dst);
-    CPU_WRITE_IMG(dst, dst_offset, result);
+
+    dst_img.buffer[dst_offset] = result;
 
     CPU_LOOP_END;
   };

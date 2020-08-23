@@ -40,7 +40,6 @@ class TrackPositionOperation : public NodeOperation {
   int m_relativeFrame;
   bool m_speed_output;
 
-  int m_width, m_height;
   float m_markerPos[2];
   float m_relativePos[2];
 

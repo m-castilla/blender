@@ -41,12 +41,11 @@ void HueSaturationValueCorrectOperation::execPixels(ExecutionManager &man)
   auto hsv = getInputOperation(0)->getPixels(this, man);
 
   auto cpu_write = [&](PixelsRect &dst, const WriteRectContext &ctx) {
-    CPU_READ_DECL(hsv);
-    CPU_WRITE_DECL(dst);
+    READ_DECL(hsv);
+    WRITE_DECL(dst);
     CPU_LOOP_START(dst);
 
-    CPU_READ_OFFSET(hsv, dst);
-    CPU_WRITE_OFFSET(dst);
+    COPY_COORDS(hsv, dst_coords);
 
     float f;
     float *hsv_val = &hsv_img.buffer[hsv_offset];
@@ -65,7 +64,7 @@ void HueSaturationValueCorrectOperation::execPixels(ExecutionManager &man)
     result[2] = hsv_val[2] * (f * 2.0f);
 
     result[0] = result[0] - floorf(result[0]); /* mod 1.0 */
-    CLAMP(result[1], 0.0f, 1.0f);
+    result[1] = CCL::clamp(result[1], 0.0f, 1.0f);
 
     dst_img.buffer[dst_offset] = result[0];
     dst_img.buffer[dst_offset + 1] = result[1];

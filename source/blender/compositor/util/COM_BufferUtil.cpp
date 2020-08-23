@@ -42,8 +42,14 @@ std::unique_ptr<TmpBuffer> createUnmanagedTmpBuffer(float *host_buffer,
   buf->width = host_width;
   buf->height = host_height;
   buf->host.brow_bytes = BufferUtil::calcBufferRowBytes(host_width, host_n_channels);
+  buf->host.bheight = host_height;
+  buf->host.bwidth = host_width;
+  buf->host.belem_chs = host_n_channels;
   buf->host.state = is_host_buffer_filled ? HostMemoryState::FILLED : HostMemoryState::CLEARED;
   buf->device.buffer = nullptr;
+  buf->device.bwidth = 0;
+  buf->device.bheight = 0;
+  buf->device.belem_chs = 0;
   buf->device.state = DeviceMemoryState::NONE;
   buf->orig_host.state = HostMemoryState::NONE;
   buf->orig_host.buffer = nullptr;
@@ -60,9 +66,9 @@ void deviceAlloc(TmpBuffer *dst,
   ASSERT_VALID_TMP_BUFFER(dst, width, height, elem_chs);
   auto device = GlobalMan->ComputeMan->getSelectedDevice();
   dst->device.buffer = device->memDeviceAlloc(device_access, width, height, elem_chs, alloc_host);
-  dst->width = width;
-  dst->height = height;
-  dst->elem_chs = elem_chs;
+  dst->device.bwidth = width;
+  dst->device.bheight = height;
+  dst->device.belem_chs = elem_chs;
   dst->device.has_map_alloc = alloc_host;
   dst->device.state = DeviceMemoryState::CLEARED;
 }
@@ -85,9 +91,9 @@ void hostAlloc(TmpBuffer *dst, int width, int height, int elem_chs)
 {
   ASSERT_VALID_TMP_BUFFER(dst, width, height, elem_chs);
   dst->host.buffer = hostAlloc(width, height, elem_chs);
-  dst->width = width;
-  dst->height = height;
-  dst->elem_chs = elem_chs;
+  dst->host.bwidth = width;
+  dst->host.bheight = height;
+  dst->host.belem_chs = elem_chs;
   dst->host.brow_bytes = BufferUtil::calcBufferRowBytes(width, elem_chs);
   dst->host.state = HostMemoryState::CLEARED;
 }
@@ -128,7 +134,13 @@ void deviceMapToHostEnqueue(TmpBuffer *buf, MemoryAccess host_access)
   if (buf->device.state == DeviceMemoryState::CLEARED) {
     host_access = MemoryAccess::WRITE;
   }
+  buf->host.bwidth = buf->width;
+  buf->host.bheight = buf->height;
+  buf->host.belem_chs = buf->elem_chs;
+
+  // set default brow_bytes, this may be changed later by memDeviceToHostMapEnqueue
   buf->host.brow_bytes = BufferUtil::calcBufferRowBytes(buf->width, buf->elem_chs);
+
   buf->host.buffer = device->memDeviceToHostMapEnqueue(buf->device.buffer,
                                                        host_access,
                                                        buf->width,

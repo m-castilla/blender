@@ -23,7 +23,8 @@
 #include "COM_kernel_cpu.h"
 
 using namespace std::placeholders;
-ColorBalanceLGGOperation::ColorBalanceLGGOperation() : NodeOperation()
+ColorBalanceLGGOperation::ColorBalanceLGGOperation()
+    : NodeOperation(), m_gain(), m_lift(), m_gamma_inv()
 {
   this->addInputSocket(SocketType::VALUE);
   this->addInputSocket(SocketType::COLOR);
@@ -49,10 +50,11 @@ ccl_kernel colorBalanceLGGOp(
 
   CPU_LOOP_START(dst);
 
-  COORDS_TO_OFFSET(dst_coords);
+  COPY_COORDS(value, dst_coords);
+  COPY_COORDS(color, dst_coords);
 
-  READ_IMG(value, dst_coords, value_pix);
-  READ_IMG(color, dst_coords, color_pix);
+  READ_IMG1(value, value_pix);
+  READ_IMG4(color, color_pix);
 
   const float fac = fminf(1.0f, value_pix.x);
   const float mfac = 1.0f - fac;
@@ -60,7 +62,7 @@ ccl_kernel colorBalanceLGGOp(
   float4 res = mfac * color_pix + fac * colorbalance_lgg(color_pix, lift, gamma_inv, gain);
   res.w = color_pix.w;
 
-  WRITE_IMG(dst, dst_coords, res);
+  WRITE_IMG4(dst, res);
 
   CPU_LOOP_END
 }
@@ -72,17 +74,15 @@ void ColorBalanceLGGOperation::execPixels(ExecutionManager &man)
 {
   auto value = getInputOperation(0)->getPixels(this, man);
   auto color = getInputOperation(1)->getPixels(this, man);
-  auto lift = CCL_NAMESPACE::make_float4(m_lift[0], m_lift[1], m_lift[2], 1.0f);
-  auto gamma_inv = CCL_NAMESPACE::make_float4(
-      m_gamma_inv[0], m_gamma_inv[1], m_gamma_inv[2], 1.0f);
-  auto gain = CCL_NAMESPACE::make_float4(m_gain[0], m_gain[1], m_gain[2], 1.0f);
-  auto cpu_write = std::bind(
-      CCL_NAMESPACE::colorBalanceLGGOp, _1, value, color, lift, gamma_inv, gain);
+  auto lift = CCL::make_float4(m_lift[0], m_lift[1], m_lift[2], 1.0f);
+  auto gamma_inv = CCL::make_float4(m_gamma_inv[0], m_gamma_inv[1], m_gamma_inv[2], 1.0f);
+  auto gain = CCL::make_float4(m_gain[0], m_gain[1], m_gain[2], 1.0f);
+  auto cpu_write = std::bind(CCL::colorBalanceLGGOp, _1, value, color, lift, gamma_inv, gain);
   computeWriteSeek(man, cpu_write, "colorBalanceLGGOp", [&](ComputeKernel *kernel) {
     kernel->addReadImgArgs(*value);
     kernel->addReadImgArgs(*color);
-    kernel->addFloat4Arg((float *)&lift);
-    kernel->addFloat4Arg((float *)&gamma_inv);
-    kernel->addFloat4Arg((float *)&gain);
+    kernel->addFloat4Arg(lift);
+    kernel->addFloat4Arg(gamma_inv);
+    kernel->addFloat4Arg(gain);
   });
 }

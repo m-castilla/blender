@@ -20,45 +20,38 @@
 
 QualityStepHelper::QualityStepHelper()
 {
-  this->m_quality = COM_QUALITY_HIGH;
+  this->m_quality = CompositorQuality::HIGH;
   this->m_step = 1;
-  this->m_offsetadd = 4;
 }
 
 void QualityStepHelper::initExecution(QualityHelper helper)
 {
   switch (helper) {
-    case COM_QH_INCREASE:
+    case QualityHelper::INCREASE:
       switch (this->m_quality) {
-        case COM_QUALITY_HIGH:
+        case CompositorQuality::HIGH:
         default:
           this->m_step = 1;
-          this->m_offsetadd = 1;
           break;
-        case COM_QUALITY_MEDIUM:
+        case CompositorQuality::MEDIUM:
           this->m_step = 2;
-          this->m_offsetadd = 2;
           break;
-        case COM_QUALITY_LOW:
+        case CompositorQuality::LOW:
           this->m_step = 3;
-          this->m_offsetadd = 3;
           break;
       }
       break;
-    case COM_QH_MULTIPLY:
+    case QualityHelper::MULTIPLY:
       switch (this->m_quality) {
-        case COM_QUALITY_HIGH:
+        case CompositorQuality::HIGH:
         default:
           this->m_step = 1;
-          this->m_offsetadd = 4;
           break;
-        case COM_QUALITY_MEDIUM:
+        case CompositorQuality::MEDIUM:
           this->m_step = 2;
-          this->m_offsetadd = 8;
           break;
-        case COM_QUALITY_LOW:
+        case CompositorQuality::LOW:
           this->m_step = 4;
-          this->m_offsetadd = 16;
           break;
       }
       break;

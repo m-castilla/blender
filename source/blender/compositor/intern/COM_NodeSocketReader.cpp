@@ -47,6 +47,7 @@ NodeSocketReader::NodeSocketReader()
   this->m_height = 0;
   this->m_isResolutionSet = false;
   this->m_btree = NULL;
+  m_initialized = false;
   m_resolution_type = ResolutionType::Determined;
 }
 
@@ -179,10 +180,12 @@ void NodeSocketReader::setMainInputSocketIndex(int index)
 }
 void NodeSocketReader::initExecution()
 {
+  m_initialized = true;
 }
 
 void NodeSocketReader::deinitExecution()
 {
+  m_initialized = false;
 }
 
 NodeOperation *NodeSocketReader::getInputOperation(int inputSocketIndex) const
@@ -212,7 +215,7 @@ void NodeSocketReader::getConnectedInputSockets(Inputs *sockets) const
  */
 void NodeSocketReader::setResolution(int width, int height, ResolutionType res_type)
 {
-  if (!isResolutionSet()) {
+  if (!isResolutionSet() || (width * height) > (m_width * m_height)) {
     m_width = width;
     m_height = height;
     m_isResolutionSet = true;

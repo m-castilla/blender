@@ -41,6 +41,7 @@ CurveBaseOperation::~CurveBaseOperation()
 void CurveBaseOperation::initExecution()
 {
   BKE_curvemapping_init(this->m_curveMapping);
+  NodeOperation::initExecution();
 }
 void CurveBaseOperation::deinitExecution()
 {
@@ -48,6 +49,7 @@ void CurveBaseOperation::deinitExecution()
     BKE_curvemapping_free(this->m_curveMapping);
     this->m_curveMapping = nullptr;
   }
+  NodeOperation::deinitExecution();
 }
 
 void CurveBaseOperation::setCurveMapping(CurveMapping *mapping)

@@ -46,8 +46,8 @@ ccl_device_inline float3 operator*=(float3 &a, float f);
 ccl_device_inline float3 operator/=(float3 &a, const float3 &b);
 ccl_device_inline float3 operator/=(float3 &a, float f);
 
-ccl_device_inline bool operator==(const float3 &a, const float3 &b);
-ccl_device_inline bool operator!=(const float3 &a, const float3 &b);
+ccl_device_inline int3 operator==(const float3 &a, const float3 &b);
+ccl_device_inline int3 operator!=(const float3 &a, const float3 &b);
 
 ccl_device_inline float distance(const float3 &a, const float3 &b);
 ccl_device_inline float dot(const float3 &a, const float3 &b);
@@ -209,18 +209,69 @@ ccl_device_inline float3 operator/=(float3 &a, float f)
   return a = a * invf;
 }
 
-ccl_device_inline bool operator==(const float3 &a, const float3 &b)
+ccl_device_inline int3 operator<(const float3 &a, const float3 &b)
 {
 #  ifdef __KERNEL_SSE__
-  return (_mm_movemask_ps(_mm_cmpeq_ps(a.m128, b.m128)) & 7) == 7;
+  return int3(_mm_castps_si128(_mm_cmplt_ps(a.m128, b.m128)));
 #  else
-  return (a.x == b.x && a.y == b.y && a.z == b.z);
+  return make_int3(a.x < b.x, a.y < b.y, a.z < b.z);
 #  endif
 }
 
-ccl_device_inline bool operator!=(const float3 &a, const float3 &b)
+ccl_device_inline int3 operator>(const float3 &a, const float3 &b)
 {
-  return !(a == b);
+#  ifdef __KERNEL_SSE__
+  return int3(_mm_castps_si128(_mm_cmpgt_ps(a.m128, b.m128)));
+#  else
+  return make_int3(a.x > b.x, a.y > b.y, a.z > b.z);
+#  endif
+}
+
+ccl_device_inline int3 operator>=(const float3 &a, const float3 &b)
+{
+#  ifdef __KERNEL_SSE__
+  return int3(_mm_castps_si128(_mm_cmpge_ps(a.m128, b.m128)));
+#  else
+  return make_int3(a.x >= b.x, a.y >= b.y, a.z >= b.z);
+#  endif
+}
+
+ccl_device_inline int3 operator<=(const float3 &a, const float3 &b)
+{
+#  ifdef __KERNEL_SSE__
+  return int3(_mm_castps_si128(_mm_cmple_ps(a.m128, b.m128)));
+#  else
+  return make_int3(a.x <= b.x, a.y <= b.y, a.z <= b.z);
+#  endif
+}
+
+ccl_device_inline int3 operator==(const float3 &a, const float3 &b)
+{
+#  ifdef __KERNEL_SSE__
+  return int3(_mm_castps_si128(_mm_cmpeq_ps(a.m128, b.m128)));
+#  else
+  return make_int3(a.x == b.x, a.y == b.y, a.z == b.z);
+#  endif
+}
+
+ccl_device_inline int3 operator!=(const float3 &a, const float3 &b)
+{
+#  ifdef __KERNEL_SSE__
+  return int3(_mm_castps_si128(_mm_cmpneq_ps(a.m128, b.m128)));
+#  else
+  return make_int3(a.x != b.x, a.y != b.y, a.z != b.z);
+#  endif
+}
+
+ccl_device_inline float3 select(const float3 &b_false, const float3 &a_true, const int3 &mask)
+{
+#  ifdef __KERNEL_SSE__
+  return float3(_mm_blendv_ps(b_false.m128, a_true.m128, _mm_castsi128_ps(mask.m128)));
+#  else
+  return make_float3((mask.x) ? a_true.x : b_false.x,
+                     (mask.y) ? a_true.y : b_false.y,
+                     (mask.z) ? a_true.z : b_false.z);
+#  endif
 }
 
 ccl_device_inline float distance(const float3 &a, const float3 &b)
@@ -429,15 +480,6 @@ ccl_device_inline float reduce_add(const float3 a)
 ccl_device_inline float average(const float3 a)
 {
   return reduce_add(a) * (1.0f / 3.0f);
-}
-
-ccl_device_inline bool isequal_float3(const float3 a, const float3 b)
-{
-#ifdef __KERNEL_OPENCL__
-  return all(a == b);
-#else
-  return a == b;
-#endif
 }
 
 ccl_device_inline float3 pow3(const float3 v, const float e)

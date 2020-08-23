@@ -44,7 +44,7 @@ class BufferRecycler {
 
   void setExecutionId(const std::string &execution_id);
 
-  TmpBuffer *createTmpBuffer(bool is_host_recyclable, int width, int height, int n_channels);
+  TmpBuffer *createTmpBuffer(bool is_host_recyclable = true);
   TmpBuffer *createTmpBuffer(
       bool is_host_recyclable, float *host_buffer, int width, int height, int n_channels);
 
