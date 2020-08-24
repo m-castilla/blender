@@ -22,6 +22,7 @@
 #include "BLI_path_util.h"
 #include "BLI_string.h"
 #include "COM_IncludesResolver.h"
+#include "MEM_guardedalloc.h"
 #include <algorithm>
 #include <string.h>
 
@@ -67,7 +68,7 @@ result in \r\r\n */
 #endif
   }
   if (!result.empty() && save_file) {
-    FILE *dst_file = fopen(dst_path, "w+");
+    FILE *dst_file = BLI_fopen(dst_path, "w+");
     fputs(result.c_str(), dst_file);
     fclose(dst_file);
   }
@@ -121,6 +122,7 @@ void mergeFileorDir(const char *path, const char *search_tag, std::string &resul
             }
           }
         } while (macro_start_cur != NULL);
+        MEM_freeN((void *)file_str);
       }
     }
   }

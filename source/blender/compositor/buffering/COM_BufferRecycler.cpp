@@ -55,6 +55,9 @@ static void deleteBuffer(TmpBuffer *buf)
       BufferUtil::origHostFree(buf);
     }
   }
+  BLI_assert(buf->host.buffer == nullptr && buf->host.state == HostMemoryState::NONE);
+  BLI_assert(buf->orig_host.buffer == nullptr && buf->orig_host.state == HostMemoryState::NONE);
+  BLI_assert(buf->device.buffer == nullptr && buf->device.state == DeviceMemoryState::NONE);
   delete buf;
 }
 
@@ -65,6 +68,43 @@ BufferRecycler::~BufferRecycler()
     RecycleData *rdata = m_recycle[type];
     delete rdata;
   });
+}
+
+void BufferRecycler::checkRecycledBufferCreated(TmpBuffer *recycled)
+{
+  if (recycled->host.buffer != nullptr &&
+      recycled->host.state != HostMemoryState::MAP_FROM_DEVICE) {
+    bool found = false;
+    for (auto created : m_created_buffers) {
+      if (created->host.buffer == recycled->host.buffer ||
+          created->orig_host.buffer == recycled->host.buffer) {
+        found = true;
+        break;
+      }
+    }
+    BLI_assert(found);
+  }
+  if (recycled->orig_host.buffer != nullptr) {
+    bool found = false;
+    for (auto created : m_created_buffers) {
+      if (created->host.buffer == recycled->orig_host.buffer ||
+          created->orig_host.buffer == recycled->orig_host.buffer) {
+        found = true;
+        break;
+      }
+    }
+    BLI_assert(found);
+  }
+  if (recycled->device.buffer != nullptr) {
+    bool found = false;
+    for (auto created : m_created_buffers) {
+      if (created->device.buffer == recycled->device.buffer) {
+        found = true;
+        break;
+      }
+    }
+    BLI_assert(found);
+  }
 }
 
 bool BufferRecycler::isCreatedBufferRecycled(TmpBuffer *created_buf)
@@ -131,9 +171,18 @@ bool BufferRecycler::isCreatedBufferRecycled(TmpBuffer *created_buf)
 void BufferRecycler::assertRecycledEqualsCreatedBuffers()
 {
 #if defined(DEBUG) || defined(COM_DEBUG)
+  // assert created buffers are recycled
   for (auto created_buf : m_created_buffers) {
     BLI_assert(isCreatedBufferRecycled(created_buf));
   }
+
+  // assert all recycled buffers are in created buffers list
+  ForeachBufferRecycleType([&](BufferRecycleType type) {
+    RecycleData *rdata = m_recycle[type];
+    for (auto recycled : rdata->buffers) {
+      checkRecycledBufferCreated(recycled);
+    }
+  });
 #endif
 }
 
@@ -299,6 +348,15 @@ bool BufferRecycler::takeRecycle(
   BLI_assert(!m_execution_id.empty());
   dst->execution_id = m_execution_id;
 
+  // TODO delete this
+  // assert all recycled buffers are in created buffers list
+  ForeachBufferRecycleType([&](BufferRecycleType type) {
+    RecycleData *rdata = m_recycle[type];
+    for (auto recycled : rdata->buffers) {
+      checkRecycledBufferCreated(recycled);
+    }
+  });
+  // End of TODO
   return work_enqueued;
 }
 
@@ -399,6 +457,10 @@ bool BufferRecycler::recycleFindAndSet(
 
 void BufferRecycler::giveRecycle(TmpBuffer *src)
 {
+#if defined(DEBUG) || defined(COM_DEBUG)
+  checkRecycledBufferCreated(src);
+#endif
+
   if (isCreatedBufferRecycled(src)) {
     return;
   }
@@ -413,13 +475,13 @@ void BufferRecycler::giveRecycle(TmpBuffer *src)
     BLI_assert(src->host.state == HostMemoryState::MAP_FROM_DEVICE);
     if (src->is_host_recyclable && src->orig_host.state != HostMemoryState::NONE) {
       host_recycle = createTmpBuffer(true, nullptr, src->width, src->height, src->elem_chs);
-      host_recycle->host = std::move(src->orig_host);
-      src->orig_host.buffer = nullptr;
-      src->orig_host.state = HostMemoryState::NONE;
+      host_recycle->host = src->orig_host;
       host_recycle->host.state = HostMemoryState::CLEARED;
       BLI_assert(host_recycle->host.buffer != nullptr);
     }
-    device_map_recycle = src;
+    device_map_recycle = createTmpBuffer(true, nullptr, src->width, src->height, src->elem_chs);
+    device_map_recycle->host = src->host;
+    device_map_recycle->device = src->device;
   }
   else {
     BLI_assert(src->orig_host.state == HostMemoryState::NONE);
@@ -429,65 +491,60 @@ void BufferRecycler::giveRecycle(TmpBuffer *src)
     if (src->is_host_recyclable) {
       if (src->host.state == HostMemoryState::CLEARED ||
           src->host.state == HostMemoryState::FILLED) {
-        host_recycle = src->device.state == DeviceMemoryState::NONE ?
-                           src :
-                           createTmpBuffer(true, nullptr, src->width, src->height, src->elem_chs);
-        host_recycle->host.buffer = src->host.buffer;
+        host_recycle = createTmpBuffer(true, nullptr, src->width, src->height, src->elem_chs);
+        host_recycle->host = src->host;
         host_recycle->host.state = HostMemoryState::CLEARED;
         BLI_assert(host_recycle->host.buffer != nullptr);
       }
-    }
-    else {
-      src->host.buffer = nullptr;
-      src->host.state = HostMemoryState::NONE;
     }
 
     if (src->device.state == DeviceMemoryState::CLEARED ||
         src->device.state == DeviceMemoryState::FILLED) {
       if (src->device.has_map_alloc) {
-        device_alloc_recycle = src;
+        device_alloc_recycle = createTmpBuffer(
+            true, nullptr, src->width, src->height, src->elem_chs);
+        device_alloc_recycle->device = src->device;
         device_alloc_recycle->device.state = DeviceMemoryState::CLEARED;
       }
       else {
-        device_recycle = src;
+        device_recycle = createTmpBuffer(true, nullptr, src->width, src->height, src->elem_chs);
+        device_recycle->device = src->device;
         device_recycle->device.state = DeviceMemoryState::CLEARED;
       }
-      src->host.buffer = nullptr;
-      src->host.state = HostMemoryState::NONE;
     }
   }
 
-  TmpBuffer *recycled = nullptr;
   if (host_recycle) {
-    addRecycle(BufferRecycleType::HOST_CLEAR, host_recycle);
-    recycled = host_recycle;
+    addRecycle(BufferRecycleType::HOST_CLEAR, src, host_recycle);
   }
   if (device_recycle) {
-    addRecycle(BufferRecycleType::DEVICE_CLEAR, device_recycle);
-    recycled = device_recycle;
+    addRecycle(BufferRecycleType::DEVICE_CLEAR, src, device_recycle);
   }
   if (device_alloc_recycle) {
-    addRecycle(BufferRecycleType::DEVICE_HOST_ALLOC, device_alloc_recycle);
-    recycled = device_alloc_recycle;
+    addRecycle(BufferRecycleType::DEVICE_HOST_ALLOC, src, device_alloc_recycle);
   }
   if (device_map_recycle) {
-    addRecycle(BufferRecycleType::DEVICE_HOST_MAPPED, device_map_recycle);
-    recycled = device_map_recycle;
+    addRecycle(BufferRecycleType::DEVICE_HOST_MAPPED, src, device_map_recycle);
   }
 
-  if (recycled) {
-    recycled->n_take_recycles = src->n_take_recycles;
-    recycled->n_give_recycles = src->n_give_recycles + 1;
-  }
-
-  if (host_recycle != src && device_recycle != src && device_alloc_recycle != src &&
-      device_map_recycle != src) {
-    delete src;
-  }
+  delete src;
 }
 
-void BufferRecycler::addRecycle(BufferRecycleType type, TmpBuffer *buf)
+void BufferRecycler::addRecycle(BufferRecycleType type, TmpBuffer *original, TmpBuffer *recycled)
 {
+  original->n_give_recycles++;
+  recycled->n_take_recycles = original->n_take_recycles;
+  recycled->n_give_recycles = original->n_give_recycles;
+  m_created_buffers.erase(original);
+  m_created_buffers.insert(recycled);
+
   auto rdata = m_recycle[type];
-  rdata->buffers.insert(buf);
+  rdata->buffers.insert(recycled);
+
+  BLI_assert(type != BufferRecycleType::HOST_CLEAR ||
+             (recycled->host.buffer != nullptr && recycled->host.bwidth > 0 &&
+              recycled->host.bheight > 0 && recycled->host.belem_chs > 0));
+  BLI_assert(type == BufferRecycleType::HOST_CLEAR ||
+             (recycled->device.buffer != nullptr && recycled->device.bwidth > 0 &&
+              recycled->device.bheight > 0 && recycled->device.belem_chs > 0));
 }

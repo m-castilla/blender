@@ -18,6 +18,10 @@
 
 #pragma once
 
+#ifdef WITH_CXX_GUARDEDALLOC
+#  include "MEM_guardedalloc.h"
+#endif
+
 #include "COM_Pixels.h"
 #include "COM_defines.h"
 #include "DNA_color_types.h"
@@ -296,4 +300,8 @@ class CompositorContext {
   {
     this->m_viewName = viewName;
   }
+
+#ifdef WITH_CXX_GUARDEDALLOC
+  MEM_CXX_CLASS_ALLOC_FUNCS("COM:CompositorContext")
+#endif
 };

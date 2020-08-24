@@ -38,6 +38,7 @@ class ViewCacheManager {
   std::unordered_set<unsigned int> m_exec_previews;
 
  public:
+  ~ViewCacheManager();
   void initialize();
   void deinitialize(bool isBreaked);
 
