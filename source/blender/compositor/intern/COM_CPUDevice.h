@@ -42,4 +42,8 @@ class CPUDevice {
  protected:
   int m_thread_id;
   int m_n_threads;
+
+#ifdef WITH_CXX_GUARDEDALLOC
+  MEM_CXX_CLASS_ALLOC_FUNCS("COM:CPUDevice")
+#endif
 };

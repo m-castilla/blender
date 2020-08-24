@@ -317,15 +317,20 @@ void BufferManager::writeSeek(NodeOperation *op,
         }
       }
 
-      if (BufferUtil::hasBuffer(op->getBufferType()) && !man.isBreaked()) {
-        compute_work_enqueued |= prepareForRead(is_write_computed, reads);
-      }
-
       if (!man.isBreaked()) {
         if (compute_work_enqueued) {
           man.deviceWaitQueueToFinish();
+          compute_work_enqueued = false;
         }
         reportWriteCompleted(op, reads, man);
+
+        if (BufferUtil::hasBuffer(op->getBufferType())) {
+          compute_work_enqueued = prepareForRead(is_write_computed, reads);
+        }
+        if (compute_work_enqueued) {
+          man.deviceWaitQueueToFinish();
+          compute_work_enqueued = false;
+        }
       }
 
       reads->is_write_complete = true;
@@ -348,14 +353,16 @@ bool BufferManager::prepareForWrite(bool is_write_computed, OpReads *reads)
   (void)host_empty;    // removes warnings
   (void)device_empty;  // removes warnings
   if (reads->total_compute_reads > 0 && reads->total_cpu_reads > 0) {
-    if (!host_ready) {
+    BLI_assert(device_empty);
+    if (is_write_computed) {
+      work_enqueued |= m_recycler->takeRecycle(
+          BufferRecycleType::DEVICE_CLEAR, buf, width, height, elem_chs);
+    }
+    else if (!host_ready) {
       BLI_assert(host_empty);
       work_enqueued |= m_recycler->takeRecycle(
           BufferRecycleType::HOST_CLEAR, buf, width, height, elem_chs);
     }
-    BLI_assert(device_empty);
-    work_enqueued |= m_recycler->takeRecycle(
-        BufferRecycleType::DEVICE_CLEAR, buf, width, height, elem_chs);
   }
   else {
     BufferRecycleType recycle_type = BufferRecycleType::HOST_CLEAR;
@@ -365,32 +372,27 @@ bool BufferManager::prepareForWrite(bool is_write_computed, OpReads *reads)
         BLI_assert(device_empty && host_empty);
         recycle_type = BufferRecycleType::DEVICE_CLEAR;
       }
+      else if (!host_ready) {
+        BLI_assert(host_empty);
+        recycle_type = BufferRecycleType::DEVICE_HOST_MAPPED;
+      }
       else {
-        if (host_ready) {
-          BLI_assert(device_empty);
-          recycle_type = BufferRecycleType::DEVICE_CLEAR;
-        }
-        else {
-          BLI_assert(host_empty);
-          recycle_type = BufferRecycleType::DEVICE_HOST_MAPPED;
-        }
+        take_recycle = false;
       }
     }
     else if (reads->total_cpu_reads >= 0) {
-      // total_cpu_reads==0 case should only happen for outputs that might want to temporarily
-      // write to a buffer.
+      // total_compute_reads==0 && total_cpu_reads==0 case should only happen for outputs that
+      // might want to temporarily write to a buffer.
       if (is_write_computed) {
         BLI_assert(device_empty && host_empty);
         recycle_type = BufferRecycleType::DEVICE_HOST_ALLOC;
       }
+      else if (!host_ready) {
+        BLI_assert(host_empty);
+        recycle_type = BufferRecycleType::HOST_CLEAR;
+      }
       else {
-        if (host_ready) {
-          take_recycle = false;
-        }
-        else {
-          BLI_assert(host_empty);
-          recycle_type = BufferRecycleType::HOST_CLEAR;
-        }
+        take_recycle = false;
       }
     }
     else {
@@ -399,6 +401,12 @@ bool BufferManager::prepareForWrite(bool is_write_computed, OpReads *reads)
 
     if (take_recycle) {
       work_enqueued |= m_recycler->takeRecycle(recycle_type, buf, width, height, elem_chs);
+      BLI_assert(recycle_type != BufferRecycleType::HOST_CLEAR ||
+                 (buf->host.buffer != nullptr && buf->host.bwidth > 0 && buf->host.bheight > 0 &&
+                  buf->host.belem_chs > 0));
+      BLI_assert(recycle_type == BufferRecycleType::HOST_CLEAR ||
+                 (buf->device.buffer != nullptr && buf->device.bwidth > 0 &&
+                  buf->device.bheight > 0 && buf->device.belem_chs > 0));
     }
   }
   return work_enqueued;
@@ -413,12 +421,17 @@ bool BufferManager::prepareForRead(bool is_compute_written, OpReads *reads)
   if (reads->total_compute_reads > 0 && reads->total_cpu_reads > 0) {
     if (is_compute_written) {
       BLI_assert(buf->device.state == DeviceMemoryState::FILLED);
-      BLI_assert(buf->host.state == HostMemoryState::CLEARED);
+      if (buf->host.state == HostMemoryState::NONE) {
+        work_enqueued |= m_recycler->takeRecycle(
+            BufferRecycleType::HOST_CLEAR, buf, buf->width, buf->height, buf->elem_chs);
+      }
       BufferUtil::deviceToHostCopyEnqueue(buf, MemoryAccess::READ_WRITE);
     }
     else {
-      BLI_assert(buf->device.state == DeviceMemoryState::CLEARED);
+      BLI_assert(buf->device.state == DeviceMemoryState::NONE);
       BLI_assert(buf->host.state == HostMemoryState::FILLED);
+      work_enqueued |= m_recycler->takeRecycle(
+          BufferRecycleType::DEVICE_CLEAR, buf, buf->width, buf->height, buf->elem_chs);
       BufferUtil::hostToDeviceCopyEnqueue(buf, MemoryAccess::READ_WRITE);
     }
     work_enqueued = true;
@@ -432,6 +445,9 @@ bool BufferManager::prepareForRead(bool is_compute_written, OpReads *reads)
           BufferUtil::deviceUnmapFromHostEnqueue(buf);
         }
         else if (buf->host.state == HostMemoryState::FILLED) {
+          BLI_assert(buf->device.state == DeviceMemoryState::NONE);
+          work_enqueued |= m_recycler->takeRecycle(
+              BufferRecycleType::DEVICE_CLEAR, buf, buf->width, buf->height, buf->elem_chs);
           BLI_assert(buf->device.state == DeviceMemoryState::CLEARED);
           BufferUtil::hostToDeviceCopyEnqueue(buf, MemoryAccess::READ_WRITE);
         }

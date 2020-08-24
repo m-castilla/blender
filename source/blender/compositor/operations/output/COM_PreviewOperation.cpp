@@ -38,11 +38,14 @@
 #include "IMB_imbuf.h"
 #include "IMB_imbuf_types.h"
 
+#include "COM_ExecutionManager.h"
+#include "COM_kernel_cpu.h"
+
 PreviewOperation::PreviewOperation(const ColorManagedViewSettings *viewSettings,
                                    const ColorManagedDisplaySettings *displaySettings)
     : NodeOperation()
 {
-  this->addInputSocket(SocketType::COLOR, InputResizeMode::FIT);
+  this->addInputSocket(SocketType::COLOR, InputResizeMode::NO_RESIZE);
   this->m_preview = NULL;
   this->m_outputBuffer = NULL;
   this->m_viewSettings = viewSettings;
@@ -125,16 +128,35 @@ void PreviewOperation::deinitExecution()
 
 void PreviewOperation::execPixels(ExecutionManager &man)
 {
-  auto src_pixels = getInputOperation(0)->getPixels(this, man);
-
+  auto src = getInputOperation(0)->getPixels(this, man);
+  float scale_x, scale_y;
+  if (man.canExecPixels()) {
+    scale_x = src->getWidth() / (float)m_width;
+    scale_y = src->getHeight() / (float)m_height;
+  }
   auto cpuWrite = [&](PixelsRect &dst, const WriteRectContext &ctx) {
     int rect_w = dst.getWidth();
     int rect_h = dst.getHeight();
-    auto src_img = src_pixels->pixelsImg();
 
-    auto dst_img = dst.pixelsImg();
-    PixelsRect src_rect = src_pixels->toRect(dst);
-    PixelsUtil::copyEqualRects(dst, src_rect);
+    READ_DECL(src);
+    WRITE_DECL(dst);
+
+    CPU_LOOP_START(dst);
+
+    src_coordsf.x = dst_coords.x * scale_x;
+    src_coordsf.y = dst_coords.y * scale_y;
+    // cast to pixel coords
+    SET_COORDS(src, src_coordsf.x, src_coordsf.y);
+
+    READ_IMG4(src, src_pix);
+
+    WRITE_IMG4(dst, src_pix);
+
+    CPU_LOOP_END;
+
+    // auto dst_img = dst.pixelsImg();
+    // PixelsRect src_rect = src_pixels->toRect(dst);
+    // PixelsUtil::copyEqualRects(dst, src_rect);
 
     // IMB_colormanagement_processor_apply function don't support row pitch
     BLI_assert(dst_img.row_jump == 0);

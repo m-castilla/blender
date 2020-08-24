@@ -16,6 +16,10 @@
  * Copyright 2011, Blender Foundation.
  */
 
+#ifdef WITH_CXX_GUARDEDALLOC
+#  include "MEM_guardedalloc.h"
+#endif
+
 #include "COM_CPUDevice.h"
 #include "COM_ExecutionGroup.h"
 #include "COM_ExecutionManager.h"

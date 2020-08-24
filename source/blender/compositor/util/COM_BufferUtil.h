@@ -29,6 +29,7 @@ class ExecutionManager;
 
 #if defined(DEBUG) || defined(COM_DEBUG)
 #  define ASSERT_VALID_TMP_BUFFER(tmp_buffer, width, height, n_channels) \
+BLI_assert((width) > 0 && (height) > 0 && (n_channels) > 0); \
     BLI_assert(BufferUtil::calcBufferBytes((width), (height), (n_channels)) == \
                (tmp_buffer)->getMinBufferBytes())
 #else

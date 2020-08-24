@@ -19,11 +19,14 @@
 #ifndef __COM_BUFFERMANAGER_H__
 #define __COM_BUFFERMANAGER_H__
 
+#ifdef WITH_CXX_GUARDEDALLOC
+#  include "MEM_guardedalloc.h"
+#endif
+
 #include "COM_BufferRecycler.h"
 #include "COM_ReadsOptimizer.h"
 #include "COM_Rect.h"
 #include "DNA_vec_types.h"
-#include "MEM_guardedalloc.h"
 #include <memory>
 #include <unordered_map>
 #include <unordered_set>

@@ -30,8 +30,12 @@ OpenCLDevice::OpenCLDevice(OpenCLManager &man, OpenCLPlatform &platform, cl_devi
       m_max_img_w(0),
       m_max_img_h(0),
       m_supported_formats(),
-      m_one_elem_img(nullptr)
+      m_one_elem_imgs()
 {
+  for (int i = 0; i < MAX_ONE_ELEM_IMGS; i++) {
+    m_one_elem_imgs[i].elem_data = nullptr;
+    m_one_elem_imgs[i].img = nullptr;
+  }
 }
 
 OpenCLDevice::~OpenCLDevice()
@@ -41,8 +45,14 @@ OpenCLDevice::~OpenCLDevice()
   m_man.printIfError(CLEW_GET_FUN(__clewReleaseDevice)(m_device_id));
 
   m_man.printIfError(clReleaseCommandQueue(m_queue));
-  if (m_one_elem_img) {
-    memDeviceFree(m_one_elem_img);
+  for (int i = 0; i < MAX_ONE_ELEM_IMGS; i++) {
+    auto elem = m_one_elem_imgs[i];
+    if (elem.img) {
+      memDeviceFree(elem.img);
+    }
+    if (elem.elem_data) {
+      MEM_freeN(elem.elem_data);
+    }
   }
 }
 
@@ -332,10 +342,13 @@ void OpenCLDevice::enqueueWork(cl_command_queue cl_queue,
   }
 }
 
-cl_mem OpenCLDevice::getOneElemImg()
+OpenCLDevice::OneElemImg OpenCLDevice::getOneElemImg(int idx)
 {
-  if (!m_one_elem_img) {
-    m_one_elem_img = (cl_mem)memDeviceAlloc(MemoryAccess::READ, 1, 1, 1, false);
+  BLI_assert(idx < MAX_ONE_ELEM_IMGS);
+  auto &elem = m_one_elem_imgs[idx];
+  if (!elem.img) {
+    elem.img = (cl_mem)memDeviceAlloc(MemoryAccess::READ, 1, 1, 4, false);
+    elem.elem_data = (float *)MEM_mallocN(sizeof(float) * 4, __func__);
   }
-  return m_one_elem_img;
+  return elem;
 }

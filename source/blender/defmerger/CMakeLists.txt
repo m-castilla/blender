@@ -51,6 +51,7 @@ endif()
 set(LIB_EXEC
   bf_defmerger
   bf_blenlib
+  bf_intern_guardedalloc
   ${ZLIB_LIBRARIES}
   ${PLATFORM_LINKLIBS}
 )

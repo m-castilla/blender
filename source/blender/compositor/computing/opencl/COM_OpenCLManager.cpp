@@ -31,7 +31,7 @@ void OpenCLManager::initialize()
   printIfError(clGetPlatformIDs(0, NULL, &numberOfPlatforms));
 
   cl_platform_id *platforms = (cl_platform_id *)MEM_mallocN(
-      sizeof(cl_platform_id) * numberOfPlatforms, __func__);
+      sizeof(cl_platform_id) * numberOfPlatforms, "OpenCLManager::initialize() -> platforms");
   printIfError(clGetPlatformIDs(numberOfPlatforms, platforms, 0));
 
   unsigned int indexPlatform;
@@ -43,18 +43,22 @@ void OpenCLManager::initialize()
       continue;
     }
 
-    cl_device_id *devices = (cl_device_id *)MEM_mallocN(sizeof(cl_device_id) * nDevices, __func__);
+    cl_device_id *devices = (cl_device_id *)MEM_mallocN(sizeof(cl_device_id) * nDevices,
+                                                        "OpenCLManager::initialize() -> devices");
     printIfError(clGetDeviceIDs(platform, CL_DEVICE_TYPE_GPU, nDevices, devices, 0));
 
     /* Check devices has the necessary capabilies */
     auto result = checkDevicesRequiredCapabilities(devices, nDevices);
-    devices = result.first;
+    MEM_freeN(devices);
+    devices = nullptr;
+    cl_device_id *capable_devices = result.first;
     nDevices = result.second;
     if (nDevices <= 0) {
       continue;
     }
 
-    cl_context context = clCreateContext(NULL, nDevices, devices, clContextError, NULL, &error);
+    cl_context context = clCreateContext(
+        NULL, nDevices, capable_devices, clContextError, NULL, &error);
     printIfError(error);
 
     auto source = loadKernelsSource();
@@ -73,17 +77,18 @@ void OpenCLManager::initialize()
 #else
     const char *build_options = "";
 #endif
-    error = clBuildProgram(program, nDevices, devices, build_options, NULL, NULL);
+    error = clBuildProgram(program, nDevices, capable_devices, build_options, NULL, NULL);
     printIfError(error);
     if (error != CL_SUCCESS) {
       size_t ret_val_size = 0;
 
       for (int i = 0; i < nDevices; i++) {
-        cl_device_id device = devices[i];
+        cl_device_id device = capable_devices[i];
         printIfError(
             clGetProgramBuildInfo(program, device, CL_PROGRAM_BUILD_LOG, 0, NULL, &ret_val_size));
 
-        char *build_log = (char *)MEM_mallocN(sizeof(char) * ret_val_size + 1, __func__);
+        char *build_log = (char *)MEM_mallocN(sizeof(char) * ret_val_size + 1,
+                                              "OpenCLManager::initialize() -> build_log");
         printIfError(clGetProgramBuildInfo(
             program, device, CL_PROGRAM_BUILD_LOG, ret_val_size, build_log, NULL));
 
@@ -97,13 +102,13 @@ void OpenCLManager::initialize()
       platformObj->initialize();
       m_platforms.push_back(platformObj);
       for (int i = 0; i < nDevices; i++) {
-        cl_device_id device = devices[i];
+        cl_device_id device = capable_devices[i];
 
         OpenCLDevice *deviceObj = new OpenCLDevice(*this, *platformObj, device);
         m_devices.push_back(deviceObj);
       }
     }
-    MEM_freeN(devices);
+    MEM_freeN(capable_devices);
   }
   MEM_freeN(platforms);
 

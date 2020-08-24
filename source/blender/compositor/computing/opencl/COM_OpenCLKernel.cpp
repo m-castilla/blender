@@ -43,7 +43,8 @@ OpenCLKernel::OpenCLKernel(OpenCLManager &man,
       m_max_group_size(0),
       m_group_size_multiple(0),
       m_initialized(false),
-      m_args_count(0)
+      m_args_count(0),
+      m_one_elem_imgs_count(0)
 #ifndef NDEBUG
       ,
       m_local_mem_used(0),
@@ -104,6 +105,7 @@ void OpenCLKernel::reset(ComputeDevice *new_device)
   clearArgs();
   m_device = (OpenCLDevice *)new_device;
   m_args_count = 0;
+  m_one_elem_imgs_count = 0;
   m_initialized = false;
   initialize();
 }
@@ -124,12 +126,21 @@ void OpenCLKernel::clearArgs()
 
 void OpenCLKernel::addReadImgArgs(PixelsRect &pixels)
 {
-  cl_mem cl_img = pixels.is_single_elem ? m_device->getOneElemImg() :
-                                          (cl_mem)pixels.tmp_buffer->device.buffer;
+  cl_mem cl_img;
   if (pixels.is_single_elem) {
+    auto elem = m_device->getOneElemImg(m_one_elem_imgs_count);
+    cl_img = elem.img;
+    m_one_elem_imgs_count++;
+
     size_t origin[3] = {0, 0, 0};
     size_t size[3] = {1, 1, 1};
-    size_t row_bytes = BufferUtil::calcBufferRowBytes(1, pixels.getElemChs());
+
+    // write 1 entire pixel (4 channels) even if single elem has less channels
+    size_t row_bytes = BufferUtil::calcBufferRowBytes(1, 4);
+    int elem_chs = pixels.getElemChs();
+    for (int i = 0; i < elem_chs; i++) {
+      elem.elem_data[i] = pixels.single_elem[i];
+    }
     m_man.printIfError(clEnqueueWriteImage(m_device->getQueue(),
                                            cl_img,
                                            CL_FALSE,
@@ -137,11 +148,15 @@ void OpenCLKernel::addReadImgArgs(PixelsRect &pixels)
                                            size,
                                            row_bytes,
                                            0,
-                                           pixels.single_elem,
+                                           elem.elem_data,
                                            0,
                                            NULL,
                                            NULL));
+
     m_work_enqueued = true;
+  }
+  else {
+    cl_img = (cl_mem)pixels.tmp_buffer->device.buffer;
   }
 
   m_man.printIfError(clSetKernelArg(m_cl_kernel, m_args_count, sizeof(cl_mem), &cl_img));
