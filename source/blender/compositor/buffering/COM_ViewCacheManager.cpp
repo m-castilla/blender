@@ -23,6 +23,14 @@
 #include "DNA_image_types.h"
 #include "MEM_guardedalloc.h"
 
+ViewCacheManager::~ViewCacheManager()
+{
+  for (auto &cache_pair : m_previews) {
+    auto cache = cache_pair.second;
+    MEM_freeN(cache->buffer);
+  }
+}
+
 void ViewCacheManager::initialize()
 {
   m_exec_previews.clear();

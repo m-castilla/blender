@@ -58,9 +58,10 @@ class BufferRecycler {
   void assertRecycledEqualsCreatedBuffers();
 
  private:
+  void checkRecycledBufferCreated(TmpBuffer *recycled);
   bool isCreatedBufferRecycled(TmpBuffer *created_buf);
   void deleteBuffers(bool deleteRecycledBuffers);
-  void addRecycle(BufferRecycleType type, TmpBuffer *buf);
+  void addRecycle(BufferRecycleType type, TmpBuffer *original, TmpBuffer *recycled);
   /* returns whether it could find a reusable buffer and set it to dst or not */
   bool recycleFindAndSet(
       BufferRecycleType type, TmpBuffer *dst, int width, int height, int elem_chs);

@@ -26,6 +26,7 @@ class OpenCLKernel : public ComputeKernel {
   size_t m_group_size_multiple;
   bool m_initialized;
   int m_args_count;
+  int m_one_elem_imgs_count;
 #if DEBUG
   size_t m_local_mem_used;
   size_t m_private_mem_used;
