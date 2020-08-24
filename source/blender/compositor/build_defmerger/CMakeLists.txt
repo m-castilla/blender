@@ -22,6 +22,7 @@
 set(INC
   .
   ../../blenlib
+  ../../../../intern/guardedalloc
 )
 
 set(SYS
@@ -36,6 +37,7 @@ set(SRC
 
 set(LIB
   bf_blenlib
+  bf_intern_guardedalloc
 )
 
 blender_add_lib(bf_defmerger "${SRC}" "${INC}" "${SYS}" "${LIB}")

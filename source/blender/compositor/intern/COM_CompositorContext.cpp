@@ -34,6 +34,10 @@ CompositorContext::CompositorContext()
   m_res_mode = DetermineResolutionMode::FromInput;
   m_previews = nullptr;
   m_inputs_scale = 0.2f;
+  m_max_cache_bytes = 0;
+  m_bnodetree = nullptr;
+  m_rendering = false;
+  m_viewName = nullptr;
 }
 
 CompositorContext CompositorContext::build(const std::string &execution_id,
@@ -45,7 +49,7 @@ CompositorContext CompositorContext::build(const std::string &execution_id,
                                            const ColorManagedDisplaySettings *displaySettings,
                                            const char *viewName)
 {
-  const int DEFAULT_BUFFER_CACHE_BYTES = 256 * 1024 * 1024;
+  const size_t DEFAULT_BUFFER_CACHE_BYTES = (size_t)2048 * 1024 * 1024;  // 1024 * 1024 = MB
 
   CompositorContext context;
   context.setbNodeTree(editingtree);

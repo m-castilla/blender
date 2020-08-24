@@ -168,10 +168,11 @@
   float2 src##_coordsf;
 
 #define WRITE_DECL(dst) \
-  int2 dst##_coords = make_int2(dst##_start_x + get_global_id(0), dst##_start_y + get_global_id(1)));
+  int2 dst##_coords = make_int2(dst##_start_x + get_global_id(0), \
+                                dst##_start_y + get_global_id(1));
 
-/*src_img must be a image2d_t , coords must be int2*/
-#define READ_IMG(src, result) read_imagef(src, src##_coords *src##_is_not_single);
+/*src_img must be a image2d_t*/
+#define READ_IMG(src, result) result = read_imagef(src, src##_coords * src##_is_not_single);
 
 #define READ_IMG1(src, result) READ_IMG(src, result);
 #define READ_IMG3(src, result) READ_IMG(src, result);
@@ -204,9 +205,9 @@
   src##_coordsf.x = (x_); \
   src##_coordsf.y = (y_);
 
-#define COPY_COORDS(to, from) to##_coords = from##_coords;
+#define COPY_COORDS(to, coords) to##_coords = coords;
 
-#define COPY_SAMPLE_COORDS(to, from) to##_coordsf = from##_coordsf;
+#define COPY_SAMPLE_COORDS(to, coords) to##_coordsf = coords;
 
 #define UPDATE_COORDS_X(src, x_) src##_coords.x = x_;
 

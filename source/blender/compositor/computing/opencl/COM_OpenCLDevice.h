@@ -27,7 +27,15 @@ class OpenCLManager;
 class OpenCLPlatform;
 class OpenCLKernel;
 class OpenCLDevice : public ComputeDevice {
+ public:
+  typedef struct OneElemImg {
+    cl_mem img;
+    float *elem_data;
+  } OneElemImg;
+
  private:
+  // limit to detect bugs (there shouldn't be a case of a kernel requesting more than 16 imgs)
+  static const int MAX_ONE_ELEM_IMGS = 16;
   cl_command_queue m_queue;
   OpenCLManager &m_man;
   OpenCLPlatform &m_platform;
@@ -41,7 +49,7 @@ class OpenCLDevice : public ComputeDevice {
   int m_max_img_w;
   int m_max_img_h;
   cl_image_format m_supported_formats;
-  cl_mem m_one_elem_img;
+  OneElemImg m_one_elem_imgs[MAX_ONE_ELEM_IMGS];
 
  public:
   OpenCLDevice(OpenCLManager &man, OpenCLPlatform &platform, cl_device_id device_id);
@@ -99,7 +107,7 @@ class OpenCLDevice : public ComputeDevice {
     return m_max_img_h;
   }
 
-  cl_mem getOneElemImg();
+  OneElemImg getOneElemImg(int idx);
   cl_command_queue getQueue()
   {
     return m_queue;
