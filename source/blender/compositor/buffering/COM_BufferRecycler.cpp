@@ -348,15 +348,6 @@ bool BufferRecycler::takeRecycle(
   BLI_assert(!m_execution_id.empty());
   dst->execution_id = m_execution_id;
 
-  // TODO delete this
-  // assert all recycled buffers are in created buffers list
-  ForeachBufferRecycleType([&](BufferRecycleType type) {
-    RecycleData *rdata = m_recycle[type];
-    for (auto recycled : rdata->buffers) {
-      checkRecycledBufferCreated(recycled);
-    }
-  });
-  // End of TODO
   return work_enqueued;
 }
 

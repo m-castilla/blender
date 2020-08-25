@@ -16,18 +16,28 @@
  * Copyright 2011, Blender Foundation.
  */
 
-#include "COM_ExecutionManager.h"
+#include "BLI_string.h"
+#include "BLT_translation.h"
+#include <algorithm>
+
 #include "COM_ComputeDevice.h"
 #include "COM_ExecutionGroup.h"
+#include "COM_ExecutionManager.h"
 #include "COM_ExecutionSystem.h"
 #include "COM_GlobalManager.h"
 #include "COM_RectUtil.h"
 #include "COM_WorkScheduler.h"
-#include <algorithm>
 
 ExecutionManager::ExecutionManager(const CompositorContext &context,
                                    std::vector<ExecutionGroup *> &exec_groups)
-    : m_context(context), m_exec_groups(exec_groups), m_op_mode(OperationMode::Optimize)
+    : m_context(context),
+      m_exec_groups(exec_groups),
+      m_op_mode(OperationMode::Optimize),
+      m_n_optimized_ops(0),
+      m_n_exec_operations(0),
+      m_n_exec_subworks(0),
+      m_n_subworks(0),
+      mutex()
 {
 }
 
@@ -77,7 +87,7 @@ void ExecutionManager::execWriteJob(
     std::vector<WorkPackage *> works;
     bool is_computed = op->isComputed(*this);
     if (op->getWriteType() == WriteType::SINGLE_THREAD) {
-      WorkPackage *work = new WorkPackage(full_write_rect, cpu_write_func);
+      WorkPackage *work = new WorkPackage(*this, full_write_rect, cpu_write_func);
       works.push_back(work);
     }
     else if (is_computed) {
@@ -88,8 +98,10 @@ void ExecutionManager::execWriteJob(
       int width = xmax - xmin;
       int height = ymax - ymin;
 
-      int n_works = m_context.getNCpuWorkThreads();
-      std::vector<rcti> splits = RectUtil::splitImgRectInEqualRects(n_works, width, height);
+      int n_total_works = m_context.getNCpuWorkThreads() * 8;
+      m_n_subworks = n_total_works;
+      m_n_exec_subworks = 0;
+      std::vector<rcti> splits = RectUtil::splitImgRectInEqualRects(n_total_works, width, height);
 
       for (auto &rect : splits) {
         if (xmin > 0) {
@@ -102,7 +114,7 @@ void ExecutionManager::execWriteJob(
         }
 
         std::shared_ptr<PixelsRect> w_rect = write_rect_builder(rect);
-        WorkPackage *work = new WorkPackage(w_rect, cpu_write_func);
+        WorkPackage *work = new WorkPackage(*this, w_rect, cpu_write_func);
         works.push_back(work);
       }
     }
@@ -151,10 +163,58 @@ void ExecutionManager::execWriteJob(
   }
 }
 
+void ExecutionManager::updateProgress(int n_exec_subworks, int n_total_subworks)
+{
+  auto tree = m_context.getbNodeTree();
+  if (tree) {
+    float progress = (float)m_n_exec_operations / (float)m_n_optimized_ops;
+    if (n_exec_subworks > 0) {
+      BLI_assert(n_exec_subworks >= 0 && n_exec_subworks <= n_total_subworks);
+      float subwork_range = ((m_n_exec_operations + 1.0f) / (float)m_n_optimized_ops) - progress;
+      float added_progress = ((float)n_exec_subworks / (float)n_total_subworks) * subwork_range;
+      progress += added_progress;
+    }
+    tree->progress(tree->prh, progress);
+
+    char buf[128];
+    BLI_snprintf(buf,
+                 sizeof(buf),
+                 TIP_("Compositing | Operation %u-%u"),
+                 m_n_exec_operations + 1,
+                 m_n_optimized_ops);
+    tree->stats_draw(tree->sdh, buf);
+  }
+}
+
 void ExecutionManager::deviceWaitQueueToFinish()
 {
   auto device = GlobalMan->ComputeMan->getSelectedDevice();
   device->waitQueueToFinish();
+}
+
+void ExecutionManager::reportSubworkCompleted()
+{
+  mutex.lock();
+  m_n_exec_subworks++;
+  updateProgress(m_n_exec_subworks, m_n_subworks);
+  mutex.unlock();
+}
+
+void ExecutionManager::reportOperationOptimized(NodeOperation *op)
+{
+  auto buf_type = op->getBufferType();
+  if (buf_type != BufferType::NO_BUFFER_NO_WRITE) {
+    m_n_optimized_ops++;
+  }
+}
+
+void ExecutionManager::reportOperationCompleted(NodeOperation *op)
+{
+  auto buf_type = op->getBufferType();
+  if (buf_type != BufferType::NO_BUFFER_NO_WRITE) {
+    m_n_exec_operations++;
+    updateProgress();
+  }
 }
 
 const rcti *ExecutionManager::getOpViewerBorder(NodeOperation *op)

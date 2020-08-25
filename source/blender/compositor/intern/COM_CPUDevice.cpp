@@ -33,5 +33,4 @@ CPUDevice::CPUDevice(int thread_idx, int n_threads)
 void CPUDevice::execute(WorkPackage &work)
 {
   work.exec();
-  work.reportFinished();
 }

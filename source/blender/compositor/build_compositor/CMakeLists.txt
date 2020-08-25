@@ -167,6 +167,7 @@ set(SRC
   ${CMP_BASE}/computing/kernel_util/COM_kernel_math_int4.h
   ${CMP_BASE}/computing/kernel_util/COM_kernel_optimization.h
   ${CMP_BASE}/computing/kernel_util/COM_kernel_sampling.h
+  ${CMP_BASE}/computing/kernel_util/COM_kernel_sampling_impl.h
   ${CMP_BASE}/computing/kernel_util/COM_kernel_simd.h
   ${CMP_BASE}/computing/kernel_util/COM_kernel_simd.cpp
   ${CMP_BASE}/computing/kernel_util/COM_kernel_types.h

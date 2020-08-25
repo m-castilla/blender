@@ -151,8 +151,8 @@ void ConvertDepthToRadiusOperation::execPixels(ExecutionManager &man)
   computeWriteSeek(man, cpu_write, "convertDepthToRadiusOp", [&](ComputeKernel *kernel) {
     kernel->addReadImgArgs(*input);
     kernel->addFloatArg(m_aperture);
-    kernel->addIntArg(m_dof_sp);
-    kernel->addIntArg(m_inverseFocalDistance);
-    kernel->addIntArg(m_maxRadius);
+    kernel->addFloatArg(m_dof_sp);
+    kernel->addFloatArg(m_inverseFocalDistance);
+    kernel->addFloatArg(m_maxRadius);
   });
 }

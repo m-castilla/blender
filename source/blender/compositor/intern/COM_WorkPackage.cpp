@@ -17,13 +17,19 @@
  */
 
 #include "COM_WorkPackage.h"
+#include "COM_ExecutionManager.h"
 #include "COM_NodeOperation.h"
 #include "COM_Rect.h"
 
 WorkPackage::WorkPackage(
+    ExecutionManager &man,
     std::shared_ptr<PixelsRect> write_rect,
     std::function<void(PixelsRect &, const WriteRectContext &)> &cpu_write_func)
-    : m_write_rect(write_rect), m_cpu_write_func(cpu_write_func), m_finished(false)
+    : m_man(man),
+      m_write_rect(write_rect),
+      m_cpu_write_func(cpu_write_func),
+      m_finished(false),
+      m_write_ctx()
 {
 }
 WorkPackage::~WorkPackage()
@@ -37,5 +43,9 @@ void WorkPackage::setWriteContext(WriteRectContext ctx)
 
 void WorkPackage::exec()
 {
-  m_cpu_write_func(*m_write_rect, m_write_ctx);
+  if (!m_man.isBreaked()) {
+    m_cpu_write_func(*m_write_rect, m_write_ctx);
+  }
+  m_finished = true;
+  m_man.reportSubworkCompleted();
 }

@@ -95,6 +95,11 @@ class ExecutionSystem {
    */
   void execute();
 
+  int getNOperations() const
+  {
+    return m_operations.size();
+  }
+
   inline bool isBreaked() const
   {
     return m_context.isBreaked();

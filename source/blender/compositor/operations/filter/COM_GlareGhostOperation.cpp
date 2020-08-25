@@ -47,7 +47,7 @@ void GlareGhostOperation::generateGlare(PixelsRect &dst,
   const float s1 = 4.0f / (float)qt, s2 = 2.0f * s1;
   int x, y, n, p, np;
   CCL::float4 cm[64];
-  float sc, isc, u, v, sm, s, t, ofs, scalef[64];
+  float sc, isc, u, v, sm, s, t, ofs, scalef[64] = {};
   const float cmo = 1.0f - settings->colmod;
   CCL::float4 zero_f4 = CCL::make_float4_1(0.0f);
   PixelsRect g_rect = src.duplicate();
@@ -114,7 +114,7 @@ void GlareGhostOperation::generateGlare(PixelsRect &dst,
         t1_x = s * g_width;
         t1_y = t * g_height;
         SET_SAMPLE_COORDS(t1, t1_x, t1_y);
-        SAMPLE_IMG(t1, sampler, t1_pix);
+        SAMPLE_BILINEAR4_CLIP(0, t1, sampler, t1_pix);
         sm = smoothMask(s, t);
         t1_pix *= sm;
         s = (u - 0.5f) * isc + 0.5f;
@@ -122,7 +122,7 @@ void GlareGhostOperation::generateGlare(PixelsRect &dst,
         t2_x = s * g_width - 0.5f;
         t2_y = t * g_height - 0.5f;
         SET_SAMPLE_COORDS(t2, t2_x, t2_y);
-        SAMPLE_IMG(t2, sampler, t2_pix);
+        SAMPLE_BILINEAR4_CLIP(0, t2, sampler, t2_pix);
         sm = smoothMask(s, t);
         t1_pix += t2_pix * sm;
 
@@ -152,7 +152,7 @@ void GlareGhostOperation::generateGlare(PixelsRect &dst,
             g_x = g_width - 0.5f;
             g_y = g_height - 0.5f;
             SET_SAMPLE_COORDS(g, g_x, g_y);
-            SAMPLE_IMG(g, sampler, g_pix);
+            SAMPLE_BILINEAR4_CLIP(0, g, sampler, g_pix);
             g_pix *= cm[np];
             sm = smoothMask(s, t) * 0.25f;
             t2_pix += g_pix * sm;

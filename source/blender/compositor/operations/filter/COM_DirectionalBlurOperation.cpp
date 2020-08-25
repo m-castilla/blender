@@ -101,7 +101,7 @@ ccl_kernel directionalBlurOp(CCL_WRITE(dst),
 
   SET_SAMPLE_COORDS(color, dst_coords.x, dst_coords.y);
 
-  SAMPLE_IMG(color, sampler, result_pix);
+  SAMPLE_BILINEAR4_CLIP(0, color, sampler, result_pix);
 
   /* blur the image */
   int it_table_end = iterations * it_table_row_length;
@@ -118,7 +118,7 @@ ccl_kernel directionalBlurOp(CCL_WRITE(dst),
     vv = cos_rot * v - sin_rot * u + pix_center_y;
 
     SET_SAMPLE_COORDS(color, uu, vv);
-    SAMPLE_IMG(color, sampler, color_pix);
+    SAMPLE_BILINEAR4_CLIP(1, color, sampler, color_pix);
 
     result_pix += color_pix;
     ltx += tx;
@@ -184,7 +184,7 @@ void DirectionalBlurOperation::execPixels(ExecutionManager &man)
     kernel->addSamplerArg(sampler);
     kernel->addIntArg(m_iterations);
     kernel->addFloatCArrayArg(it_table, m_iterations * it_table_row_length);
-    kernel->addFloatArg(it_table_row_length);
+    kernel->addIntArg(it_table_row_length);
     kernel->addFloat4Arg(one_by_iterations_plus_one_f4);
     kernel->addFloatArg(m_pix_center_x);
     kernel->addFloatArg(m_pix_center_y);

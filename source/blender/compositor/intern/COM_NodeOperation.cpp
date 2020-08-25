@@ -161,7 +161,7 @@ void NodeOperation::computeWriteSeek(
     GlobalMan->BufferMan->writeSeek(this,
                                     man,
                                     std::bind(&ExecutionManager::execWriteJob,
-                                              man,
+                                              &man,
                                               this,
                                               _1,
                                               cpu_func,
@@ -184,6 +184,7 @@ std::shared_ptr<PixelsRect> NodeOperation::getPixels(NodeOperation *reader_op,
       if (!m_exec_pixels_optimized && !GlobalMan->hasAnyKindOfCache(this)) {
         execPixels(man);
         m_exec_pixels_optimized = true;
+        man.reportOperationOptimized(this);
       }
       GlobalMan->BufferMan->readOptimize(this, reader_op, man);
     }

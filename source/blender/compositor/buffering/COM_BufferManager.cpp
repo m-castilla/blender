@@ -334,6 +334,7 @@ void BufferManager::writeSeek(NodeOperation *op,
       }
 
       reads->is_write_complete = true;
+      man.reportOperationCompleted(op);
     }
   }
 }

@@ -91,6 +91,7 @@
 #define make_float4(x, y, z, w) ((float4)(x, y, z, w))
 #define make_float4_1(f) ((float4)(f, f, f, f))
 #define make_float4_3(f3) ((float4)(f3, 0.0f))
+#define make_float4_31(f3, f) ((float4)(f3, f))
 #define make_int2(x, y) ((int2)(x, y))
 #define make_int3(x, y, z) ((int3)(x, y, z))
 #define make_int3_1(i) ((int3)(i, i, i))
@@ -181,6 +182,8 @@
 /*src_img must be a image2d_t, sampler must be sampler_t, coords must be float2*/
 #define SAMPLE_IMG(src, sampler, result) \
   result = read_imagef(src, sampler, src##_coordsf * src##_is_not_single);
+
+#include "kernel_util/COM_kernel_sampling.h"
 
 /*dst_img must be a image2d_t , coords must be int2, pixel must be float4*/
 #define WRITE_IMG(dst, pixel) write_imagef(dst, dst##_coords, pixel);
