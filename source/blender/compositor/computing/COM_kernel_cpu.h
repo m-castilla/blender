@@ -288,6 +288,8 @@ CCL_NAMESPACE_END
     WRITE_IMG3(dst, pixel); \
   }
 
+#include "kernel_util/COM_kernel_sampling.h"
+
 #define SAMPLE_IMG(src, sampler, result) CCL::sample(src##_img, result, sampler, src##_coordsf);
 
 #endif

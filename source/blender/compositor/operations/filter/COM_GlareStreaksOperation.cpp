@@ -85,17 +85,17 @@ void GlareStreaksOperation::generateGlare(PixelsRect &dst,
           coordf_x = tdst_coords.x + vxp;
           coordf_y = tdst_coords.y + vyp;
           SET_SAMPLE_COORDS(tsrc, coordf_x, coordf_y);
-          SAMPLE_IMG(tsrc, sampler, c2);
+          SAMPLE_BILINEAR4_CLIP(0, tsrc, sampler, c2);
 
           coordf_x = tdst_coords.x + vxp * 2.0f;
           coordf_y = tdst_coords.y + vyp * 2.0f;
           SET_SAMPLE_COORDS(tsrc, coordf_x, coordf_y);
-          SAMPLE_IMG(tsrc, sampler, c3);
+          SAMPLE_BILINEAR4_CLIP(1, tsrc, sampler, c3);
 
           coordf_x = tdst_coords.x + vxp * 3.0f;
           coordf_y = tdst_coords.y + vyp * 3.0f;
           SET_SAMPLE_COORDS(tsrc, coordf_x, coordf_y);
-          SAMPLE_IMG(tsrc, sampler, c4);
+          SAMPLE_BILINEAR4_CLIP(2, tsrc, sampler, c4);
 
           // modulate color to look vaguely similar to a color spectrum
           c2.y *= cmo;

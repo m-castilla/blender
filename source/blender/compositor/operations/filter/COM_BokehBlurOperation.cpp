@@ -60,7 +60,9 @@ ccl_kernel bokehBlurOp(CCL_WRITE(dst),
                        const float bokeh_factor,
                        const int bokeh_mid_x,
                        const int bokeh_mid_y,
-                       const int quality_step)
+                       const int quality_step,
+                       const int color_width,
+                       const int color_height)
 {
   READ_DECL(color);
   READ_DECL(bokeh);
@@ -68,7 +70,6 @@ ccl_kernel bokehBlurOp(CCL_WRITE(dst),
   READ_DECL(bounding);
   WRITE_DECL(dst);
   float4 color_accum, multiplier_accum;
-  int2 blur_coords;
 
   CPU_LOOP_START(dst);
 
@@ -83,30 +84,32 @@ ccl_kernel bokehBlurOp(CCL_WRITE(dst),
       READ_IMG4(color, color_accum);
       multiplier_accum = make_float4_1(1.0f);
     }
-    const int blur_miny = dst_coords.y - pixel_size;
-    const int blur_maxy = dst_coords.y + pixel_size;
-    const int blur_minx = dst_coords.x - pixel_size;
-    const int blur_maxx = dst_coords.x + pixel_size;
+    const int blur_miny = max(0, dst_coords.y - pixel_size);
+    const int blur_maxy = min(color_height, dst_coords.y + pixel_size);
+    const int blur_minx = max(0, dst_coords.x - pixel_size);
+    const int blur_maxx = min(color_width, dst_coords.x + pixel_size);
+
     SET_SAMPLE_COORDS(bokeh, blur_minx, blur_miny);
-    SET_SAMPLE_COORDS(color, blur_minx, blur_miny);
+    SET_COORDS(color, blur_minx, blur_miny);
     float bokeh_coordf_y, bokeh_coordf_x;
-    for (blur_coords.y = blur_miny; blur_coords.y < blur_maxy; blur_coords.y += quality_step) {
-      bokeh_coordf_y = bokeh_mid_y - (blur_coords.y - dst_coords.y) * bokeh_factor;
+    while (color_coords.y < blur_maxy) {
+      bokeh_coordf_y = bokeh_mid_y - (color_coords.y - dst_coords.y) * bokeh_factor;
       UPDATE_SAMPLE_COORDS_Y(bokeh, bokeh_coordf_y);
-      for (blur_coords.x = blur_minx; blur_coords.x < blur_maxx; blur_coords.x += quality_step) {
-        bokeh_coordf_x = bokeh_mid_x - (blur_coords.x - dst_coords.x) * bokeh_factor;
+      while (color_coords.x < blur_maxx) {
+        bokeh_coordf_x = bokeh_mid_x - (color_coords.x - dst_coords.x) * bokeh_factor;
         UPDATE_SAMPLE_COORDS_X(bokeh, bokeh_coordf_x);
-        SAMPLE_IMG(bokeh, sampler, bokeh_pix);
-        SAMPLE_IMG(color, sampler, color_pix);
+        SAMPLE_NEAREST4_CLIP(0, bokeh, sampler, bokeh_pix);
+        READ_IMG(color, color_pix);
+        // SAMPLE_IMG(bokeh, sampler, bokeh_pix);
+        // SAMPLE_IMG(color, sampler, color_pix);
         color_accum += bokeh_pix * color_pix;
         multiplier_accum += bokeh_pix;
-        INCR_SAMPLE_COORDS_X(bokeh, quality_step);
-        INCR_SAMPLE_COORDS_X(color, quality_step);
+        INCR_COORDS_X(color, quality_step);
       }
       INCR_SAMPLE_COORDS_Y(bokeh, quality_step);
-      INCR_SAMPLE_COORDS_Y(color, quality_step);
-      UPDATE_SAMPLE_COORDS_X(bokeh, blur_minx);
-      UPDATE_SAMPLE_COORDS_X(color, blur_minx);
+      UPDATE_SAMPLE_COORDS_X(bokeh, blur_minx)
+      INCR_COORDS_Y(color, quality_step);
+      UPDATE_COORDS_X(color, blur_minx);
     }
 
     color_pix = color_accum * (1.0f / multiplier_accum);
@@ -134,6 +137,7 @@ void BokehBlurOperation::execPixels(ExecutionManager &man)
   int pixel_size;
   float bokeh_factor;
   int quality_step = QualityStepHelper::getStep();
+  int color_width, color_height;
   PixelsSampler sampler = {PixelInterpolation::NEAREST, PixelExtend::CLIP};
 
   if (man.canExecPixels()) {
@@ -141,6 +145,8 @@ void BokehBlurOperation::execPixels(ExecutionManager &man)
     int bokeh_height = bokeh->getHeight();
     int output_width = getWidth();
     int output_height = getHeight();
+    color_width = color->getWidth();
+    color_height = color->getHeight();
     bokehMidX = bokeh_width / 2.0f;
     bokehMidY = bokeh_height / 2.0f;
 
@@ -163,7 +169,9 @@ void BokehBlurOperation::execPixels(ExecutionManager &man)
       bokeh_factor,
       bokehMidX,
       bokehMidY,
-      quality_step);
+      quality_step,
+      color_width,
+      color_height);
   computeWriteSeek(man, cpu_write, "bokehBlurOp", [&](ComputeKernel *kernel) {
     kernel->addReadImgArgs(*color);
     kernel->addReadImgArgs(*bokeh);
@@ -175,6 +183,8 @@ void BokehBlurOperation::execPixels(ExecutionManager &man)
     kernel->addIntArg(bokehMidX);
     kernel->addIntArg(bokehMidY);
     kernel->addIntArg(quality_step);
+    kernel->addIntArg(color_width);
+    kernel->addIntArg(color_height);
   });
 }
 
