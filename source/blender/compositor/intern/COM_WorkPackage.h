@@ -32,13 +32,15 @@ class PixelsRect;
 struct WriteRectContext;
 class WorkPackage {
  private:
+  ExecutionManager &m_man;
   std::shared_ptr<PixelsRect> m_write_rect;
   std::function<void(PixelsRect &, const WriteRectContext &)> &m_cpu_write_func;
   std::atomic<bool> m_finished;
   WriteRectContext m_write_ctx;
 
  public:
-  WorkPackage(std::shared_ptr<PixelsRect> write_rect,
+  WorkPackage(ExecutionManager &man,
+              std::shared_ptr<PixelsRect> write_rect,
               std::function<void(PixelsRect &, const WriteRectContext &)> &cpu_write_func);
   ~WorkPackage();
   void setWriteContext(WriteRectContext ctx);
@@ -46,10 +48,6 @@ class WorkPackage {
   bool hasFinished()
   {
     return m_finished;
-  }
-  void reportFinished()
-  {
-    m_finished = true;
   }
   void reset()
   {
