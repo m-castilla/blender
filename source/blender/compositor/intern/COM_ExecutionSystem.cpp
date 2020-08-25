@@ -40,7 +40,11 @@
 #include <algorithm>
 
 ExecutionSystem::ExecutionSystem(const CompositorContext &context)
-    : m_bNodeTree(context.getbNodeTree()), m_context(context)
+    : m_bNodeTree(context.getbNodeTree()),
+      m_context(context),
+      m_operations(),
+      m_groups(),
+      m_readers_reads()
 {
   {
     NodeOperationBuilder builder(*this, m_bNodeTree);

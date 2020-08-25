@@ -23,6 +23,7 @@
 #include "COM_defines.h"
 #include <functional>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <vector>
 
@@ -39,6 +40,11 @@ class ExecutionManager {
   const CompositorContext &m_context;
   std::vector<ExecutionGroup *> &m_exec_groups;
   OperationMode m_op_mode;
+  int m_n_optimized_ops;
+  int m_n_exec_operations;
+  int m_n_exec_subworks;
+  int m_n_subworks;
+  std::mutex mutex;
 
  public:
   ExecutionManager(const CompositorContext &context, std::vector<ExecutionGroup *> &exec_groups);
@@ -54,11 +60,18 @@ class ExecutionManager {
                     std::function<void(PixelsRect &)> after_write_func,
                     std::string compute_kernel,
                     std::function<void(ComputeKernel *)> add_kernel_args_func);
+
+  void reportOperationOptimized(NodeOperation *op);
+  // must be called by BufferManager when the full operation write is completed
+  void reportOperationCompleted(NodeOperation *op);
+  // must be called by WorkPackage on completed
+  void reportSubworkCompleted();
   static void deviceWaitQueueToFinish();
 
  private:
   // returns null if operation has no viewer border
   const rcti *getOpViewerBorder(NodeOperation *op);
+  void updateProgress(int n_exec_subworks = 0, int n_total_subworks = 0);
 };
 
 #endif
