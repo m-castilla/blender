@@ -123,7 +123,7 @@
 /* SAMPLER PRIVATE IMPLEMENTATION MACROS */
 
 #  define SAMPLER_ASSERT__(sampler, interp_mode, extend_mode) \
-    kernel_assert(sampler.interp == PixelInterpolation::interp_mode && \
+    kernel_assert(sampler.filter == PixelInterpolation::interp_mode && \
                   sampler.extend == PixelExtend::extend_mode);
 
 #  define NEAREST_OFFSET__(name, img) \
@@ -154,7 +154,7 @@
     type src##_nearest_##ctx_num##_y__ = coords.y; \
     EXTEND_CLIP##n_chs##_##type_letter##_START( \
         src##_img, dst_pix, src##_nearest_##ctx_num##_x__, src##_nearest_##ctx_num##_y__); \
-    NEAREST_WRITE_##type_letter##n_chs##__(src##_nearest_##ctx_num, src##_img, dst_pix); \
+    NEAREST_WRITE_F##n_chs##__(src##_nearest_##ctx_num, src##_img, dst_pix); \
     EXTEND_CLIP_END;
 
 #  define SAMPLE_NEAREST_MODE__( \
@@ -164,7 +164,7 @@
     type src##_nearest_##ctx_num##_y__ = coords.y; \
     EXTEND_##mode##_##type_letter##( \
         src##_img, src##_nearest_##ctx_num##_x__, src##_nearest_##ctx_num##_y__); \
-    NEAREST_WRITE_##type_letter##n_chs##__(src##_nearest_##ctx_num, src##_img, dst_pix);
+    NEAREST_WRITE_F##n_chs##__(src##_nearest_##ctx_num, src##_img, dst_pix);
 
 /* END OF PRIVATE IMPLEMENTATION MACROS */
 
