@@ -47,7 +47,7 @@ class GlareBaseOperation : public NodeOperation {
   {
     this->m_settings = settings;
   }
-  virtual WriteType getWriteType() const
+  virtual WriteType getWriteType() const override
   {
     return WriteType::SINGLE_THREAD;
   }

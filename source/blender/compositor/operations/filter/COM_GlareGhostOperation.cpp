@@ -45,7 +45,7 @@ void GlareGhostOperation::generateGlare(PixelsRect &dst,
   PixelsSampler sampler = {PixelInterpolation::BILINEAR, PixelExtend::CLIP};
   const int qt = 1 << settings->quality;
   const float s1 = 4.0f / (float)qt, s2 = 2.0f * s1;
-  int x, y, n, p, np;
+  int n, p, np;
   CCL::float4 cm[64];
   float sc, isc, u, v, sm, s, t, ofs, scalef[64] = {};
   const float cmo = 1.0f - settings->colmod;
@@ -81,7 +81,7 @@ void GlareGhostOperation::generateGlare(PixelsRect &dst,
     CCL::float4 cmo1 = CCL::make_float4(1.0f, cmo, cmo, 1.0f);
     CCL::float4 cmo2 = CCL::make_float4(cmo, 1.0f, cmo, 1.0f);
     CCL::float4 cmo3 = CCL::make_float4(cmo, cmo, 1.0f, 1.0f);
-    for (x = 0; x < (settings->iter * 4); x++) {
+    for (int x = 0, y = 0; x < (settings->iter * 4); x++) {
       y = x & 3;
       cm[x] = CCL::make_float4_1(1.0f);
       if (y == 1) {
@@ -131,6 +131,7 @@ void GlareGhostOperation::generateGlare(PixelsRect &dst,
       }
       breaked = man.isBreaked();
       INCR1_COORDS_Y(g);
+      UPDATE_COORDS_X(g, 0);
     }
   }
 
@@ -140,17 +141,17 @@ void GlareGhostOperation::generateGlare(PixelsRect &dst,
     int g_x, g_y;
     for (n = 1; n < settings->iter && (!breaked); n++) {
       SET_COORDS(t1, 0, 0);
-      while (y < g_height && (!breaked)) {
-        v = ((float)y + 0.5f) / (float)g_height;
-        while (x < g_width) {
-          u = ((float)x + 0.5f) / (float)g_width;
+      while (t1_coords.y < g_height && (!breaked)) {
+        v = ((float)t1_coords.y + 0.5f) / (float)g_height;
+        while (t1_coords.x < g_width) {
+          u = ((float)t1_coords.x + 0.5f) / (float)g_width;
           t2_pix = zero_f4;
           for (p = 0; p < 4; p++) {
             np = (n << 2) + p;
             s = (u - 0.5f) * scalef[np] + 0.5f;
             t = (v - 0.5f) * scalef[np] + 0.5f;
-            g_x = g_width - 0.5f;
-            g_y = g_height - 0.5f;
+            g_x = s * g_width - 0.5f;
+            g_y = t * g_height - 0.5f;
             SET_SAMPLE_COORDS(g, g_x, g_y);
             SAMPLE_BILINEAR4_CLIP(0, g, sampler, g_pix);
             g_pix *= cm[np];
@@ -159,11 +160,13 @@ void GlareGhostOperation::generateGlare(PixelsRect &dst,
           }
           READ_IMG4(t1, t1_pix);
           t2_pix += t1_pix;
+          t2_pix.w = t1_pix.w;
           WRITE_IMG4(t1, t2_pix);
           INCR1_COORDS_X(t1);
         }
         breaked = man.isBreaked();
         INCR1_COORDS_Y(t1);
+        UPDATE_COORDS_X(t1, 0);
       }
       PixelsUtil::copyEqualRects(g_rect, t1_rect);
     }

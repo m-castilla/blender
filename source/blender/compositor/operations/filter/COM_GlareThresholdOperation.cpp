@@ -57,17 +57,10 @@ void GlareThresholdOperation::execPixels(ExecutionManager &man)
 
     CPU_LOOP_START(dst);
 
-    COPY_COORDS(color, dst_coords);
-
-    dst_img.buffer[dst_offset] = color_img.buffer[color_offset];
-    dst_img.buffer[dst_offset + 1] = color_img.buffer[color_offset + 1];
-    dst_img.buffer[dst_offset + 2] = color_img.buffer[color_offset + 2];
-    dst_img.buffer[dst_offset + 3] = color_img.buffer[color_offset + 3];
-
-    if (IMB_colormanagement_get_luminance(&dst_img.buffer[dst_offset]) >= threshold) {
-      dst_img.buffer[dst_offset] -= threshold;
-      dst_img.buffer[dst_offset + 1] -= threshold;
-      dst_img.buffer[dst_offset + 2] -= threshold;
+    if (IMB_colormanagement_get_luminance(&color_img.buffer[dst_offset]) >= threshold) {
+      dst_img.buffer[dst_offset] = color_img.buffer[dst_offset] - threshold;
+      dst_img.buffer[dst_offset + 1] = color_img.buffer[dst_offset + 1] - threshold;
+      dst_img.buffer[dst_offset + 2] = color_img.buffer[dst_offset + 2] - threshold;
 
       dst_img.buffer[dst_offset] = fmaxf(dst_img.buffer[dst_offset], 0.0f);
       dst_img.buffer[dst_offset + 1] = fmaxf(dst_img.buffer[dst_offset + 1], 0.0f);
@@ -78,6 +71,7 @@ void GlareThresholdOperation::execPixels(ExecutionManager &man)
       dst_img.buffer[dst_offset + 1] = 0.0f;
       dst_img.buffer[dst_offset + 2] = 0.0f;
     }
+    dst_img.buffer[dst_offset + 3] = color_img.buffer[dst_offset + 3];
 
     CPU_LOOP_END
   };

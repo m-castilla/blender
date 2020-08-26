@@ -24,6 +24,8 @@
 
 #include "COM_kernel_cpu.h"
 
+#include <math.h>
+
 /*
  *  2D Fast Hartley Transform, used for convolution
  */
@@ -295,16 +297,21 @@ static void convolve(PixelsRect &dst, PixelsRect &src, PixelsRect &ckrn, Executi
   h2 = nextPow2(h2, &log2_h);
 
   // alloc space
-  size_t data1_size = 3 * w2 * h2;
-  size_t data2_size = w2 * h2;
+  size_t data1_n_elems = (size_t)3 * w2 * h2;
+  size_t data2_n_elems = (size_t)w2 * h2;
   TmpBuffer *data1_tmp = recycler->createTmpBuffer(true);
-  recycler->takeRecycle(BufferRecycleType::HOST_CLEAR, data1_tmp, data1_size, 1, 1);
+  recycler->takeRecycle(BufferRecycleType::HOST_CLEAR, data1_tmp, data1_n_elems, 1, 1);
   TmpBuffer *data2_tmp = recycler->createTmpBuffer(true);
-  recycler->takeRecycle(BufferRecycleType::HOST_CLEAR, data2_tmp, data2_size, 1, 1);
-  data1 = data1_tmp->host.buffer;
-  data2 = data2_tmp->host.buffer;
-  memset(data1, 0, data1_size);
-  memset(data2, 0, data2_size);
+  recycler->takeRecycle(BufferRecycleType::HOST_CLEAR, data2_tmp, data2_n_elems, 1, 1);
+
+  // if someday fReal is changed to double, instead of using takeRecycle which returns float
+  // buffers, we should create manually buffers of type double
+  BLI_assert(sizeof(float) == sizeof(fREAL));
+  data1 = (fREAL *)data1_tmp->host.buffer;
+  data2 = (fREAL *)data2_tmp->host.buffer;
+  memset(data1, 0, data1_n_elems * sizeof(fREAL));
+  memset(data2, 0, data2_n_elems * sizeof(fREAL));
+  float alpha;
 
   // normalize convolutor
   wt = CCL::make_float4_1(0.0f);
@@ -316,6 +323,7 @@ static void convolve(PixelsRect &dst, PixelsRect &src, PixelsRect &ckrn, Executi
       INCR1_COORDS_X(kernel);
     }
     INCR1_COORDS_Y(kernel);
+    UPDATE_COORDS_X(kernel, 0);
   }
   if (wt.x != 0.0f) {
     wt.x = 1.0f / wt.x;
@@ -331,11 +339,14 @@ static void convolve(PixelsRect &dst, PixelsRect &src, PixelsRect &ckrn, Executi
   while (kernel_coords.y < kernelHeight) {
     while (kernel_coords.x < kernelWidth) {
       READ_IMG4(kernel, pix);
-      wt *= pix;
-      wt.w = pix.w;
+      alpha = pix.w;
+      pix *= wt;
+      pix.w = alpha;
+      WRITE_IMG4(kernel, pix);
       INCR1_COORDS_X(kernel);
     }
     INCR1_COORDS_Y(kernel);
+    UPDATE_COORDS_X(kernel, 0);
   }
 
   // copy image data, unpacking interleaved RGBA into separate channels
@@ -381,13 +392,13 @@ static void convolve(PixelsRect &dst, PixelsRect &src, PixelsRect &ckrn, Executi
             continue;
           }
           fp = &data2[y * w2];
-          colp = &src_buf[yy * imageWidth * COM_NUM_CHANNELS_COLOR];
+          colp = &src_buf[(size_t)yy * imageWidth * src_img.elem_chs_incr];
           for (x = 0; x < xbsz; x++) {
             int xx = xbl * xbsz + x;
             if (xx >= imageWidth) {
               continue;
             }
-            fp[x] = colp[xx * COM_NUM_CHANNELS_COLOR + ch];
+            fp[x] = colp[xx * src_img.elem_chs_incr + ch];
           }
         }
 
@@ -403,6 +414,9 @@ static void convolve(PixelsRect &dst, PixelsRect &src, PixelsRect &ckrn, Executi
         fht_convolve(data2, data1ch, log2_h, log2_w);
         FHT2D(data2, log2_h, log2_w, 0, 1);
         // data again transposed, so in order again
+
+        // TODO: delete
+        BLI_assert(ch != 1 || data2[32 * 128] == 5.82076609e-11);
 
         // overlap-add result
         for (y = 0; y < (int)h2; y++) {
@@ -470,6 +484,7 @@ void GlareFogGlowOperation::generateGlare(PixelsRect &dst,
       INCR1_COORDS_X(ckrn);
     }
     INCR1_COORDS_Y(ckrn);
+    UPDATE_COORDS_X(ckrn, 0);
   }
 
   convolve(dst, src, ckrn_rect, man);
