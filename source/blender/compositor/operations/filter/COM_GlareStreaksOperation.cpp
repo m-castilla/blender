@@ -116,6 +116,7 @@ void GlareStreaksOperation::generateGlare(PixelsRect &dst,
           INCR1_COORDS_X(tdst);
         }
         INCR1_COORDS_Y(tdst);
+        UPDATE_COORDS_X(tdst, 0);
         if (isBreaked()) {
           breaked = true;
         }
@@ -140,6 +141,8 @@ void GlareStreaksOperation::generateGlare(PixelsRect &dst,
       }
       INCR1_COORDS_Y(tsrc);
       INCR1_COORDS_Y(dst);
+      UPDATE_COORDS_X(tsrc, 0);
+      UPDATE_COORDS_X(dst, 0);
     }
 
     memset(tdst_img.buffer, 0, tdst_img.brow_bytes * tdst_img.col_elems);

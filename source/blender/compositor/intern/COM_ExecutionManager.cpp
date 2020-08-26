@@ -87,6 +87,8 @@ void ExecutionManager::execWriteJob(
     std::vector<WorkPackage *> works;
     bool is_computed = op->isComputed(*this);
     if (op->getWriteType() == WriteType::SINGLE_THREAD) {
+      m_n_subworks = 1;
+      m_n_exec_subworks = 0;
       WorkPackage *work = new WorkPackage(*this, full_write_rect, cpu_write_func);
       works.push_back(work);
     }
@@ -99,9 +101,10 @@ void ExecutionManager::execWriteJob(
       int height = ymax - ymin;
 
       int n_total_works = m_context.getNCpuWorkThreads() * 8;
-      m_n_subworks = n_total_works;
-      m_n_exec_subworks = 0;
+      n_total_works = std::min(n_total_works, height);
       std::vector<rcti> splits = RectUtil::splitImgRectInEqualRects(n_total_works, width, height);
+      m_n_subworks = splits.size();
+      m_n_exec_subworks = 0;
 
       for (auto &rect : splits) {
         if (xmin > 0) {
@@ -134,10 +137,6 @@ void ExecutionManager::execWriteJob(
 
       bool finished = false;
       while (!finished) {
-        // if (isBreaked()) {
-        //  WorkScheduler::stop();
-        //  break;
-        //}
         WorkScheduler::finish();
         finished = true;
         for (WorkPackage *work : works) {

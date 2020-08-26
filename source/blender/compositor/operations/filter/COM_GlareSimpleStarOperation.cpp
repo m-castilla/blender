@@ -49,6 +49,7 @@ void GlareSimpleStarOperation::generateGlare(PixelsRect &dst,
 
   int width = getWidth();
   int height = getHeight();
+  PixelsSampler sampler = PixelsSampler{PixelInterpolation::NEAREST, PixelExtend::CLIP};
 
   bool breaked = false;
   int coord_x, coord_y;
@@ -69,12 +70,12 @@ void GlareSimpleStarOperation::generateGlare(PixelsRect &dst,
 
         coord_x = settings->star_45 ? xm : x;
         SET_COORDS(t1, coord_x, ym);
-        READ_IMG4(t1, tc);
+        READ_NEAREST4_CLIP(0, t1, sampler, tc);
         c += tc * f2_f4;
 
         coord_x = settings->star_45 ? xp : x;
         SET_COORDS(t1, coord_x, yp);
-        READ_IMG4(t1, tc);
+        READ_NEAREST4_CLIP(1, t1, sampler, tc);
         c += tc * f2_f4;
 
         c.w = 1.0f;
@@ -88,12 +89,12 @@ void GlareSimpleStarOperation::generateGlare(PixelsRect &dst,
 
         coord_y = settings->star_45 ? yp : y;
         SET_COORDS(t2, xm, coord_y);
-        READ_IMG4(t2, tc);
+        READ_NEAREST4_CLIP(0, t2, sampler, tc);
         c += tc * f2_f4;
 
         coord_y = settings->star_45 ? ym : y;
         SET_COORDS(t2, xp, coord_y);
-        READ_IMG4(t2, tc);
+        READ_NEAREST4_CLIP(1, t2, sampler, tc);
         c += tc * f2_f4;
 
         c.w = 1.0f;
@@ -119,12 +120,12 @@ void GlareSimpleStarOperation::generateGlare(PixelsRect &dst,
 
         coord_x = settings->star_45 ? xm : x;
         SET_COORDS(t1, coord_x, ym);
-        READ_IMG4(t1, tc);
+        READ_NEAREST4_CLIP(0, t1, sampler, tc);
         c += tc * f2_f4;
 
         coord_x = settings->star_45 ? xp : x;
         SET_COORDS(t1, coord_x, yp);
-        READ_IMG4(t1, tc);
+        READ_NEAREST4_CLIP(1, t1, sampler, tc);
         c += tc * f2_f4;
 
         c.w = 1.0f;
@@ -138,12 +139,12 @@ void GlareSimpleStarOperation::generateGlare(PixelsRect &dst,
 
         coord_y = settings->star_45 ? yp : y;
         SET_COORDS(t2, xm, coord_y);
-        READ_IMG4(t2, tc);
+        READ_NEAREST4_CLIP(0, t2, sampler, tc);
         c += tc * f2_f4;
 
         coord_y = settings->star_45 ? ym : y;
         SET_COORDS(t2, xp, coord_y);
-        READ_IMG4(t2, tc);
+        READ_NEAREST4_CLIP(1, t2, sampler, tc);
         c += tc * f2_f4;
 
         c.w = 1.0f;
@@ -175,6 +176,9 @@ void GlareSimpleStarOperation::generateGlare(PixelsRect &dst,
     INCR1_COORDS_Y(t1);
     INCR1_COORDS_Y(t2);
     INCR1_COORDS_Y(dst);
+    UPDATE_COORDS_X(t1, 0);
+    UPDATE_COORDS_X(t2, 0);
+    UPDATE_COORDS_X(dst, 0);
   }
 
   recycler->giveRecycle(t1_rect.tmp_buffer);
