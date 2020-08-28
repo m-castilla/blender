@@ -24,6 +24,9 @@
 #include "COM_CompositorContext.h"
 #include "COM_NodeConverter.h"
 #include "DNA_node_types.h"
+#ifdef WITH_CXX_GUARDEDALLOC
+#  include "MEM_guardedalloc.h"
+#endif
 
 class NodeOperation;
 /**
@@ -244,6 +247,10 @@ class Node {
 
   bNodeSocket *getEditorInputSocket(int editorNodeInputSocketIndex);
   bNodeSocket *getEditorOutputSocket(int editorNodeOutputSocketIndex);
+
+#ifdef WITH_CXX_GUARDEDALLOC
+  MEM_CXX_CLASS_ALLOC_FUNCS("COM:Node")
+#endif
 };
 
 /**
@@ -293,6 +300,10 @@ class NodeInput {
   float getEditorValueFloat();
   void getEditorValueColor(float *value);
   void getEditorValueVector(float *value);
+
+#ifdef WITH_CXX_GUARDEDALLOC
+  MEM_CXX_CLASS_ALLOC_FUNCS("COM:NodeInput")
+#endif
 };
 
 /**
@@ -326,4 +337,8 @@ class NodeOutput {
   float getEditorValueFloat();
   void getEditorValueColor(float *value);
   void getEditorValueVector(float *value);
+
+#ifdef WITH_CXX_GUARDEDALLOC
+  MEM_CXX_CLASS_ALLOC_FUNCS("COM:NodeOutput")
+#endif
 };

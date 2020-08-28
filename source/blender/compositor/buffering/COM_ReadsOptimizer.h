@@ -45,11 +45,17 @@ typedef struct OpReads {
   /* */
 
   std::unordered_map<OpKey, ReaderReads *> *readers_reads;
+#ifdef WITH_CXX_GUARDEDALLOC
+  MEM_CXX_CLASS_ALLOC_FUNCS("COM:OpReads")
+#endif
 } OpReads;
 typedef struct ReaderReads {
   int n_compute_reads;
   int n_cpu_reads;
   OpReads *reads;
+#ifdef WITH_CXX_GUARDEDALLOC
+  MEM_CXX_CLASS_ALLOC_FUNCS("COM:ReaderReads")
+#endif
 } ReaderReads;
 
 class BufferRecycler;

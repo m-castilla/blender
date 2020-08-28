@@ -121,7 +121,8 @@ void InpaintSimpleOperation::execPixels(ExecutionManager &man)
     }
 
     int area_size = offsets[width + height];
-    int *pixelorder = (int *)MEM_mallocN(sizeof(int) * area_size, __func__);
+    int *pixelorder = (int *)MEM_mallocN(sizeof(int) * area_size,
+                                         "Compositor InpaintOperation -> pixelorder");
 
     for (int i = 0; i < width * height; i++) {
       if (manhattan_distance[i] > 0) {
@@ -196,6 +197,7 @@ void InpaintSimpleOperation::execPixels(ExecutionManager &man)
     }
 
     MEM_freeN(manhattan_distance);
+    MEM_freeN(pixelorder);
   };
   cpuWriteSeek(man, cpu_write);
 }

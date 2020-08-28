@@ -121,6 +121,8 @@ void NodeOperationBuilder::convertToOperations()
   }
   for (auto it = m_operations.begin(); it != m_operations.end();) {
     if (groups_ops.find(*it) == groups_ops.end()) {
+      NodeOperation *op = *it;
+      delete op;
       it = m_operations.erase(it);
     }
     else {

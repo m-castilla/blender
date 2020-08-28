@@ -21,6 +21,9 @@
 
 #include "COM_MathUtil.h"
 #include <functional>
+#ifdef WITH_CXX_GUARDEDALLOC
+#  include "MEM_guardedalloc.h"
+#endif
 
 class ComputeDevice;
 class ComputeKernel;
@@ -40,6 +43,9 @@ typedef struct PixelsSampler {
   {
     return filter == o.filter && extend == o.extend;
   }
+#ifdef WITH_CXX_GUARDEDALLOC
+  MEM_CXX_CLASS_ALLOC_FUNCS("COM:PixelsSampler")
+#endif
 } PixelsSampler;
 
 /* PixelsSampler default hash function. Mainly for being used by
@@ -110,6 +116,9 @@ typedef struct PixelsImg {
                           int n_channels,
                           const rcti &rect,
                           bool is_single_elem = false);
+#ifdef WITH_CXX_GUARDEDALLOC
+  MEM_CXX_CLASS_ALLOC_FUNCS("COM:PixelsImg")
+#endif
 } PixelsImg;
 
 #endif
