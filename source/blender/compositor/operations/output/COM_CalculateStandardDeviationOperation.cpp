@@ -16,10 +16,10 @@
  * Copyright 2011, Blender Foundation.
  */
 
-#include <math.h>
 #include "COM_CalculateStandardDeviationOperation.h"
 #include "BLI_math.h"
 #include "BLI_utildefines.h"
+#include <math.h>
 
 #include "COM_ExecutionManager.h"
 #include "IMB_colormanagement.h"
@@ -34,14 +34,14 @@ CalculateStandardDeviationOperation::CalculateStandardDeviationOperation()
   addOutputSocket(SocketType::VALUE);
 }
 
-float *CalculateStandardDeviationOperation::getSingleElem() 
-  {
-    if (!m_calculated) {
-      m_result = sqrt(m_sum / m_n_pixels);
-      m_calculated = true;
-    }
-    return &m_result;
+float *CalculateStandardDeviationOperation::getSingleElem()
+{
+  if (!m_calculated) {
+    m_result = sqrt(m_sum / m_n_pixels);
+    m_calculated = true;
   }
+  return &m_result;
+}
 
 void CalculateStandardDeviationOperation::execPixels(ExecutionManager &man)
 {
@@ -55,7 +55,7 @@ void CalculateStandardDeviationOperation::execPixels(ExecutionManager &man)
     BLI_assert(src_mean->is_single_elem);
     float mean = *src_mean->single_elem;
     int setting = m_setting;
-    auto cpu_write = [&](PixelsRect &dst, const WriteRectContext &ctx) {
+    auto cpu_write = [&](PixelsRect &dst, const WriteRectContext & /*ctx*/) {
       float sum = 0.0f;
       int n_pixels = 0;
       float value = 0.0f;

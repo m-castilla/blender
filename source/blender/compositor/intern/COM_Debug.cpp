@@ -543,7 +543,7 @@ void DebugInfo::execution_group_finished(const ExecutionGroup * /*group*/)
 {
 }
 
-void DebugInfo::update_graphviz(const ExecutionSystem *sys)
+void DebugInfo::update_graphviz(const ExecutionSystem * /*sys*/)
 {
 }
 

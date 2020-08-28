@@ -28,10 +28,10 @@ CCL_NAMESPACE_BEGIN
  */
 
 #ifndef __KERNEL_OPENCL__
-ccl_device_inline int3 min(const int3& a, const int3& b);
-ccl_device_inline int3 max(const int3& a, const int3& b);
+ccl_device_inline int3 min(const int3 &a, const int3 &b);
+ccl_device_inline int3 max(const int3 &a, const int3 &b);
 ccl_device_inline int3 clamp(const int3 &a, const int mn, const int mx);
-ccl_device_inline int3 clamp(const int3 &a, int3 &mn, const int mx);
+ccl_device_inline int3 clamp(const int3 &a, const int3 &mn, const int mx);
 ccl_device_inline int3 clamp(const int3 &a, const int3 &mn, const int3 &mx);
 #endif /* !__KERNEL_OPENCL__ */
 
@@ -40,7 +40,7 @@ ccl_device_inline int3 clamp(const int3 &a, const int3 &mn, const int3 &mx);
  */
 
 #ifndef __KERNEL_OPENCL__
-ccl_device_inline int3 min(const int3& a, const int3& b)
+ccl_device_inline int3 min(const int3 &a, const int3 &b)
 {
 #  if defined(__KERNEL_SSE__) && defined(__KERNEL_SSE41__)
   return int3(_mm_min_epi32(a.m128, b.m128));
@@ -49,7 +49,7 @@ ccl_device_inline int3 min(const int3& a, const int3& b)
 #  endif
 }
 
-ccl_device_inline int3 max(const int3& a,const  int3& b)
+ccl_device_inline int3 max(const int3 &a, const int3 &b)
 {
 #  if defined(__KERNEL_SSE__) && defined(__KERNEL_SSE41__)
   return int3(_mm_max_epi32(a.m128, b.m128));

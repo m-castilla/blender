@@ -121,10 +121,9 @@ void BufferManager::deinitialize(bool isBreaked)
 void BufferManager::checkCache()
 {
   while (m_current_cache_bytes > m_max_cache_bytes && m_cached_buffers.size() > 1) {
-    size_t desired_bytes = m_max_cache_bytes - CLEAN_CACHE_STEP_BYTES;
-    if (desired_bytes < 0) {
-      desired_bytes = 0;
-    }
+    size_t desired_bytes = CLEAN_CACHE_STEP_BYTES > m_max_cache_bytes ?
+                               0 :
+                               m_max_cache_bytes - CLEAN_CACHE_STEP_BYTES;
     std::vector<std::pair<OpKey, CacheBuffer *>> caches_by_time(m_cached_buffers.begin(),
                                                                 m_cached_buffers.end());
     std::sort(caches_by_time.begin(),

@@ -76,7 +76,7 @@ void OpenCLKernel::initialize()
                                                 sizeof(size_t),
                                                 &m_group_size_multiple,
                                                 NULL));
-#if DEBUG
+#ifdef DEBUG
     cl_ulong local_mem_bytes;
     m_man.printIfError(clGetKernelWorkGroupInfo(m_cl_kernel,
                                                 device_id,
@@ -209,7 +209,7 @@ void OpenCLKernel::addBoolArg(bool value)
 void OpenCLKernel::addInt3Arg(const CCL::int3 &value)
 {
   cl_int3 cl_i3;
-  cl_i3.s[0]= value.x;
+  cl_i3.s[0] = value.x;
   cl_i3.s[1] = value.y;
   cl_i3.s[2] = value.z;
   m_man.printIfError(clSetKernelArg(m_cl_kernel, m_args_count, sizeof(cl_int3), &cl_i3));

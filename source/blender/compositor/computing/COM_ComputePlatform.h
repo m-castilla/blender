@@ -31,7 +31,7 @@ class ComputePlatform {
   void recycleKernel(ComputeKernel *kernel);
   void *getSampler(PixelsSampler &pix_sampler);
 
-  ~ComputePlatform();
+  virtual ~ComputePlatform();
 
  protected:
   ComputePlatform();

@@ -34,19 +34,19 @@ set(INC
   ${CMP_NODES}/input
   ${CMP_NODES}/output
   ${CMP_NODES}/color
-  ${CMP_NODES}/matte
   ${CMP_NODES}/converter
-  ${CMP_NODES}/vector
   ${CMP_NODES}/filter
+  # ${CMP_NODES}/matte
+    # ${CMP_NODES}/vector
   ${CMP_NODES}/distort
   ${CMP_NODES}/layout
   ${CMP_OPS}
   ${CMP_OPS}/input
   ${CMP_OPS}/output
   ${CMP_OPS}/color
-  ${CMP_OPS}/matte
+  # ${CMP_OPS}/matte
   ${CMP_OPS}/converter
-  ${CMP_OPS}/vector
+  # ${CMP_OPS}/vector
   ${CMP_OPS}/filter
   ${CMP_OPS}/distort
   ${CMP_BASE}/util

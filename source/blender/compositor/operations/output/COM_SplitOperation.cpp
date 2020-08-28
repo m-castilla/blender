@@ -40,7 +40,7 @@ SplitOperation::SplitOperation() : NodeOperation()
 void SplitOperation::hashParams()
 {
   NodeOperation::hashParams();
-  hashParam( m_splitPercentage);
+  hashParam(m_splitPercentage);
   hashParam(m_xSplit);
 }
 
@@ -59,7 +59,7 @@ void SplitOperation::execPixels(ExecutionManager &man)
   int split_mark = this->m_xSplit ? this->m_splitPercentage * this->getWidth() / 100.0f :
                                     this->m_splitPercentage * this->getHeight() / 100.0f;
 
-  auto cpuWrite = [&](PixelsRect &dst, const WriteRectContext &ctx) {
+  auto cpuWrite = [&](PixelsRect &dst, const WriteRectContext & /*ctx*/) {
     auto pix1_r = dst, pix2_r = dst;
     if (m_xSplit) {
       pix1_r.xmin = std::max(dst.xmin, split_mark);

@@ -18,11 +18,11 @@
 
 #include <cstring>
 
-#include "COM_MovieClipOperation.h"
 #include "BKE_image.h"
 #include "BKE_movieclip.h"
 #include "BLI_listbase.h"
 #include "COM_BufferUtil.h"
+#include "COM_MovieClipOperation.h"
 #include "COM_PixelsUtil.h"
 #include "IMB_imbuf.h"
 
@@ -116,7 +116,7 @@ void MovieClipBaseOperation::hashParams()
 
 void MovieClipOperation::execPixels(ExecutionManager &man)
 {
-  auto cpuWrite = [&](PixelsRect &dst, const WriteRectContext &ctx) {
+  auto cpuWrite = [&](PixelsRect &dst, const WriteRectContext & /*ctx*/) {
     if (m_movieClipBuffer == nullptr ||
         (m_movieClipBuffer->rect == nullptr && m_movieClipBuffer->rect_float == nullptr)) {
       PixelsUtil::setRectElem(dst, (float *)&CCL::TRANSPARENT_PIXEL);

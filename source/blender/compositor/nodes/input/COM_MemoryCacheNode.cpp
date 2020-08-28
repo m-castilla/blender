@@ -26,7 +26,7 @@ MemoryCacheNode::MemoryCacheNode(bNode *editorNode) : Node(editorNode)
 }
 
 void MemoryCacheNode::convertToOperations(NodeConverter &converter,
-                                          const CompositorContext &context) const
+                                          const CompositorContext & /*context*/) const
 {
   NodeInput *input = this->getInputSocket(0);
   if (input->isLinked()) {

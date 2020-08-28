@@ -83,6 +83,7 @@ void BufferRecycler::checkRecycledBufferCreated(TmpBuffer *recycled)
         break;
       }
     }
+    UNUSED_VARS(found);
     BLI_assert(found);
   }
   if (recycled->is_host_recyclable && recycled->orig_host.buffer != nullptr) {
@@ -94,6 +95,7 @@ void BufferRecycler::checkRecycledBufferCreated(TmpBuffer *recycled)
         break;
       }
     }
+    UNUSED_VARS(found);
     BLI_assert(found);
   }
   if (recycled->device.buffer != nullptr) {
@@ -104,6 +106,7 @@ void BufferRecycler::checkRecycledBufferCreated(TmpBuffer *recycled)
         break;
       }
     }
+    UNUSED_VARS(found);
     BLI_assert(found);
   }
 }

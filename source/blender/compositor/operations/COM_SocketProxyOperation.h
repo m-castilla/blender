@@ -34,7 +34,7 @@ class SocketProxyOperation : public NodeOperation {
   }
 
  protected:
-  void execPixels(ExecutionManager &man) override
+  void execPixels(ExecutionManager & /*man*/) override
   {
   }
 };

@@ -45,7 +45,7 @@ void CalculateMeanOperation::execPixels(ExecutionManager &man)
 {
   auto src = getInputOperation(0)->getPixels(this, man);
   int setting = m_setting;
-  auto cpu_write = [&](PixelsRect &dst, const WriteRectContext &ctx) {
+  auto cpu_write = [&](PixelsRect &dst, const WriteRectContext & /*ctx*/) {
     float sum = 0;
     int n_pixels = 0;
     READ_DECL(src);

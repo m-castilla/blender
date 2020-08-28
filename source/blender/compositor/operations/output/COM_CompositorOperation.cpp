@@ -135,7 +135,7 @@ void CompositorOperation::execPixels(ExecutionManager &man)
   if (m_useAlphaInput) {
     alpha_pixels = getInputOperation(1)->getPixels(this, man);
   }
-  auto cpuWrite = [&, this](PixelsRect &dst, const WriteRectContext &ctx) {
+  auto cpuWrite = [&, this](PixelsRect &dst, const WriteRectContext & /*ctx*/) {
     float *out = this->m_outputBuffer;
     float *z = this->m_depthBuffer;
     auto out_buffer = BufferUtil::createUnmanagedTmpBuffer(

@@ -134,7 +134,7 @@ void PreviewOperation::execPixels(ExecutionManager &man)
     scale_x = src->getWidth() / (float)m_width;
     scale_y = src->getHeight() / (float)m_height;
   }
-  auto cpuWrite = [&](PixelsRect &dst, const WriteRectContext &ctx) {
+  auto cpuWrite = [&](PixelsRect &dst, const WriteRectContext & /*ctx*/) {
     int rect_w = dst.getWidth();
     int rect_h = dst.getHeight();
 
