@@ -8,6 +8,7 @@ Currently I'm adapting all image operations to this new system. Only the followi
 - All output nodes
 - All color nodes
 - All convert nodes
+- All filter nodes
 - From distort group: Scale and Translate nodes
 - All things from group and layout can be used too.
 
@@ -46,7 +47,7 @@ I added these features because I think it was really necessary:
    * Medium Quality = 300 pixels
    * High Quality = 450 pixels
 
-- **Option to Scale Inputs down**: This option is a fast way to reduce the size of inputs (images, renders, textures, masks, video clips...). It's very useful because most of the time user don't need them to be the original size, only when going to render the final result. So when working and testing different parameters in the nodes instead of zooming out the view, user should better try to scale down inputs with this option because it will increase the performance a lot and at the same time reduce the size of the output result. It affects to the resolution of all the nodes from the input to the output. But when using this option, user should always use relative sizes in the options of the nodes (for example scale node) because using absolute size values in the nodes and setting Inputs Scale option to 0.5 for example will obviously produce a very different result than inputs scale 1.0.
+- **Option to Scale Inputs down**: This option is a fast way to reduce the size of inputs (images, renders, textures, masks, video clips...). It could be useful because most of the time user don't need them to be the original size, only when going to render the final result. So when working and testing different parameters in the nodes instead of zooming out the view, user may try to scale down inputs with this option because it will increase the performance a lot and at the same time reduce the size of the output result. It affects to the resolution of all the nodes from the input to the output. But when using this option, user should always use relative sizes in the options of the nodes (for example scale node) because using absolute size values in the nodes and setting Inputs Scale option to 0.5 for example will obviously produce a very different result than inputs scale 1.0. There are nodes that may do operations on pixel based values, this can make results vary noticeably with different inputs scale, so consider this option only for fast previewing an approximation of the final result, don't trust it too much.
 
 Removed options from UI
 =======================
@@ -54,8 +55,24 @@ Removed options from UI
 - **Chunk size**: Now how operations writing is divided is implementation defined (depending on the number of threads system can execute at full performance and best work group size for GPU devices). This how it must be since the user shouldn't care about this things.
 - **Two pass**: This option skipped the execution of some nodes and skipped low priority outputs (viewers and previews I guess) on first pass. I don't think this is needed anymore, because now only viewers or previews that need update are updated. Performance in general should improve and together with MemoryCacheNodes, I don't see much utility in doing a first pass to show something that is not going to be the final result (because it skips slow operations as blur for example). User should better try to put a MemoryCacheNode ahead of slow operations or ahead of nodes that he knows he rarely need to touch and work from there.
 
+Other changes
+==============
+- **Sampling/Operations Results**: Now any kind of sampling is always done over the result of the operation being read. Previously due to not all operations being buffered, sampling was done over the last buffered operation, which could be the last operation (the operation being read) or not. It affects very little to the output result but it probably does slightly. In any case to do sampling over an operation behind the operation you want to sample and execute the algorithm of the operation being read over it, it's not desirable or expected I think. Other thing that happens with the previous implementation is that if for example you use a scale node (which is not buffered) to scale down an image and after it you put another scale node to scale it up to the original size, as a user I expect that I get some kind of pixelation effect as it happens when you manually resize an image down and up, but you get exacly the same image as before. Now if you do such a thing you get what you would expect.
+- **Pixelate Node**: Previously this node required the user to surround it with scale nodes with inverse values to get a desirable effect, see `Documentation <https://docs.blender.org/manual/en/latest/compositing/types/filter/pixelate.html>`_ . Now a size option has been added, no need to surround it with scale nodes anymore.
+- **Levels Node**: The standard deviation output wasn't giving a right result, it's what I deduce by looking at the code because it wasn't implementing correctly the standard deviation formula. I fixed it. I may be wrong, correct me if I am.
+
+TODO
+========
+- Get to work all the remaining nodes. 
+- Many algorithms have a lot of room to improve performance, some of them are single threaded or can't be executed with OpenCL or both, but it's not easy. I may have to find a way to slice parts of the algorithms adding them as works with a range of values and execute them as threads or OpenCL kernels while keeping all the abstractions I've made as much as possible. I'll think about it once I've got all nodes working and have a better understading of all the algorithms.
+- Fixing bugs.
+
+From here is rather unknown, depends on my situation and seeing if this solution is really considered an improvement or an acceptable solution for blender or not.   But I'd like to keep doing things like:
+
+- Better document it if required.
+- Implement frequently requested features?, maybe picking from here -> https://devtalk.blender.org/t/compositor-improvements/13264/36
+- Having fun implementing trippy image algorithms?
+
 Final words
 ===========
 If someone may want to try it, I'll appreciate it if you report any issue you may find as there will be for sure. But don't use it with production files please, it's very experimental yet.
-When I finish adapting all operations I'll concentrate on fixing issues, making little improvements and getting people feedback to see if it really improves user experience respect the previous compositor and see what can be improved.
-I cannot know if this branch has any future in terms of Blender, but at least I can say I like this part of Blender and I want finish it leaving it in a usable state with all the nodes available as soon as possible. Only a big issue would stop me.
