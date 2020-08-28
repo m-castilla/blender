@@ -37,6 +37,13 @@ SplitOperation::SplitOperation() : NodeOperation()
   this->addOutputSocket(SocketType::COLOR);
 }
 
+void SplitOperation::hashParams()
+{
+  NodeOperation::hashParams();
+  hashParam( m_splitPercentage);
+  hashParam(m_xSplit);
+}
+
 static void write_rect(std::shared_ptr<PixelsRect> src, PixelsRect &dst, rcti copy_rect)
 {
   auto src_r = src->toRect(copy_rect);
