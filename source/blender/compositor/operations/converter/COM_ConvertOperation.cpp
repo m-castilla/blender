@@ -22,7 +22,6 @@
 #include "COM_ComputeKernel.h"
 #include "COM_ConvertOperation.h"
 #include "COM_PixelsUtil.h"
-#include "COM_kernel_cpu_nocompat.h"
 
 using namespace std::placeholders;
 
@@ -132,7 +131,7 @@ void ConvertColorToBWOperation::execPixels(ExecutionManager &man)
 {
   auto src = m_inputOperation->getPixels(this, man);
 
-  auto cpuWrite = [&](PixelsRect &dst, const WriteRectContext &ctx) {
+  auto cpuWrite = [&](PixelsRect &dst, const WriteRectContext & /*ctx*/) {
     READ_DECL(src);
     WRITE_DECL(dst);
     CPU_LOOP_START(dst);
