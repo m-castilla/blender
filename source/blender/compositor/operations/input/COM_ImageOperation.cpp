@@ -137,7 +137,7 @@ void BaseImageOperation::hashParams()
 void ImageOperation::execPixels(ExecutionManager &man)
 {
   float norm_mult = 1.0 / 255.0;
-  auto cpuWrite = [&](PixelsRect &dst, const WriteRectContext &ctx) {
+  auto cpuWrite = [&](PixelsRect &dst, const WriteRectContext & /*ctx*/) {
     if (m_imageFloatBuffer == nullptr && m_imageByteBuffer == nullptr) {
       PixelsUtil::setRectElem(dst, (float *)&CCL::TRANSPARENT_PIXEL);
     }

@@ -100,7 +100,7 @@ float *RenderLayersProg::getCustomBuffer()
 
 ResolutionType RenderLayersProg::determineResolution(int resolution[2],
                                                      int /*preferredResolution*/[2],
-                                                     bool setResolution)
+                                                     bool /*setResolution*/)
 {
   Scene *sce = this->getScene();
   Render *re = (sce) ? RE_GetSceneRender(sce) : NULL;
@@ -134,7 +134,7 @@ ResolutionType RenderLayersProg::determineResolution(int resolution[2],
 /* ******** Render Layers Alpha Operation ******** */
 void RenderLayersAlphaProg::execPixels(ExecutionManager &man)
 {
-  auto cpuWrite = [&](PixelsRect &dst, const WriteRectContext &ctx) {
+  auto cpuWrite = [&](PixelsRect &dst, const WriteRectContext & /*ctx*/) {
     if (m_inputBuffer == NULL) {
       PixelsUtil::setRectElem(dst, 1.0f);
     }

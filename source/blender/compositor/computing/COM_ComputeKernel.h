@@ -41,6 +41,9 @@ class ComputeKernel {
   ComputeKernel(std::string kernel_name) : m_kernel_name(kernel_name)
   {
   }
+  virtual ~ComputeKernel()
+  {
+  }
 };
 
 #endif

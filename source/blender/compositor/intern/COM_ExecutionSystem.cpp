@@ -52,7 +52,6 @@ ExecutionSystem::ExecutionSystem(const CompositorContext &context)
   }
 
   int index;
-  int resolution[2];
 
   rctf *viewer_border = &m_bNodeTree->viewer_border;
   bool use_viewer_border = (m_bNodeTree->flag & NTREE_VIEWER_BORDER) &&
@@ -62,8 +61,6 @@ ExecutionSystem::ExecutionSystem(const CompositorContext &context)
   m_bNodeTree->stats_draw(m_bNodeTree->sdh, TIP_("Compositing | Determining resolution"));
 
   for (index = 0; index < this->m_groups.size(); index++) {
-    resolution[0] = 0;
-    resolution[1] = 0;
     ExecutionGroup *executionGroup = this->m_groups[index];
 
     if (context.isRendering()) {

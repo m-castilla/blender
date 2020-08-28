@@ -160,7 +160,7 @@ void OutputSingleLayerOperation::execPixels(ExecutionManager &man)
 {
   auto img_pixels = getInputOperation(0)->getPixels(this, man);
   int n_channels = PixelsUtil::getNChannels(m_datatype);
-  auto cpuWrite = [&, this](PixelsRect &dst, const WriteRectContext &ctx) {
+  auto cpuWrite = [&, this](PixelsRect &dst, const WriteRectContext & /*ctx*/) {
     auto out_buffer = BufferUtil::createUnmanagedTmpBuffer(
         m_outputBuffer, getWidth(), getHeight(), n_channels, false);
     PixelsRect out_rect(out_buffer.get(), dst);
@@ -267,7 +267,7 @@ void OutputOpenExrMultiLayerOperation::execPixels(ExecutionManager &man)
     layers_pixs.push_back(layer.imageInput ? layer.imageInput->getPixels(this, man) : nullptr);
   }
 
-  auto cpuWrite = [&, this](PixelsRect &dst, const WriteRectContext &ctx) {
+  auto cpuWrite = [&, this](PixelsRect &dst, const WriteRectContext & /*ctx*/) {
     for (unsigned int i = 0; i < this->m_layers.size(); i++) {
       OutputOpenExrLayer &layer = this->m_layers[i];
       if (layer.imageInput) {

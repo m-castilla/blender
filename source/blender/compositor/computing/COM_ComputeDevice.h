@@ -64,7 +64,7 @@ class ComputeDevice {
 
  protected:
   ComputeDevice();
-  ~ComputeDevice();
+  virtual ~ComputeDevice();
 
 #ifdef WITH_CXX_GUARDEDALLOC
   MEM_CXX_CLASS_ALLOC_FUNCS("COM:ComputeDevice")

@@ -80,7 +80,7 @@ void TextureBaseOperation::hashParams()
 
 ResolutionType TextureBaseOperation::determineResolution(int resolution[2],
                                                          int preferredResolution[2],
-                                                         bool setResolution)
+                                                         bool /*setResolution*/)
 {
   if (preferredResolution[0] == 0 || preferredResolution[1] == 0) {
     int width = this->m_rd->xsch * this->m_rd->size / 100;
@@ -105,7 +105,7 @@ void TextureBaseOperation::writePixels(ExecutionManager &man, bool is_alpha_only
   auto size = m_inputSize->getPixels(this, man);
   auto offset = m_inputOffset->getPixels(this, man);
 
-  auto cpu_write = [&](PixelsRect &dst, const WriteRectContext &ctx) {
+  auto cpu_write = [&](PixelsRect &dst, const WriteRectContext & /*ctx*/) {
     TexResult texres = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0, NULL};
     CCL::float4 texture_vec;
     int retval;

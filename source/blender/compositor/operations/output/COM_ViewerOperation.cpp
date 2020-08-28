@@ -106,7 +106,7 @@ void ViewerOperation::execPixels(ExecutionManager &man)
   if (m_useAlphaInput) {
     src_alpha = getInputOperation(1)->getPixels(this, man);
   }
-  auto cpuWrite = [&](PixelsRect &dst, const WriteRectContext &ctx) {
+  auto cpuWrite = [&](PixelsRect &dst, const WriteRectContext & /*ctx*/) {
     auto img_buf = BufferUtil::createUnmanagedTmpBuffer(
         m_outputBuffer, getWidth(), getHeight(), COM_NUM_CHANNELS_COLOR, false);
     PixelsRect img_dst(img_buf.get(), dst);
