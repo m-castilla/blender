@@ -16,6 +16,7 @@
  * Copyright 2011, Blender Foundation.
  */
 
+#include <math.h>
 #include "COM_CalculateStandardDeviationOperation.h"
 #include "BLI_math.h"
 #include "BLI_utildefines.h"
@@ -32,6 +33,15 @@ CalculateStandardDeviationOperation::CalculateStandardDeviationOperation()
   addInputSocket(SocketType::VALUE);
   addOutputSocket(SocketType::VALUE);
 }
+
+float *CalculateStandardDeviationOperation::getSingleElem() 
+  {
+    if (!m_calculated) {
+      m_result = sqrt(m_sum / m_n_pixels);
+      m_calculated = true;
+    }
+    return &m_result;
+  }
 
 void CalculateStandardDeviationOperation::execPixels(ExecutionManager &man)
 {

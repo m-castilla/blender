@@ -16,6 +16,8 @@
  * Copyright 2011, Blender Foundation.
  */
 
+#include <cstring>
+
 #include "COM_RenderLayersNode.h"
 #include "COM_RenderLayersProg.h"
 #include "COM_ScaleOperation.h"

@@ -71,10 +71,7 @@ class SetColorOperation : public NodeOperation {
   {
     m_color[3] = value;
   }
-  void setChannels(const float value[4])
-  {
-    memcpy(m_color, value, sizeof(float) * 4);
-  }
+  void setChannels(const float value[4]);
   BufferType getBufferType() const override
   {
     return BufferType::NO_BUFFER_NO_WRITE;
