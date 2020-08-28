@@ -337,7 +337,7 @@ static CCL::float4 accumulate_line(PixelsImg &input_img,
 void SunBeamsOperation::execPixels(ExecutionManager &man)
 {
   auto color = getInputOperation(0)->getPixels(this, man);
-  auto cpu_write = [&](PixelsRect &dst, const WriteRectContext &ctx) {
+  auto cpu_write = [&](PixelsRect &dst, const WriteRectContext & /*ctx*/) {
     READ_DECL(color);
     WRITE_DECL(dst);
 

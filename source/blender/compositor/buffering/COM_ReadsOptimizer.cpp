@@ -127,7 +127,7 @@ std::vector<std::pair<OpKey, ReaderReads *>> ReadsOptimizer::peepAllReadersReads
   return {};
 }
 
-OpReads *ReadsOptimizer::peepReads(ExecutionManager &man)
+OpReads *ReadsOptimizer::peepReads(ExecutionManager & /*man*/)
 {
   return m_reads;
 }

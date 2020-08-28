@@ -28,7 +28,7 @@ MemoryCacheOperation::MemoryCacheOperation() : NodeOperation()
 void MemoryCacheOperation::execPixels(ExecutionManager &man)
 {
   auto src = getInputOperation(0)->getPixels(this, man);
-  auto cpu_write = [&](PixelsRect &dst, const WriteRectContext &ctx) {
+  auto cpu_write = [&](PixelsRect &dst, const WriteRectContext & /*ctx*/) {
     PixelsRect src_rect = src->toRect(dst);
     PixelsUtil::copyEqualRects(dst, src_rect);
   };

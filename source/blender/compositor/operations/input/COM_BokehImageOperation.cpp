@@ -73,7 +73,7 @@ void BokehImageOperation::deinitExecution()
 
 ResolutionType BokehImageOperation::determineResolution(int resolution[2],
                                                         int /*preferredResolution*/[2],
-                                                        bool setResolution)
+                                                        bool /*setResolution*/)
 {
   resolution[0] = COM_BLUR_BOKEH_PIXELS;
   resolution[1] = COM_BLUR_BOKEH_PIXELS;

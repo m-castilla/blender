@@ -18,7 +18,6 @@
 
 #include "COM_MathBaseOperation.h"
 #include "COM_ComputeKernel.h"
-#include "COM_kernel_cpu_nocompat.h"
 
 using namespace std::placeholders;
 MathBaseOperation::MathBaseOperation() : NodeOperation()

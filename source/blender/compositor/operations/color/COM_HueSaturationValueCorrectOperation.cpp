@@ -19,7 +19,6 @@
 #include "COM_HueSaturationValueCorrectOperation.h"
 #include "BKE_colortools.h"
 #include "COM_ComputeKernel.h"
-#include "COM_kernel_cpu_nocompat.h"
 
 HueSaturationValueCorrectOperation::HueSaturationValueCorrectOperation() : CurveBaseOperation()
 {
@@ -40,7 +39,7 @@ void HueSaturationValueCorrectOperation::execPixels(ExecutionManager &man)
 {
   auto hsv = getInputOperation(0)->getPixels(this, man);
 
-  auto cpu_write = [&](PixelsRect &dst, const WriteRectContext &ctx) {
+  auto cpu_write = [&](PixelsRect &dst, const WriteRectContext & /*ctx*/) {
     READ_DECL(hsv);
     WRITE_DECL(dst);
     CPU_LOOP_START(dst);

@@ -37,11 +37,12 @@ class ComputeKernel {
 
   virtual bool hasWorkEnqueued() = 0;
 
- protected:
-  ComputeKernel(std::string kernel_name) : m_kernel_name(kernel_name)
+  virtual ~ComputeKernel()
   {
   }
-  virtual ~ComputeKernel()
+
+ protected:
+  ComputeKernel(std::string kernel_name) : m_kernel_name(kernel_name)
   {
   }
 };

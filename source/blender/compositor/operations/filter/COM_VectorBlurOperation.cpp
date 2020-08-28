@@ -83,7 +83,7 @@ void VectorBlurOperation::execPixels(ExecutionManager &man)
   auto img = getInputOperation(0)->getPixels(this, man);
   auto z = getInputOperation(1)->getPixels(this, man);
   auto vector = getInputOperation(2)->getPixels(this, man);
-  auto cpu_write = [&](PixelsRect &dst, const WriteRectContext &ctx) {
+  auto cpu_write = [&](PixelsRect &dst, const WriteRectContext & /*ctx*/) {
     generateVectorBlur(dst, *img, *vector, *z);
   };
   cpuWriteSeek(man, cpu_write);

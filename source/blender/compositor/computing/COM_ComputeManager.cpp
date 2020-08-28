@@ -28,6 +28,7 @@
 #include "COM_PixelsUtil.h"
 #include "COM_defines.h"
 #include "MEM_guardedalloc.h"
+#include <string.h>
 
 #if defined(COM_DEBUG) || defined(DEBUG)
 
@@ -40,7 +41,9 @@
 ComputeManager::ComputeManager() : m_device(nullptr), m_is_initialized(false)
 {
 }
-ComputeManager::~ComputeManager(){}
+ComputeManager::~ComputeManager()
+{
+}
 
 void ComputeManager::initialize()
 {
@@ -110,7 +113,8 @@ std::pair<std::string, std::string> ComputeManager::loadKernelsSource()
 
   /*get compositor computing directory path*/
   bin_folder_parent_idx--;  // once more to get to blender main dir
-  BLI_path_name_at_index(app_dir, bin_folder_parent_idx, &r_offset, &r_len);
+  auto p = BLI_path_name_at_index(app_dir, bin_folder_parent_idx, &r_offset, &r_len);
+  UNUSED_VARS(p);
   blender_main[r_offset] = '\0';
   std::string source_dst = std::string(blender_main);
   free(blender_main);

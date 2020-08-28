@@ -1,5 +1,6 @@
 ﻿#include "COM_OpenCLDevice.h"
 #include "BLI_assert.h"
+#include "BLI_utildefines.h"
 #include "COM_BufferUtil.h"
 #include "COM_OpenCLKernel.h"
 #include "COM_OpenCLManager.h"
@@ -193,7 +194,7 @@ float *OpenCLDevice::memDeviceToHostMapEnqueue(void *device_buffer,
                                                MemoryAccess host_mem_access,
                                                int width,
                                                int height,
-                                               int UNUSED(elem_chs),
+                                               int elem_chs,
                                                size_t &r_map_row_pitch)
 {
   cl_int error;
@@ -224,6 +225,7 @@ float *OpenCLDevice::memDeviceToHostMapEnqueue(void *device_buffer,
                                           NULL,
                                           &error);
   BLI_assert(r_map_row_pitch >= BufferUtil::calcBufferRowBytes(width, elem_chs));
+  UNUSED_VARS(elem_chs);
   m_man.printIfError(error);
   return map;
 }

@@ -51,7 +51,7 @@ void GlareThresholdOperation::execPixels(ExecutionManager &man)
 {
   auto color = getInputOperation(0)->getPixels(this, man);
   const float threshold = this->m_settings->threshold;
-  auto cpu_write = [&](PixelsRect &dst, const WriteRectContext &ctx) {
+  auto cpu_write = [&](PixelsRect &dst, const WriteRectContext & /*ctx*/) {
     READ_DECL(color);
     WRITE_DECL(dst);
 

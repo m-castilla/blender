@@ -49,7 +49,7 @@ void DenoiseOperation::execPixels(ExecutionManager &man)
   auto normal = getInputOperation(1)->getPixels(this, man);
   auto albedo = getInputOperation(2)->getPixels(this, man);
 
-  auto cpu_write = [&](PixelsRect &dst, const WriteRectContext &ctx) {
+  auto cpu_write = [&](PixelsRect &dst, const WriteRectContext & /*ctx*/) {
 #ifdef WITH_OPENIMAGEDENOISE
     if (!color->is_single_elem && BLI_cpu_support_sse41()) {
       oidn::DeviceRef device = oidn::newDevice();
