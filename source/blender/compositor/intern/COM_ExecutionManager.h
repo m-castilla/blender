@@ -16,8 +16,8 @@
  * Copyright 2011, Blender Foundation.
  */
 
-#ifndef __COM_CHUNKTHREADMANAGER_H__
-#define __COM_CHUNKTHREADMANAGER_H__
+#ifndef __COM_EXECUTIONMANAGER_H__
+#define __COM_EXECUTIONMANAGER_H__
 
 #include "COM_Rect.h"
 #include "COM_defines.h"
@@ -26,6 +26,9 @@
 #include <mutex>
 #include <string>
 #include <vector>
+#ifdef WITH_CXX_GUARDEDALLOC
+#  include "MEM_guardedalloc.h"
+#endif
 
 struct WriteRectContext;
 class ComputeManager;
@@ -72,6 +75,10 @@ class ExecutionManager {
   // returns null if operation has no viewer border
   const rcti *getOpViewerBorder(NodeOperation *op);
   void updateProgress(int n_exec_subworks = 0, int n_total_subworks = 0);
+
+  #ifdef WITH_CXX_GUARDEDALLOC
+  MEM_CXX_CLASS_ALLOC_FUNCS("COM:ExecutionManager");
+#endif
 };
 
 #endif

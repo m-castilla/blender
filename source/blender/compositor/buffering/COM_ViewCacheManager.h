@@ -58,7 +58,7 @@ class ViewCacheManager {
   void deletePreviewCache(PreviewCache *cache);
 
 #ifdef WITH_CXX_GUARDEDALLOC
-  MEM_CXX_CLASS_ALLOC_FUNCS("COM:BufferManager")
+  MEM_CXX_CLASS_ALLOC_FUNCS("COM:ViewCacheManager")
 #endif
 };
 

@@ -50,6 +50,9 @@ class BufferManager {
     bool is_written;
     /* if written, pixels for the given op_rect will be returned */
     std::shared_ptr<PixelsRect> pixels;
+#ifdef WITH_CXX_GUARDEDALLOC
+    MEM_CXX_CLASS_ALLOC_FUNCS("COM:ReadResult")
+#endif
   } ReadResult;
 
  private:

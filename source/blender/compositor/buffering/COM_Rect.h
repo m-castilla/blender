@@ -51,6 +51,9 @@ template<> struct hash<OpKey> {
   {
     return k.op_hash;
   }
+#ifdef WITH_CXX_GUARDEDALLOC
+  MEM_CXX_CLASS_ALLOC_FUNCS("COM:OpKey")
+#endif
 };
 
 }  // namespace std

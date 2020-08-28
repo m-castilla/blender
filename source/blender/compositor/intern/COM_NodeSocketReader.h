@@ -25,6 +25,9 @@
 #include <vector>
 
 #include "COM_defines.h"
+#ifdef WITH_CXX_GUARDEDALLOC
+#  include "MEM_guardedalloc.h"
+#endif
 
 class NodeOperationInput;
 class NodeOperationOutput;
