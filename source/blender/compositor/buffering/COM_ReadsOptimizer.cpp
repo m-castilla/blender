@@ -106,7 +106,7 @@ void ReadsOptimizer::optimize(NodeOperation *op, NodeOperation *reader_op, Execu
 }
 
 std::vector<std::pair<OpKey, ReaderReads *>> ReadsOptimizer::peepAllReadersReads(
-    ExecutionManager &man)
+    ExecutionManager & /*man*/)
 {
   if (!m_all_readers_reads_gotten) {
     m_all_readers_reads_gotten = true;

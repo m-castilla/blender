@@ -83,7 +83,6 @@ ccl_device_inline float3 interp(float3 a, float3 b, float t);
 ccl_device_inline float3 sqr3(float3 a);
 ccl_device_inline float reduce_add(const float3 a);
 ccl_device_inline float average(const float3 a);
-ccl_device_inline bool isequal_float3(const float3 a, const float3 b);
 
 /*******************************************************************************
  * Definition.

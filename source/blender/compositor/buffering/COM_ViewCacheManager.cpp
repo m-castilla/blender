@@ -88,7 +88,6 @@ bool ViewCacheManager::viewerNeedsUpdate(ViewerOperation *op)
   auto found_it = m_viewers.find(img_id);
   if (found_it != m_viewers.end()) {
     auto last_op_key = found_it->second;
-    auto op_key = op->getKey();
     if (last_op_key == op_key) {
       return false;
     }

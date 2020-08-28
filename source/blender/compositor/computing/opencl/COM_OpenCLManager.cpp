@@ -150,7 +150,7 @@ OpenCLManager::~OpenCLManager()
   }
 }
 
-bool checkDeviceVersion(cl_device_id device)
+static bool checkDeviceVersion(cl_device_id device)
 {
   const int req_major = 1, req_minor = 1;
   int major, minor;

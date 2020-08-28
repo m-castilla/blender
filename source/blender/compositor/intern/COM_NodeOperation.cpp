@@ -91,7 +91,7 @@ void NodeOperation::deinitExecution()
   NodeSocketReader::deinitExecution();
 }
 
-bool NodeOperation::isComputed(ExecutionManager &man) const
+bool NodeOperation::isComputed(ExecutionManager & /*man*/) const
 {
   BufferType btype = getBufferType();
   if (btype == BufferType::CUSTOM || btype == BufferType::NO_BUFFER_NO_WRITE ||
@@ -206,5 +206,5 @@ std::shared_ptr<PixelsRect> NodeOperation::getPixels(NodeOperation *reader_op,
 
 void NodeOperation::execPixels(ExecutionManager &man)
 {
-  cpuWriteSeek(man, [&](PixelsRect &dst, const WriteRectContext &ctx) {});
+  cpuWriteSeek(man, [&](PixelsRect & /*dst*/, const WriteRectContext & /*ctx*/) {});
 }
