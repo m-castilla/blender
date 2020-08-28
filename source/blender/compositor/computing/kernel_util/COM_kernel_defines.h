@@ -23,6 +23,11 @@
 #ifndef __COM_KERNEL_DEFINES_H__
 #define __COM_KERNEL_DEFINES_H__
 
+
+#define JOIN(X, Y) DO_JOIN(X, Y)
+#define DO_JOIN(X, Y) DO_JOIN2(X,Y)
+#define DO_JOIN2(X, Y) X##Y
+
 /* On x86_64, versions of glibc < 2.16 have an issue where expf is
  * much slower than the double version.  This was fixed in glibc 2.16.
  */
@@ -65,7 +70,7 @@
 #endif
 
 #if defined(__GNUC__) || defined(__clang__)
-#    define TYPEOF(x) typeof(x)
+#    define TYPEOF(x) __typeof__(x)
 #endif
 
 #undef CHECK_TYPE
@@ -87,7 +92,7 @@
 #  define CHECK_TYPE_PAIR(var_a, var_b) \
     { \
       TYPEOF(var_a) * __tmp; \
-      __tmp = (typeof(var_b) *)NULL; \
+      __tmp = (__typeof__(var_b) *)NULL; \
       (void)__tmp; \
     } \
     (void)0

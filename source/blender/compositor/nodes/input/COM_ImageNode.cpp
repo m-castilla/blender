@@ -16,6 +16,8 @@
  * Copyright 2011, Blender Foundation.
  */
 
+#include <string.h> 
+
 #include "COM_ImageNode.h"
 #include "BKE_node.h"
 #include "BLI_utildefines.h"

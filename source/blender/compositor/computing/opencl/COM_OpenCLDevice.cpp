@@ -193,7 +193,7 @@ float *OpenCLDevice::memDeviceToHostMapEnqueue(void *device_buffer,
                                                MemoryAccess host_mem_access,
                                                int width,
                                                int height,
-                                               int elem_chs,
+                                               int UNUSED(elem_chs),
                                                size_t &r_map_row_pitch)
 {
   cl_int error;
@@ -239,7 +239,7 @@ void OpenCLDevice::memDeviceToHostCopyEnqueue(float *r_host_buffer,
                                               void *device_buffer,
 
                                               size_t host_row_bytes,
-                                              MemoryAccess mem_access,
+                                              MemoryAccess UNUSED(mem_access),
                                               int width,
                                               int height,
                                               int elem_chs)

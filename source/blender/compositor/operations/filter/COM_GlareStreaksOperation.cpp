@@ -16,6 +16,8 @@
  * Copyright 2011, Blender Foundation.
  */
 
+#include <cstring>
+
 #include "COM_GlareStreaksOperation.h"
 #include "COM_ExecutionManager.h"
 #include "COM_GlobalManager.h"

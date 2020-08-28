@@ -21,6 +21,7 @@
 #include "COM_CalculateMeanOperation.h"
 #include "COM_NodeOperation.h"
 
+
 /**
  * \brief base class of CalculateStandardDeviation,
  * implementing the simple CalculateStandardDeviation.
@@ -29,14 +30,7 @@
 class CalculateStandardDeviationOperation : public CalculateMeanOperation {
  public:
   CalculateStandardDeviationOperation();
-  virtual float *getSingleElem() override
-  {
-    if (!m_calculated) {
-      m_result = sqrt(m_sum / m_n_pixels);
-      m_calculated = true;
-    }
-    return &m_result;
-  }
+  virtual float *getSingleElem() override;
 
  protected:
   void execPixels(ExecutionManager &man) override;
