@@ -21,6 +21,7 @@
 #include "COM_MaskOperation.h"
 
 #include "DNA_mask_types.h"
+#include <cfloat>
 
 MaskNode::MaskNode(bNode *editorNode) : Node(editorNode)
 {

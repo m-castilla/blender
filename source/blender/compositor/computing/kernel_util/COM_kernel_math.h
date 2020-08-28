@@ -79,7 +79,7 @@ CCL_NAMESPACE_BEGIN
 
 /* Scalar */
 
-#ifdef _WIN32
+
 #  ifndef __KERNEL_OPENCL__
 ccl_device_inline float fmaxf(const float a, const float b)
 {
@@ -91,7 +91,6 @@ ccl_device_inline float fminf(const float a, const float b)
   return (a < b) ? a : b;
 }
 #  endif /* !__KERNEL_OPENCL__ */
-#endif   /* _WIN32 */
 
 #ifndef __KERNEL_COMPUTE__
 using std::isfinite;

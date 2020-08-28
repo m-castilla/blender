@@ -15,6 +15,7 @@
  *
  * Copyright 2012, Blender Foundation.
  */
+#include <cstring>
 
 #include "COM_MaskOperation.h"
 #include "BKE_mask.h"

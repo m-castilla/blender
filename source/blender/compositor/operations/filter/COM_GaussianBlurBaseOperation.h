@@ -24,6 +24,7 @@
 #include "COM_GlobalManager.h"
 #include "COM_NodeOperation.h"
 #include <functional>
+#include "COM_kernel_cpu.h"
 
 class GaussianBlurBaseOperation : public BlurBaseOperation {
  protected:

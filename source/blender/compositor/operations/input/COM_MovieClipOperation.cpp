@@ -16,6 +16,8 @@
  * Copyright 2011, Blender Foundation.
  */
 
+#include <cstring>
+
 #include "COM_MovieClipOperation.h"
 #include "BKE_image.h"
 #include "BKE_movieclip.h"
