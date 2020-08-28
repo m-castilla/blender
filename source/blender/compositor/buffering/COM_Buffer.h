@@ -25,6 +25,12 @@ enum class HostMemoryState { NONE, CLEARED, MAP_FROM_DEVICE, FILLED };
 enum class DeviceMemoryState { NONE, CLEARED, MAP_TO_HOST, FILLED };
 typedef struct HostBuffer {
   float *buffer;
+
+  /**
+   * Total buffer bytes. Must always be the same from creation
+   */
+  size_t buffer_bytes;
+
   /**
    * Buffer row bytes (pitch). Should only be different from image row bytes when mapping from a
    * device but all host buffers we create should not have added pitch (row jump).
@@ -100,13 +106,17 @@ typedef struct TmpBuffer {
   int n_take_recycles;
   /**/
 
+  inline size_t getElemBytes() const
+  {
+    return (size_t)elem_chs * sizeof(float);
+  }
   inline size_t getMinBufferBytes() const
   {
-    return (size_t)width * height * elem_chs * sizeof(float);
+    return (size_t)width * height * getElemBytes();
   }
   inline size_t getMinBufferRowBytes() const
   {
-    return (size_t)width * elem_chs * sizeof(float);
+    return (size_t)width * getElemBytes();
   }
   inline size_t getUsedBufferRowBytes() const
   {
@@ -114,7 +124,7 @@ typedef struct TmpBuffer {
       return host.brow_bytes;
     }
     else {
-      return (size_t)width * elem_chs * sizeof(float);
+      return (size_t)width * getElemBytes();
     }
   }
 } TmpBuffer;

@@ -25,6 +25,10 @@
 
 #include "COM_VectorBlurOperation.h"
 
+#include "COM_ExecutionManager.h"
+#include "COM_GlobalManager.h"
+#include "COM_PixelsUtil.h"
+
 /* Defined */
 #define PASS_VECTOR_MAX 10000.0f
 
@@ -45,84 +49,50 @@ void antialias_tagbuf(int xsize, int ysize, char *rectmove);
 /* VectorBlurOperation */
 VectorBlurOperation::VectorBlurOperation() : NodeOperation()
 {
-  this->addInputSocket(COM_DT_COLOR);
-  this->addInputSocket(COM_DT_VALUE);  // ZBUF
-  this->addInputSocket(COM_DT_COLOR);  // SPEED
-  this->addOutputSocket(COM_DT_COLOR);
+  this->addInputSocket(SocketType::COLOR);
+  this->addInputSocket(SocketType::VALUE);  // ZBUF
+
+  // SPEED (it's COLOR yes, even if in node is VECTOR, not a mistake. It's
+  // like this because the vector output in RenderLayersProg is COLOR and
+  // alpha channel must be used too)
+  this->addInputSocket(SocketType::COLOR);
+  this->addOutputSocket(SocketType::COLOR);
   this->m_settings = NULL;
-  this->m_cachedInstance = NULL;
-  this->m_inputImageProgram = NULL;
-  this->m_inputSpeedProgram = NULL;
-  this->m_inputZProgram = NULL;
-  setComplex(true);
 }
+
+void VectorBlurOperation::hashParams()
+{
+  NodeOperation::hashParams();
+  hashParam(QualityStepHelper::getStep());
+  hashParam(m_settings->samples);
+  hashParam(m_settings->maxspeed);
+  hashParam(m_settings->minspeed);
+  hashParam(m_settings->curved);
+  hashParam(m_settings->fac);
+}
+
 void VectorBlurOperation::initExecution()
 {
-  initMutex();
-  this->m_inputImageProgram = getInputSocketReader(0);
-  this->m_inputZProgram = getInputSocketReader(1);
-  this->m_inputSpeedProgram = getInputSocketReader(2);
-  this->m_cachedInstance = NULL;
-  QualityStepHelper::initExecution(COM_QH_INCREASE);
+
+  QualityStepHelper::initExecution(QualityHelper::INCREASE);
+  NodeOperation::initExecution();
 }
 
-void VectorBlurOperation::executePixel(float output[4], int x, int y, void *data)
+void VectorBlurOperation::execPixels(ExecutionManager &man)
 {
-  float *buffer = (float *)data;
-  int index = (y * this->getWidth() + x) * COM_NUM_CHANNELS_COLOR;
-  copy_v4_v4(output, &buffer[index]);
+  auto img = getInputOperation(0)->getPixels(this, man);
+  auto z = getInputOperation(1)->getPixels(this, man);
+  auto vector = getInputOperation(2)->getPixels(this, man);
+  auto cpu_write = [&](PixelsRect &dst, const WriteRectContext &ctx) {
+    generateVectorBlur(dst, *img, *vector, *z);
+  };
+  cpuWriteSeek(man, cpu_write);
 }
 
-void VectorBlurOperation::deinitExecution()
-{
-  deinitMutex();
-  this->m_inputImageProgram = NULL;
-  this->m_inputSpeedProgram = NULL;
-  this->m_inputZProgram = NULL;
-  if (this->m_cachedInstance) {
-    MEM_freeN(this->m_cachedInstance);
-    this->m_cachedInstance = NULL;
-  }
-}
-void *VectorBlurOperation::initializeTileData(rcti *rect)
-{
-  if (this->m_cachedInstance) {
-    return this->m_cachedInstance;
-  }
-
-  lockMutex();
-  if (this->m_cachedInstance == NULL) {
-    MemoryBuffer *tile = (MemoryBuffer *)this->m_inputImageProgram->initializeTileData(rect);
-    MemoryBuffer *speed = (MemoryBuffer *)this->m_inputSpeedProgram->initializeTileData(rect);
-    MemoryBuffer *z = (MemoryBuffer *)this->m_inputZProgram->initializeTileData(rect);
-    float *data = (float *)MEM_dupallocN(tile->getBuffer());
-    this->generateVectorBlur(data, tile, speed, z);
-    this->m_cachedInstance = data;
-  }
-  unlockMutex();
-  return this->m_cachedInstance;
-}
-
-bool VectorBlurOperation::determineDependingAreaOfInterest(rcti * /*input*/,
-                                                           ReadBufferOperation *readOperation,
-                                                           rcti *output)
-{
-  if (this->m_cachedInstance == NULL) {
-    rcti newInput;
-    newInput.xmax = this->getWidth();
-    newInput.xmin = 0;
-    newInput.ymax = this->getHeight();
-    newInput.ymin = 0;
-    return NodeOperation::determineDependingAreaOfInterest(&newInput, readOperation, output);
-  }
-
-  return false;
-}
-
-void VectorBlurOperation::generateVectorBlur(float *data,
-                                             MemoryBuffer *inputImage,
-                                             MemoryBuffer *inputSpeed,
-                                             MemoryBuffer *inputZ)
+void VectorBlurOperation::generateVectorBlur(PixelsRect &dst,
+                                             PixelsRect &inputImage,
+                                             PixelsRect &inputSpeed,
+                                             PixelsRect &inputZ)
 {
   NodeBlurData blurdata;
   blurdata.samples = this->m_settings->samples / QualityStepHelper::getStep();
@@ -130,13 +100,68 @@ void VectorBlurOperation::generateVectorBlur(float *data,
   blurdata.minspeed = this->m_settings->minspeed;
   blurdata.curved = this->m_settings->curved;
   blurdata.fac = this->m_settings->fac;
+
+  auto dst_img = dst.pixelsImg();
+  TmpBuffer *dst_buffer;
+  bool recycle_dst = false;
+  PixelsRect dst_dup_rect = dst;
+  if (dst_img.is_single_elem || dst_img.row_jump != 0) {
+    dst_dup_rect = dst.duplicate();
+    dst_buffer = dst_dup_rect.tmp_buffer;
+    recycle_dst = true;
+  }
+  else {
+    dst_buffer = dst.tmp_buffer;
+  }
+
+  auto img_img = inputImage.pixelsImg();
+  TmpBuffer *img_buffer;
+  bool recycle_img = false;
+  if (img_img.is_single_elem || img_img.row_jump != 0) {
+    auto img_dup_rect = inputImage.duplicate();
+    img_buffer = img_dup_rect.tmp_buffer;
+    recycle_img = true;
+  }
+  else {
+    img_buffer = inputImage.tmp_buffer;
+  }
+
+  auto z_img = inputZ.pixelsImg();
+  TmpBuffer *z_buffer;
+  bool recycle_z = false;
+  if (z_img.is_single_elem || z_img.row_jump != 0) {
+    auto z_dup_rect = inputZ.duplicate();
+    z_buffer = z_dup_rect.tmp_buffer;
+    recycle_z = true;
+  }
+  else {
+    z_buffer = inputZ.tmp_buffer;
+  }
+
+  // speed must always be duplicated because is modified in zbuf_accumulate_vecblur
+  auto speed_dup_rect = inputSpeed.duplicate();
+  TmpBuffer *speed_buffer = speed_dup_rect.tmp_buffer;
+
   zbuf_accumulate_vecblur(&blurdata,
                           this->getWidth(),
                           this->getHeight(),
-                          data,
-                          inputImage->getBuffer(),
-                          inputSpeed->getBuffer(),
-                          inputZ->getBuffer());
+                          dst_buffer->host.buffer,
+                          img_buffer->host.buffer,
+                          speed_buffer->host.buffer,
+                          z_buffer->host.buffer);
+
+  auto recycler = GlobalMan->BufferMan->recycler();
+  recycler->giveRecycle(speed_buffer);
+  if (recycle_dst) {
+    PixelsUtil::copyEqualRects(dst, dst_dup_rect);
+    recycler->giveRecycle(dst_buffer);
+  }
+  if (recycle_img) {
+    recycler->giveRecycle(img_buffer);
+  }
+  if (recycle_z) {
+    recycler->giveRecycle(z_buffer);
+  }
 }
 
 /* ****************** Spans ******************************* */

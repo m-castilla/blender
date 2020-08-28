@@ -17,31 +17,57 @@
  */
 
 #include "COM_PixelateOperation.h"
+#include "COM_ComputeKernel.h"
+#include "COM_kernel_cpu.h"
+#include <algorithm>
 
-PixelateOperation::PixelateOperation(DataType datatype) : NodeOperation()
+using namespace std::placeholders;
+PixelateOperation::PixelateOperation() : NodeOperation()
 {
-  this->addInputSocket(datatype);
-  this->addOutputSocket(datatype);
-  this->setResolutionInputSocketIndex(0);
-  this->m_inputOperation = NULL;
+  this->addInputSocket(SocketType::DYNAMIC);
+  this->addOutputSocket(SocketType::DYNAMIC);
+  m_size = 0.0f;
 }
 
-void PixelateOperation::initExecution()
+void PixelateOperation::hashParams()
 {
-  this->m_inputOperation = this->getInputSocketReader(0);
+  NodeOperation::hashParams();
+  hashParam(m_size);
 }
 
-void PixelateOperation::deinitExecution()
+#define OPENCL_CODE
+CCL_NAMESPACE_BEGIN
+ccl_kernel pixelateOp(CCL_WRITE(dst), CCL_READ(input), float size)
 {
-  this->m_inputOperation = NULL;
-}
+  READ_DECL(input);
+  WRITE_DECL(dst);
 
-void PixelateOperation::executePixelSampled(float output[4],
-                                            float x,
-                                            float y,
-                                            PixelSampler sampler)
+  CPU_LOOP_START(dst);
+
+  int down_x = dst_coords.x * size;
+  int down_y = dst_coords.y * size;
+  int up_x = down_x * (1.0f / size);
+  int up_y = down_y * (1.0f / size);
+  SET_COORDS(input, up_x, up_y);
+  READ_IMG(input, input_pix);
+  WRITE_IMG(dst, input_pix);
+
+  CPU_LOOP_END
+}
+CCL_NAMESPACE_END
+#undef OPENCL_CODE
+
+void PixelateOperation::execPixels(ExecutionManager &man)
 {
-  float nx = round(x);
-  float ny = round(y);
-  this->m_inputOperation->readSampled(output, nx, ny, sampler);
+  auto input = getInputOperation(0)->getPixels(this, man);
+  float size = 1.0f - m_size;
+  if (size <= 0) {
+    size = FLT_EPSILON;
+  }
+  std::function<void(PixelsRect &, const WriteRectContext &)> cpu_write = std::bind(
+      CCL::pixelateOp, _1, input, size);
+  computeWriteSeek(man, cpu_write, "pixelateOp", [&](ComputeKernel *kernel) {
+    kernel->addReadImgArgs(*input);
+    kernel->addIntArg(size);
+  });
 }

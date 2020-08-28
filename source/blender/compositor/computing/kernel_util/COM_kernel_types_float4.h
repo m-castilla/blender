@@ -55,6 +55,7 @@ ccl_device_inline float4 make_float4_1(float f);
 ccl_device_inline float4 make_float4(float x, float y, float z, float w);
 ccl_device_inline float4 make_float4_3(const float3 &f3);
 ccl_device_inline float4 make_float4_31(const float3 &f3, const float alpha);
+ccl_device_inline float4 make_float4_a(const float *array_);
 ccl_device_inline void print_float4(const char *label, const float4 &a);
 
 CCL_NAMESPACE_END

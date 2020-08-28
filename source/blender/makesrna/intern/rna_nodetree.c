@@ -6186,6 +6186,18 @@ static void def_cmp_inpaint(StructRNA *srna)
   RNA_def_property_update(prop, NC_NODE | NA_EDITED, "rna_Node_update");
 }
 
+static void def_cmp_pixelate(StructRNA *srna)
+{
+  PropertyRNA *prop;
+
+  prop = RNA_def_property(srna, "size", PROP_FLOAT, PROP_NONE);
+  RNA_def_property_float_sdna(prop, NULL, "custom3");
+  RNA_def_property_range(prop, 0.5, 1.0);
+  RNA_def_property_ui_range(prop, 0.5, 1.0, 0.5, 3);
+  RNA_def_property_ui_text(prop, "Size", "Relative pixel size");
+  RNA_def_property_update(prop, NC_NODE | NA_EDITED, "rna_Node_update");
+}
+
 static void def_cmp_despeckle(StructRNA *srna)
 {
   PropertyRNA *prop;

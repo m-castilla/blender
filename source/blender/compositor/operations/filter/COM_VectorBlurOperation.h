@@ -25,50 +25,37 @@
 class VectorBlurOperation : public NodeOperation, public QualityStepHelper {
  private:
   /**
-   * \brief Cached reference to the inputProgram
-   */
-  SocketReader *m_inputImageProgram;
-  SocketReader *m_inputSpeedProgram;
-  SocketReader *m_inputZProgram;
-
-  /**
    * \brief settings of the glare node.
    */
   NodeBlurData *m_settings;
-
-  float *m_cachedInstance;
 
  public:
   VectorBlurOperation();
 
   /**
-   * the inner loop of this program
-   */
-  void executePixel(float output[4], int x, int y, void *data);
-
-  /**
    * Initialize the execution
    */
-  void initExecution();
-
-  /**
-   * Deinitialize the execution
-   */
-  void deinitExecution();
-
-  void *initializeTileData(rcti *rect);
+  void initExecution() override;
 
   void setVectorBlurSettings(NodeBlurData *settings)
   {
     this->m_settings = settings;
   }
-  bool determineDependingAreaOfInterest(rcti *input,
-                                        ReadBufferOperation *readOperation,
-                                        rcti *output);
+
+  WriteType getWriteType() const override
+  {
+    return WriteType::SINGLE_THREAD;
+  }
 
  protected:
-  void generateVectorBlur(float *data,
-                          MemoryBuffer *inputImage,
-                          MemoryBuffer *inputSpeed,
-                          MemoryBuffer *inputZ);
+  bool canCompute() const override
+  {
+    return false;
+  }
+  void hashParams() override;
+  void execPixels(ExecutionManager &man) override;
+  void generateVectorBlur(PixelsRect &dst,
+                          PixelsRect &inputImage,
+                          PixelsRect &inputSpeed,
+                          PixelsRect &inputZ);
 };

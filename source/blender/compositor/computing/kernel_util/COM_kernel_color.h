@@ -460,7 +460,7 @@ ccl_device_inline float4 colorband_evaluate(const float input_factor,
 
         float4 result = t[3] * bands_colors[cbd3] + t[2] * bands_colors[cbd2] +
                         t[1] * bands_colors[cbd1] + t[0] * bands_colors[cbd0];
-        clamp(result, 0.0f, 1.0f);
+        result = clamp(result, 0.0f, 1.0f);
         return result;
       }
       else {
