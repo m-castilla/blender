@@ -376,6 +376,9 @@ void NodeOperationBuilder::add_input_constant_value(NodeOperationInput *input,
         float value[4];
         if (node_input && node_input->getbNodeSocket()) {
           node_input->getEditorValueColor(value);
+          if (node_input->getDataType() == DataType::VECTOR) {
+            value[3] = 1.0f;
+          }
         }
         else {
           zero_v4(value);

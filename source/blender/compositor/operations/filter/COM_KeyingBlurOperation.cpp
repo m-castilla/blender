@@ -17,79 +17,102 @@
  */
 
 #include "COM_KeyingBlurOperation.h"
+#include "COM_ComputeKernel.h"
+#include "COM_kernel_cpu.h"
 
-#include "MEM_guardedalloc.h"
-
-#include "BLI_listbase.h"
-#include "BLI_math.h"
-
+using namespace std::placeholders;
 KeyingBlurOperation::KeyingBlurOperation() : NodeOperation()
 {
-  this->addInputSocket(COM_DT_VALUE);
-  this->addOutputSocket(COM_DT_VALUE);
+  this->addInputSocket(SocketType::VALUE);
+  this->addOutputSocket(SocketType::VALUE);
 
   this->m_size = 0;
   this->m_axis = BLUR_AXIS_X;
-
-  this->setComplex(true);
 }
 
-void *KeyingBlurOperation::initializeTileData(rcti *rect)
+void KeyingBlurOperation::hashParams()
 {
-  void *buffer = getInputOperation(0)->initializeTileData(rect);
-
-  return buffer;
+  NodeOperation::hashParams();
+  hashParam(m_size);
+  hashParam(m_axis);
 }
 
-void KeyingBlurOperation::executePixel(float output[4], int x, int y, void *data)
+#define OPENCL_CODE
+CCL_NAMESPACE_BEGIN
+ccl_kernel keyingBlurXOp(CCL_WRITE(dst), CCL_READ(input), int input_width, int size)
 {
-  MemoryBuffer *inputBuffer = (MemoryBuffer *)data;
-  const int bufferWidth = inputBuffer->getWidth();
-  float *buffer = inputBuffer->getBuffer();
-  int count = 0;
+  READ_DECL(input);
+  WRITE_DECL(dst);
+
   float average = 0.0f;
+  CPU_LOOP_START(dst);
 
-  if (this->m_axis == 0) {
-    const int start = max(0, x - this->m_size + 1), end = min(bufferWidth, x + this->m_size);
-    for (int cx = start; cx < end; cx++) {
-      int bufferIndex = (y * bufferWidth + cx);
-      average += buffer[bufferIndex];
-      count++;
-    }
-  }
-  else {
-    const int start = max(0, y - this->m_size + 1),
-              end = min(inputBuffer->getHeight(), y + this->m_size);
-    for (int cy = start; cy < end; cy++) {
-      int bufferIndex = (cy * bufferWidth + x);
-      average += buffer[bufferIndex];
-      count++;
-    }
+  const int start_x = max(0, dst_coords.x - size + 1);
+  const int end_x = min(input_width, dst_coords.x + size);
+  int count = end_x - start_x;
+  SET_COORDS(input, start_x, dst_coords.y);
+  while (input_coords.x < end_x) {
+    READ_IMG1(input, input_pix);
+    average += input_pix.x;
+    INCR1_COORDS_X(input);
   }
 
-  average /= (float)count;
+  input_pix.x = average / (float)count;
 
-  output[0] = average;
+  WRITE_IMG4(dst, input_pix);
+
+  CPU_LOOP_END
 }
 
-bool KeyingBlurOperation::determineDependingAreaOfInterest(rcti *input,
-                                                           ReadBufferOperation *readOperation,
-                                                           rcti *output)
+ccl_kernel keyingBlurYOp(CCL_WRITE(dst), CCL_READ(input), int input_height, int size)
 {
-  rcti newInput;
+  READ_DECL(input);
+  WRITE_DECL(dst);
 
-  if (this->m_axis == BLUR_AXIS_X) {
-    newInput.xmin = input->xmin - this->m_size;
-    newInput.ymin = input->ymin;
-    newInput.xmax = input->xmax + this->m_size;
-    newInput.ymax = input->ymax;
+  float average = 0.0f;
+  CPU_LOOP_START(dst);
+
+  const int start_y = max(0, dst_coords.y - size + 1);
+  const int end_y = min(input_height, dst_coords.y + size);
+  int count = end_y - start_y;
+  SET_COORDS(input, dst_coords.x, start_y);
+  while (input_coords.y < end_y) {
+    READ_IMG1(input, input_pix);
+    average += input_pix.x;
+    INCR1_COORDS_X(input);
+  }
+
+  input_pix.x = average / (float)count;
+
+  WRITE_IMG4(dst, input_pix);
+
+  CPU_LOOP_END
+}
+CCL_NAMESPACE_END
+#undef OPENCL_CODE
+
+void KeyingBlurOperation::execPixels(ExecutionManager &man)
+{
+  auto input = getInputOperation(0)->getPixels(this, man);
+  int width = getWidth();
+  int height = getHeight();
+  BLI_assert(m_axis == BLUR_AXIS_X || m_axis == BLUR_AXIS_Y);
+  if (m_axis == BLUR_AXIS_X) {
+    std::function<void(PixelsRect &, const WriteRectContext &)> cpu_write = std::bind(
+        CCL::keyingBlurXOp, _1, input, width, m_size);
+    computeWriteSeek(man, cpu_write, "keyingBlurXOp", [&](ComputeKernel *kernel) {
+      kernel->addReadImgArgs(*input);
+      kernel->addIntArg(width);
+      kernel->addIntArg(m_size);
+    });
   }
   else {
-    newInput.xmin = input->xmin;
-    newInput.ymin = input->ymin - this->m_size;
-    newInput.xmax = input->xmax;
-    newInput.ymax = input->ymax + this->m_size;
+    std::function<void(PixelsRect &, const WriteRectContext &)> cpu_write = std::bind(
+        CCL::keyingBlurYOp, _1, input, height, m_size);
+    computeWriteSeek(man, cpu_write, "keyingBlurYOp", [&](ComputeKernel *kernel) {
+      kernel->addReadImgArgs(*input);
+      kernel->addIntArg(height);
+      kernel->addIntArg(m_size);
+    });
   }
-
-  return NodeOperation::determineDependingAreaOfInterest(&newInput, readOperation, output);
 }

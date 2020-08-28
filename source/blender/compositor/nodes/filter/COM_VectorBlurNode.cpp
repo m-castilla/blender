@@ -38,6 +38,7 @@ void VectorBlurNode::convertToOperations(NodeConverter &converter,
 
   converter.mapInputSocket(getInputSocket(0), operation->getInputSocket(0));
   converter.mapInputSocket(getInputSocket(1), operation->getInputSocket(1));
-  converter.mapInputSocket(getInputSocket(2), operation->getInputSocket(2));
+  // We must allow mapping different socket types because in Node is VECTOR but in Operation must be COLOR
+  converter.mapInputSocket(getInputSocket(2), operation->getInputSocket(2), false);
   converter.mapOutputSocket(getOutputSocket(), operation->getOutputSocket());
 }

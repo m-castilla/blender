@@ -52,6 +52,7 @@ struct ccl_try_align(16) float3
 ccl_device_inline float3 make_float3_1(float f);
 ccl_device_inline float3 make_float3(float x, float y, float z);
 ccl_device_inline float3 make_float3_4(const float4 &f4);
+ccl_device_inline float3 make_float3_a(const float *array_);
 ccl_device_inline void print_float3(const char *label, const float3 &a);
 
 CCL_NAMESPACE_END

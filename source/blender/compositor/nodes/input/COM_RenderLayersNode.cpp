@@ -41,7 +41,8 @@ void RenderLayersNode::testSocketLink(NodeConverter &converter,
   operation->setRenderData(context.getRenderData());
   operation->setViewName(context.getViewName());
 
-  converter.mapOutputSocket(output, operation->getOutputSocket());
+  //We must allow mapping different socket types. For example vector output in node is VECTOR but in Operation is COLOR.
+  converter.mapOutputSocket(output, operation->getOutputSocket(), false);
   converter.addOperation(operation);
 
   if (is_preview) { /* only for image socket */

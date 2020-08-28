@@ -61,6 +61,12 @@ ViewerOperation::ViewerOperation() : NodeOperation()
   m_needs_write = false;
 }
 
+void ViewerOperation::hashParams()
+{
+  NodeOperation::hashParams();
+  hashParam(m_useAlphaInput);
+}
+
 void ViewerOperation::initExecution()
 {
   m_doDepthBuffer = getInputSocket(2)->hasUserLink();

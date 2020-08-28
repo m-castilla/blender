@@ -45,11 +45,7 @@ class KeyingBlurOperation : public NodeOperation {
     this->m_axis = value;
   }
 
-  void *initializeTileData(rcti *rect);
-
-  void executePixel(float output[4], int x, int y, void *data);
-
-  bool determineDependingAreaOfInterest(rcti *input,
-                                        ReadBufferOperation *readOperation,
-                                        rcti *output);
+ protected:
+  void hashParams() override;
+  void execPixels(ExecutionManager &man) override;
 };

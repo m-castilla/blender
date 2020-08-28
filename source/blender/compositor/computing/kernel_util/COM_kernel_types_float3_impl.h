@@ -97,6 +97,16 @@ ccl_device_inline float3 make_float3_4(const float4 &f4)
   return a;
 }
 
+ccl_device_inline float3 make_float3_a(const float *array_)
+{
+#ifdef __KERNEL_SSE__
+  float3 a(_mm_set_ps(0.0f, array_[2], array_[1], array_[0]));
+#else
+  float3 a = {array_[0], array_[1], array_[2], 0.0f};
+#endif
+  return a;
+}
+
 ccl_device_inline void print_float3(const char *label, const float3 &a)
 {
   printf("%s: %.8f %.8f %.8f\n", label, (double)a.x, (double)a.y, (double)a.z);

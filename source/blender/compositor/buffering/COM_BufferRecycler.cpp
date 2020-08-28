@@ -18,6 +18,7 @@
 
 #include "COM_BufferRecycler.h"
 #include "BLI_assert.h"
+#include "BLI_utildefines.h"
 #include "COM_BufferUtil.h"
 #include "COM_ExecutionSystem.h"
 #include "COM_RectUtil.h"
@@ -72,7 +73,7 @@ BufferRecycler::~BufferRecycler()
 
 void BufferRecycler::checkRecycledBufferCreated(TmpBuffer *recycled)
 {
-  if (recycled->host.buffer != nullptr &&
+  if (recycled->is_host_recyclable && recycled->host.buffer != nullptr &&
       recycled->host.state != HostMemoryState::MAP_FROM_DEVICE) {
     bool found = false;
     for (auto created : m_created_buffers) {
@@ -84,7 +85,7 @@ void BufferRecycler::checkRecycledBufferCreated(TmpBuffer *recycled)
     }
     BLI_assert(found);
   }
-  if (recycled->orig_host.buffer != nullptr) {
+  if (recycled->is_host_recyclable && recycled->orig_host.buffer != nullptr) {
     bool found = false;
     for (auto created : m_created_buffers) {
       if (created->host.buffer == recycled->orig_host.buffer ||
@@ -296,7 +297,6 @@ TmpBuffer *BufferRecycler::createTmpBuffer(
 bool BufferRecycler::takeRecycle(
     BufferRecycleType type, TmpBuffer *dst, int width, int height, int elem_chs)
 {
-  // by default set requested params. May be changed later if recycle found
   dst->width = width;
   dst->height = height;
   dst->elem_chs = elem_chs;
@@ -368,8 +368,7 @@ bool BufferRecycler::recycleFindAndSet(
   while (it != rdata->buffers.end()) {
     auto tmp = (*it);
     if (type == BufferRecycleType::HOST_CLEAR) {
-      auto tmp_bytes = BufferUtil::calcBufferBytes(
-          tmp->host.bwidth, tmp->host.bheight, tmp->host.belem_chs);
+      auto tmp_bytes = tmp->host.buffer_bytes;
       if (tmp_bytes >= min_buffer_bytes) {
         float scale = (float)tmp_bytes / (float)min_buffer_bytes;
         if (scale < candi_area_scale && scale < MAX_BUFFER_SCALE_DIFF_FOR_REUSE) {
@@ -405,25 +404,38 @@ bool BufferRecycler::recycleFindAndSet(
 
   if (candidate) {
     switch (type) {
-      case BufferRecycleType::HOST_CLEAR:
-        dst->host = std::move(candidate->host);
+      case BufferRecycleType::HOST_CLEAR: {
+        BLI_assert(candidate->host.brow_bytes == candidate->getMinBufferRowBytes());
         BLI_assert(candidate->host.state == HostMemoryState::CLEARED);
         BLI_assert(candidate->device.state == DeviceMemoryState::NONE);
-        break;
+        dst->host = candidate->host;
+        // adapt host buffer to new width and elem_chs to avoid row_jump (host buffer is always
+        // contiguous memory)
+        dst->host.bwidth = width;
+        dst->host.belem_chs = elem_chs;
+        dst->host.brow_bytes = dst->getMinBufferRowBytes();
+        // It might seem we loose a buffer bytes here when remainder is not 0, but on next
+        // recycling host.buffer_bytes will be the same and bytes can be recovered.
+        dst->host.bheight = candidate->host.buffer_bytes / dst->host.brow_bytes;
+
+        BLI_assert(dst->host.brow_bytes * dst->host.bheight >
+                   dst->host.buffer_bytes - dst->host.brow_bytes);
+        BLI_assert(dst->host.brow_bytes * dst->host.bheight <= dst->host.buffer_bytes);
+      } break;
       case BufferRecycleType::DEVICE_HOST_ALLOC:
-        dst->device = std::move(candidate->device);
+        dst->device = candidate->device;
         BLI_assert(candidate->device.has_map_alloc);
         BLI_assert(candidate->device.state == DeviceMemoryState::CLEARED);
         BLI_assert(candidate->host.state == HostMemoryState::NONE);
         break;
       case BufferRecycleType::DEVICE_CLEAR:
-        dst->device = std::move(candidate->device);
+        dst->device = candidate->device;
         BLI_assert(candidate->device.state == DeviceMemoryState::CLEARED);
         BLI_assert(candidate->host.state == HostMemoryState::NONE);
         break;
       case BufferRecycleType::DEVICE_HOST_MAPPED:
-        dst->host = std::move(candidate->host);
-        dst->device = std::move(candidate->device);
+        dst->host = candidate->host;
+        dst->device = candidate->device;
         BLI_assert(candidate->host.state == HostMemoryState::MAP_FROM_DEVICE);
         BLI_assert(candidate->device.state == DeviceMemoryState::MAP_TO_HOST);
         break;

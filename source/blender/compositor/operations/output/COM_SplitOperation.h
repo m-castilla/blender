@@ -42,5 +42,6 @@ class SplitOperation : public NodeOperation {
   }
 
  protected:
+  void hashParams() override;
   void execPixels(ExecutionManager &man) override;
 };

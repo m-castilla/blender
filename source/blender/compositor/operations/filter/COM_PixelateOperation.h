@@ -29,34 +29,21 @@
  */
 class PixelateOperation : public NodeOperation {
  private:
-  /**
-   * \brief cached reference to the input operation
-   */
-  SocketReader *m_inputOperation;
+  float m_size;
 
  public:
   /**
    * \brief PixelateOperation
    * \param dataType: the datatype to create this operator for (saves datatype conversions)
    */
-  PixelateOperation(DataType dataType);
+  PixelateOperation();
 
-  /**
-   * \brief initialization of the execution
-   */
-  void initExecution();
+  void setSize(float size)
+  {
+    m_size = size;
+  }
 
-  /**
-   * \brief de-initialization of the execution
-   */
-  void deinitExecution();
-
-  /**
-   * \brief executePixel
-   * \param output: result
-   * \param x: x-coordinate
-   * \param y: y-coordinate
-   * \param sampler: sampler
-   */
-  void executePixelSampled(float output[4], float x, float y, PixelSampler sampler);
+ protected:
+  void hashParams() override;
+  void execPixels(ExecutionManager &man) override;
 };

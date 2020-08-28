@@ -18,14 +18,22 @@
 #include "MEM_guardedalloc.h"
 
 #include "COM_SunBeamsOperation.h"
+#include "COM_kernel_cpu.h"
+#include <algorithm>
 
-SunBeamsOperation::SunBeamsOperation() : NodeOperation()
+SunBeamsOperation::SunBeamsOperation()
+    : NodeOperation(), m_data(), m_source_px(), m_ray_length_px(0)
 {
-  this->addInputSocket(COM_DT_COLOR);
-  this->addOutputSocket(COM_DT_COLOR);
-  this->setResolutionInputSocketIndex(0);
+  this->addInputSocket(SocketType::COLOR);
+  this->addOutputSocket(SocketType::COLOR);
+}
 
-  this->setComplex(true);
+void SunBeamsOperation::hashParams()
+{
+  NodeOperation::hashParams();
+  hashParam(m_data.source[0]);
+  hashParam(m_data.source[1]);
+  hashParam(m_data.ray_length);
 }
 
 void SunBeamsOperation::initExecution()
@@ -33,7 +41,8 @@ void SunBeamsOperation::initExecution()
   /* convert to pixels */
   this->m_source_px[0] = this->m_data.source[0] * this->getWidth();
   this->m_source_px[1] = this->m_data.source[1] * this->getHeight();
-  this->m_ray_length_px = this->m_data.ray_length * max(this->getWidth(), this->getHeight());
+  this->m_ray_length_px = this->m_data.ray_length * std::max(this->getWidth(), this->getHeight());
+  NodeOperation::initExecution();
 }
 
 /**
@@ -104,7 +113,7 @@ template<int fxu, int fxv, int fyu, int fyv> struct BufferLineAccumulator {
    * \param num: Total steps in the loop
    * \param v, dv: Vertical offset in sector space, for line offset perpendicular to the loop axis
    */
-  static float *init_buffer_iterator(MemoryBuffer *input,
+  static float *init_buffer_iterator(PixelsImg &input_img,
                                      const float source[2],
                                      const float co[2],
                                      float dist_min,
@@ -125,8 +134,8 @@ template<int fxu, int fxv, int fyu, int fyv> struct BufferLineAccumulator {
     float cos_phi = 1.0f / dr;
 
     /* clamp u range to avoid influence of pixels "behind" the source */
-    float umin = max_ff(pu - cos_phi * dist_min, 0.0f);
-    float umax = max_ff(pu - cos_phi * dist_max, 0.0f);
+    float umin = fmaxf(pu - cos_phi * dist_min, 0.0f);
+    float umax = fmaxf(pu - cos_phi * dist_max, 0.0f);
     v = umin * tan_phi;
     dv = tan_phi;
 
@@ -138,7 +147,7 @@ template<int fxu, int fxv, int fyu, int fyv> struct BufferLineAccumulator {
 
     falloff_factor = dist_max > dist_min ? dr / (float)(dist_max - dist_min) : 0.0f;
 
-    float *iter = input->getBuffer() + COM_NUM_CHANNELS_COLOR * (x + input->getWidth() * y);
+    float *iter = input_img.buffer + input_img.elem_chs_incr * (x + input_img.row_elems * y);
     return iter;
   }
 
@@ -149,34 +158,37 @@ template<int fxu, int fxv, int fyu, int fyv> struct BufferLineAccumulator {
    * The loop runs backwards(!) over the primary sector space axis u, i.e. increasing distance to
    * pt. After each step it decrements v by dv < 1, adding a buffer shift when necessary.
    */
-  static void eval(MemoryBuffer *input,
-                   float output[4],
+  static void eval(PixelsImg &input_img,
+                   PixelsRect &dst_rect,
+                   CCL::float4 &output,
                    const float co[2],
                    const float source[2],
                    float dist_min,
                    float dist_max)
   {
-    rcti rect = *input->getRect();
-    int buffer_width = input->getWidth();
+    int row_elems = input_img.row_elems;
     int x, y, num;
     float v, dv;
     float falloff_factor;
-    float border[4];
+    CCL::float4 zero_f4 = CCL::make_float4_1(0.0f);
+    CCL::float4 border;
+    CCL::float4 buf_pix;
 
-    zero_v4(output);
+    output = zero_f4;
 
     if ((int)(co[0] - source[0]) == 0 && (int)(co[1] - source[1]) == 0) {
-      copy_v4_v4(output,
-                 input->getBuffer() + COM_NUM_CHANNELS_COLOR *
-                                          ((int)source[0] + input->getWidth() * (int)source[1]));
+      int width_incr = input_img.brow_chs_incr / COM_NUM_CHANNELS_COLOR;
+      float *input_source = input_img.buffer + input_img.elem_chs_incr *
+                                                   ((int)source[0] + width_incr * (int)source[1]);
+      output = CCL::make_float4_a(input_source);
       return;
     }
 
     /* Initialize the iteration variables. */
     float *buffer = init_buffer_iterator(
-        input, source, co, dist_min, dist_max, x, y, num, v, dv, falloff_factor);
-    zero_v3(border);
-    border[3] = 1.0f;
+        input_img, source, co, dist_min, dist_max, x, y, num, v, dv, falloff_factor);
+    border = zero_f4;
+    border.w = 1.0f;
 
     /* v_local keeps track of when to decrement v (see below) */
     float v_local = v - floorf(v);
@@ -186,13 +198,17 @@ template<int fxu, int fxv, int fyu, int fyv> struct BufferLineAccumulator {
       weight *= weight;
 
       /* range check, use last valid color when running beyond the image border */
-      if (x >= rect.xmin && x < rect.xmax && y >= rect.ymin && y < rect.ymax) {
-        madd_v4_v4fl(output, buffer, buffer[3] * weight);
+      if (x >= dst_rect.xmin && x < dst_rect.xmax && y >= dst_rect.ymin && y < dst_rect.ymax) {
+        float alpha_weight = buffer[3] * weight;
+        buf_pix = CCL::make_float4_a(buffer);
+        output += buf_pix * alpha_weight;
         /* use as border color in case subsequent pixels are out of bounds */
-        copy_v4_v4(border, buffer);
+        border = buf_pix;
       }
       else {
-        madd_v4_v4fl(output, border, border[3] * weight);
+        float alpha_weight = border.w * weight;
+        buf_pix = border;
+        output += buf_pix * alpha_weight;
       }
 
       /* TODO implement proper filtering here, see
@@ -208,7 +224,7 @@ template<int fxu, int fxv, int fyu, int fyv> struct BufferLineAccumulator {
       /* decrement u */
       x -= fxu;
       y -= fyu;
-      buffer -= (fxu + fyu * buffer_width) * COM_NUM_CHANNELS_COLOR;
+      buffer -= (fxu + fyu * row_elems) * input_img.elem_chs_incr;
 
       /* decrement v (in steps of dv < 1) */
       v_local -= dv;
@@ -217,13 +233,13 @@ template<int fxu, int fxv, int fyu, int fyv> struct BufferLineAccumulator {
 
         x -= fxv;
         y -= fyv;
-        buffer -= (fxv + fyv * buffer_width) * COM_NUM_CHANNELS_COLOR;
+        buffer -= (fxv + fyv * row_elems) * input_img.elem_chs_incr;
       }
     }
 
     /* normalize */
     if (num > 0) {
-      mul_v4_fl(output, 1.0f / (float)num);
+      output *= 1.0f / (float)num;
     }
   }
 };
@@ -236,12 +252,12 @@ template<int fxu, int fxv, int fyu, int fyv> struct BufferLineAccumulator {
  * due to using compile time constants instead of a local matrix variable defining the sector
  * space.
  */
-static void accumulate_line(MemoryBuffer *input,
-                            float output[4],
-                            const float co[2],
-                            const float source[2],
-                            float dist_min,
-                            float dist_max)
+static CCL::float4 accumulate_line(PixelsImg &input_img,
+                                   PixelsRect &dst,
+                                   const float co[2],
+                                   const float source[2],
+                                   float dist_min,
+                                   float dist_max)
 {
   /* coordinates relative to source */
   float pt_ofs[2] = {co[0] - source[0], co[1] - source[1]};
@@ -261,26 +277,30 @@ static void accumulate_line(MemoryBuffer *input,
    * The template arguments encode the transformation into "sector space",
    * by means of rotation/mirroring matrix elements.
    */
-
+  CCL::float4 output = CCL::make_float4_1(0.0f);
   if (fabsf(pt_ofs[1]) > fabsf(pt_ofs[0])) {
     if (pt_ofs[0] > 0.0f) {
       if (pt_ofs[1] > 0.0f) {
         /* 2 */
-        BufferLineAccumulator<0, 1, 1, 0>::eval(input, output, co, source, dist_min, dist_max);
+        BufferLineAccumulator<0, 1, 1, 0>::eval(
+            input_img, dst, output, co, source, dist_min, dist_max);
       }
       else {
         /* 7 */
-        BufferLineAccumulator<0, 1, -1, 0>::eval(input, output, co, source, dist_min, dist_max);
+        BufferLineAccumulator<0, 1, -1, 0>::eval(
+            input_img, dst, output, co, source, dist_min, dist_max);
       }
     }
     else {
       if (pt_ofs[1] > 0.0f) {
         /* 3 */
-        BufferLineAccumulator<0, -1, 1, 0>::eval(input, output, co, source, dist_min, dist_max);
+        BufferLineAccumulator<0, -1, 1, 0>::eval(
+            input_img, dst, output, co, source, dist_min, dist_max);
       }
       else {
         /* 6 */
-        BufferLineAccumulator<0, -1, -1, 0>::eval(input, output, co, source, dist_min, dist_max);
+        BufferLineAccumulator<0, -1, -1, 0>::eval(
+            input_img, dst, output, co, source, dist_min, dist_max);
       }
     }
   }
@@ -288,68 +308,81 @@ static void accumulate_line(MemoryBuffer *input,
     if (pt_ofs[0] > 0.0f) {
       if (pt_ofs[1] > 0.0f) {
         /* 1 */
-        BufferLineAccumulator<1, 0, 0, 1>::eval(input, output, co, source, dist_min, dist_max);
+        BufferLineAccumulator<1, 0, 0, 1>::eval(
+            input_img, dst, output, co, source, dist_min, dist_max);
       }
       else {
         /* 8 */
-        BufferLineAccumulator<1, 0, 0, -1>::eval(input, output, co, source, dist_min, dist_max);
+        BufferLineAccumulator<1, 0, 0, -1>::eval(
+            input_img, dst, output, co, source, dist_min, dist_max);
       }
     }
     else {
       if (pt_ofs[1] > 0.0f) {
         /* 4 */
-        BufferLineAccumulator<-1, 0, 0, 1>::eval(input, output, co, source, dist_min, dist_max);
+        BufferLineAccumulator<-1, 0, 0, 1>::eval(
+            input_img, dst, output, co, source, dist_min, dist_max);
       }
       else {
         /* 5 */
-        BufferLineAccumulator<-1, 0, 0, -1>::eval(input, output, co, source, dist_min, dist_max);
+        BufferLineAccumulator<-1, 0, 0, -1>::eval(
+            input_img, dst, output, co, source, dist_min, dist_max);
       }
     }
   }
+
+  return output;
 }
 
-void *SunBeamsOperation::initializeTileData(rcti * /*rect*/)
+void SunBeamsOperation::execPixels(ExecutionManager &man)
 {
-  void *buffer = getInputOperation(0)->initializeTileData(NULL);
-  return buffer;
+  auto color = getInputOperation(0)->getPixels(this, man);
+  auto cpu_write = [&](PixelsRect &dst, const WriteRectContext &ctx) {
+    READ_DECL(color);
+    WRITE_DECL(dst);
+
+    CPU_LOOP_START(dst);
+
+    const float co[2] = {(float)dst_coords.x, (float)dst_coords.y};
+
+    color_pix = accumulate_line(
+        color_img, dst, co, this->m_source_px, 0.0f, this->m_ray_length_px);
+    WRITE_IMG4(dst, color_pix);
+
+    CPU_LOOP_END;
+  };
+  cpuWriteSeek(man, cpu_write);
 }
 
-void SunBeamsOperation::executePixel(float output[4], int x, int y, void *data)
-{
-  const float co[2] = {(float)x, (float)y};
-
-  accumulate_line(
-      (MemoryBuffer *)data, output, co, this->m_source_px, 0.0f, this->m_ray_length_px);
-}
-
-static void calc_ray_shift(rcti *rect, float x, float y, const float source[2], float ray_length)
-{
-  float co[2] = {(float)x, (float)y};
-  float dir[2], dist;
-
-  /* move (x,y) vector toward the source by ray_length distance */
-  sub_v2_v2v2(dir, co, source);
-  dist = normalize_v2(dir);
-  mul_v2_fl(dir, min_ff(dist, ray_length));
-  sub_v2_v2(co, dir);
-
-  int ico[2] = {(int)co[0], (int)co[1]};
-  BLI_rcti_do_minmax_v(rect, ico);
-}
-
-bool SunBeamsOperation::determineDependingAreaOfInterest(rcti *input,
-                                                         ReadBufferOperation *readOperation,
-                                                         rcti *output)
-{
-  /* Enlarges the rect by moving each corner toward the source.
-   * This is the maximum distance that pixels can influence each other
-   * and gives a rect that contains all possible accumulated pixels.
-   */
-  rcti rect = *input;
-  calc_ray_shift(&rect, input->xmin, input->ymin, this->m_source_px, this->m_ray_length_px);
-  calc_ray_shift(&rect, input->xmin, input->ymax, this->m_source_px, this->m_ray_length_px);
-  calc_ray_shift(&rect, input->xmax, input->ymin, this->m_source_px, this->m_ray_length_px);
-  calc_ray_shift(&rect, input->xmax, input->ymax, this->m_source_px, this->m_ray_length_px);
-
-  return NodeOperation::determineDependingAreaOfInterest(&rect, readOperation, output);
-}
+// static void calc_ray_shift(rcti *rect, float x, float y, const float source[2], float
+// ray_length)
+//{
+//  float co[2] = {(float)x, (float)y};
+//  float dir[2], dist;
+//
+//  /* move (x,y) vector toward the source by ray_length distance */
+//  sub_v2_v2v2(dir, co, source);
+//  dist = normalize_v2(dir);
+//  mul_v2_fl(dir, min_ff(dist, ray_length));
+//  sub_v2_v2(co, dir);
+//
+//  int ico[2] = {(int)co[0], (int)co[1]};
+//  BLI_rcti_do_minmax_v(rect, ico);
+//}
+//
+// bool SunBeamsOperation::determineDependingAreaOfInterest(rcti *input,
+//                                                         ReadBufferOperation *readOperation,
+//                                                         rcti *output)
+//{
+//  /* Enlarges the rect by moving each corner toward the source.
+//   * This is the maximum distance that pixels can influence each other
+//   * and gives a rect that contains all possible accumulated pixels.
+//   */
+//  rcti rect = *input;
+//  calc_ray_shift(&rect, input->xmin, input->ymin, this->m_source_px, this->m_ray_length_px);
+//  calc_ray_shift(&rect, input->xmin, input->ymax, this->m_source_px, this->m_ray_length_px);
+//  calc_ray_shift(&rect, input->xmax, input->ymin, this->m_source_px, this->m_ray_length_px);
+//  calc_ray_shift(&rect, input->xmax, input->ymax, this->m_source_px, this->m_ray_length_px);
+//
+//  return NodeOperation::determineDependingAreaOfInterest(&rect, readOperation, output);
+//}

@@ -241,7 +241,7 @@
     } \
     else { \
       if (sampler.extend == PixelExtend::CLIP) { \
-        SAMPLE_NEAREST##n_chs##_UNCHECKED(0, src, sampler, dst_pix); \
+        SAMPLE_NEAREST##n_chs##_CLIP(0, src, sampler, dst_pix); \
       } \
       else if (sampler.extend == PixelExtend::EXTEND) { \
         SAMPLE_NEAREST##n_chs##_EXTEND(0, src, sampler, dst_pix); \
@@ -284,82 +284,94 @@ CCL_NAMESPACE_END
 #else  //__KERNEL_COMPUTE__
 /* NEAREST UNCHECKED */
 #  define SAMPLE_NEAREST1_UNCHECKED(ctx_num, src, sampler, dst_pix) \
-    SAMPLE_IMG(src, sampler, result);
-#  define READ_NEAREST1_UNCHECKED(ctx_num, src, sampler, dst_pix) SAMPLE_IMG(src, sampler, result);
+    SAMPLE_IMG(src, sampler, dst_pix);
+#  define READ_NEAREST1_UNCHECKED(ctx_num, src, sampler, dst_pix) \
+    SAMPLE_IMG(src, sampler, dst_pix);
 #  define SAMPLE_NEAREST3_UNCHECKED(ctx_num, src, sampler, dst_pix) \
-    SAMPLE_IMG(src, sampler, result);
-#  define READ_NEAREST3_UNCHECKED(ctx_num, src, sampler, dst_pix) SAMPLE_IMG(src, sampler, result);
+    SAMPLE_IMG(src, sampler, dst_pix);
+#  define READ_NEAREST3_UNCHECKED(ctx_num, src, sampler, dst_pix) \
+    SAMPLE_IMG(src, sampler, dst_pix);
 #  define SAMPLE_NEAREST4_UNCHECKED(ctx_num, src, sampler, dst_pix) \
-    SAMPLE_IMG(src, sampler, result);
-#  define READ_NEAREST4_UNCHECKED(ctx_num, src, sampler, dst_pix) SAMPLE_IMG(src, sampler, result);
+    SAMPLE_IMG(src, sampler, dst_pix);
+#  define READ_NEAREST4_UNCHECKED(ctx_num, src, sampler, dst_pix) \
+    SAMPLE_IMG(src, sampler, dst_pix);
 /* END of NEAREST UNCHECKED*/
 
 /* NEAREST CLIP */
-#  define SAMPLE_NEAREST1_CLIP(ctx_num, src, sampler, dst_pix) SAMPLE_IMG(src, sampler, result);
-#  define SAMPLE_NEAREST3_CLIP(ctx_num, src, sampler, dst_pix) SAMPLE_IMG(src, sampler, result);
-#  define SAMPLE_NEAREST4_CLIP(ctx_num, src, sampler, dst_pix) SAMPLE_IMG(src, sampler, result);
-#  define READ_NEAREST1_CLIP(ctx_num, src, sampler, dst_pix) SAMPLE_IMG(src, sampler, result);
-#  define READ_NEAREST3_CLIP(ctx_num, src, sampler, dst_pix) SAMPLE_IMG(src, sampler, result);
-#  define READ_NEAREST4_CLIP(ctx_num, src, sampler, dst_pix) SAMPLE_IMG(src, sampler, result);
+#  define SAMPLE_NEAREST1_CLIP(ctx_num, src, sampler, dst_pix) SAMPLE_IMG(src, sampler, dst_pix);
+#  define SAMPLE_NEAREST3_CLIP(ctx_num, src, sampler, dst_pix) SAMPLE_IMG(src, sampler, dst_pix);
+#  define SAMPLE_NEAREST4_CLIP(ctx_num, src, sampler, dst_pix) SAMPLE_IMG(src, sampler, dst_pix);
+#  define READ_NEAREST1_CLIP(ctx_num, src, sampler, dst_pix) SAMPLE_IMG(src, sampler, dst_pix);
+#  define READ_NEAREST3_CLIP(ctx_num, src, sampler, dst_pix) SAMPLE_IMG(src, sampler, dst_pix);
+#  define READ_NEAREST4_CLIP(ctx_num, src, sampler, dst_pix) SAMPLE_IMG(src, sampler, dst_pix);
 /* END of NEAREST CLIP*/
 
 /* NEAREST EXTEND */
-#  define SAMPLE_NEAREST1_EXTEND(ctx_num, src, sampler, dst_pix) SAMPLE_IMG(src, sampler, result);
-#  define READ_NEAREST1_EXTEND(ctx_num, src, sampler, dst_pix) SAMPLE_IMG(src, sampler, result);
-#  define SAMPLE_NEAREST3_EXTEND(ctx_num, src, sampler, dst_pix) SAMPLE_IMG(src, sampler, result);
-#  define READ_NEAREST3_EXTEND(ctx_num, src, sampler, dst_pix) SAMPLE_IMG(src, sampler, result);
-#  define SAMPLE_NEAREST4_EXTEND(ctx_num, src, sampler, dst_pix) SAMPLE_IMG(src, sampler, result);
-#  define READ_NEAREST4_EXTEND(ctx_num, src, sampler, dst_pix) SAMPLE_IMG(src, sampler, result);
+#  define SAMPLE_NEAREST1_EXTEND(ctx_num, src, sampler, dst_pix) SAMPLE_IMG(src, sampler, dst_pix);
+#  define READ_NEAREST1_EXTEND(ctx_num, src, sampler, dst_pix) SAMPLE_IMG(src, sampler, dst_pix);
+#  define SAMPLE_NEAREST3_EXTEND(ctx_num, src, sampler, dst_pix) SAMPLE_IMG(src, sampler, dst_pix);
+#  define READ_NEAREST3_EXTEND(ctx_num, src, sampler, dst_pix) SAMPLE_IMG(src, sampler, dst_pix);
+#  define SAMPLE_NEAREST4_EXTEND(ctx_num, src, sampler, dst_pix) SAMPLE_IMG(src, sampler, dst_pix);
+#  define READ_NEAREST4_EXTEND(ctx_num, src, sampler, dst_pix) SAMPLE_IMG(src, sampler, dst_pix);
 /* END of NEAREST EXTEND*/
 
 /* NEAREST REPEAT */
-#  define SAMPLE_NEAREST1_REPEAT(ctx_num, src, sampler, dst_pix) SAMPLE_IMG(src, sampler, result);
-#  define READ_NEAREST1_REPEAT(ctx_num, src, sampler, dst_pix) SAMPLE_IMG(src, sampler, result);
-#  define SAMPLE_NEAREST3_REPEAT(ctx_num, src, sampler, dst_pix) SAMPLE_IMG(src, sampler, result);
-#  define READ_NEAREST3_REPEAT(ctx_num, src, sampler, dst_pix) SAMPLE_IMG(src, sampler, result);
-#  define SAMPLE_NEAREST4_REPEAT(ctx_num, src, sampler, dst_pix) SAMPLE_IMG(src, sampler, result);
-#  define READ_NEAREST4_REPEAT(ctx_num, src, sampler, dst_pix) SAMPLE_IMG(src, sampler, result);
+#  define SAMPLE_NEAREST1_REPEAT(ctx_num, src, sampler, dst_pix) SAMPLE_IMG(src, sampler, dst_pix);
+#  define READ_NEAREST1_REPEAT(ctx_num, src, sampler, dst_pix) SAMPLE_IMG(src, sampler, dst_pix);
+#  define SAMPLE_NEAREST3_REPEAT(ctx_num, src, sampler, dst_pix) SAMPLE_IMG(src, sampler, dst_pix);
+#  define READ_NEAREST3_REPEAT(ctx_num, src, sampler, dst_pix) SAMPLE_IMG(src, sampler, dst_pix);
+#  define SAMPLE_NEAREST4_REPEAT(ctx_num, src, sampler, dst_pix) SAMPLE_IMG(src, sampler, dst_pix);
+#  define READ_NEAREST4_REPEAT(ctx_num, src, sampler, dst_pix) SAMPLE_IMG(src, sampler, dst_pix);
 /* END of NEAREST REPEAT*/
 
 /* NEAREST MIRROR */
-#  define SAMPLE_NEAREST1_MIRROR(ctx_num, src, sampler, dst_pix) SAMPLE_IMG(src, sampler, result);
-#  define READ_NEAREST1_MIRROR(ctx_num, src, sampler, dst_pix) SAMPLE_IMG(src, sampler, result);
-#  define SAMPLE_NEAREST3_MIRROR(ctx_num, src, sampler, dst_pix) SAMPLE_IMG(src, sampler, result);
-#  define READ_NEAREST3_MIRROR(ctx_num, src, sampler, dst_pix) SAMPLE_IMG(src, sampler, result);
-#  define SAMPLE_NEAREST4_MIRROR(ctx_num, src, sampler, dst_pix) SAMPLE_IMG(src, sampler, result);
-#  define READ_NEAREST4_MIRROR(ctx_num, src, sampler, dst_pix) SAMPLE_IMG(src, sampler, result);
+#  define SAMPLE_NEAREST1_MIRROR(ctx_num, src, sampler, dst_pix) SAMPLE_IMG(src, sampler, dst_pix);
+#  define READ_NEAREST1_MIRROR(ctx_num, src, sampler, dst_pix) SAMPLE_IMG(src, sampler, dst_pix);
+#  define SAMPLE_NEAREST3_MIRROR(ctx_num, src, sampler, dst_pix) SAMPLE_IMG(src, sampler, dst_pix);
+#  define READ_NEAREST3_MIRROR(ctx_num, src, sampler, dst_pix) SAMPLE_IMG(src, sampler, dst_pix);
+#  define SAMPLE_NEAREST4_MIRROR(ctx_num, src, sampler, dst_pix) SAMPLE_IMG(src, sampler, dst_pix);
+#  define READ_NEAREST4_MIRROR(ctx_num, src, sampler, dst_pix) SAMPLE_IMG(src, sampler, dst_pix);
 /* END of NEAREST MIRROR*/
 
 /*** END of NEAREST MACROS ***/
 
 /*** BILINEAR MACROS ***/
 #  define SAMPLE_BILINEAR1_UNCHECKED(ctx_num, src, sampler, dst_pix) \
-    SAMPLE_IMG(src, sampler, result);
+    SAMPLE_IMG(src, sampler, dst_pix);
 #  define SAMPLE_BILINEAR3_UNCHECKED(ctx_num, src, sampler, dst_pix) \
-    SAMPLE_IMG(src, sampler, result);
+    SAMPLE_IMG(src, sampler, dst_pix);
 #  define SAMPLE_BILINEAR4_UNCHECKED(ctx_num, src, sampler, dst_pix) \
-    SAMPLE_IMG(src, sampler, result);
+    SAMPLE_IMG(src, sampler, dst_pix);
 
-#  define SAMPLE_BILINEAR1_CLIP(ctx_num, src, sampler, dst_pix) SAMPLE_IMG(src, sampler, result);
-#  define SAMPLE_BILINEAR3_CLIP(ctx_num, src, sampler, dst_pix) SAMPLE_IMG(src, sampler, result);
-#  define SAMPLE_BILINEAR4_CLIP(ctx_num, src, sampler, dst_pix) SAMPLE_IMG(src, sampler, result);
+#  define SAMPLE_BILINEAR1_CLIP(ctx_num, src, sampler, dst_pix) SAMPLE_IMG(src, sampler, dst_pix);
+#  define SAMPLE_BILINEAR3_CLIP(ctx_num, src, sampler, dst_pix) SAMPLE_IMG(src, sampler, dst_pix);
+#  define SAMPLE_BILINEAR4_CLIP(ctx_num, src, sampler, dst_pix) SAMPLE_IMG(src, sampler, dst_pix);
 
-#  define SAMPLE_BILINEAR1_EXTEND(ctx_num, src, sampler, dst_pix) SAMPLE_IMG(src, sampler, result);
-#  define SAMPLE_BILINEAR3_EXTEND(ctx_num, src, sampler, dst_pix) SAMPLE_IMG(src, sampler, result);
-#  define SAMPLE_BILINEAR4_EXTEND(ctx_num, src, sampler, dst_pix) SAMPLE_IMG(src, sampler, result);
+#  define SAMPLE_BILINEAR1_EXTEND(ctx_num, src, sampler, dst_pix) \
+    SAMPLE_IMG(src, sampler, dst_pix);
+#  define SAMPLE_BILINEAR3_EXTEND(ctx_num, src, sampler, dst_pix) \
+    SAMPLE_IMG(src, sampler, dst_pix);
+#  define SAMPLE_BILINEAR4_EXTEND(ctx_num, src, sampler, dst_pix) \
+    SAMPLE_IMG(src, sampler, dst_pix);
 
-#  define SAMPLE_BILINEAR1_REPEAT(ctx_num, src, sampler, dst_pix) SAMPLE_IMG(src, sampler, result);
-#  define SAMPLE_BILINEAR3_REPEAT(ctx_num, src, sampler, dst_pix) SAMPLE_IMG(src, sampler, result);
-#  define SAMPLE_BILINEAR4_REPEAT(ctx_num, src, sampler, dst_pix) SAMPLE_IMG(src, sampler, result);
+#  define SAMPLE_BILINEAR1_REPEAT(ctx_num, src, sampler, dst_pix) \
+    SAMPLE_IMG(src, sampler, dst_pix);
+#  define SAMPLE_BILINEAR3_REPEAT(ctx_num, src, sampler, dst_pix) \
+    SAMPLE_IMG(src, sampler, dst_pix);
+#  define SAMPLE_BILINEAR4_REPEAT(ctx_num, src, sampler, dst_pix) \
+    SAMPLE_IMG(src, sampler, dst_pix);
 
-#  define SAMPLE_BILINEAR1_MIRROR(ctx_num, src, sampler, dst_pix) SAMPLE_IMG(src, sampler, result);
-#  define SAMPLE_BILINEAR3_MIRROR(ctx_num, src, sampler, dst_pix) SAMPLE_IMG(src, sampler, result);
-#  define SAMPLE_BILINEAR4_MIRROR(ctx_num, src, sampler, dst_pix) SAMPLE_IMG(src, sampler, result);
+#  define SAMPLE_BILINEAR1_MIRROR(ctx_num, src, sampler, dst_pix) \
+    SAMPLE_IMG(src, sampler, dst_pix);
+#  define SAMPLE_BILINEAR3_MIRROR(ctx_num, src, sampler, dst_pix) \
+    SAMPLE_IMG(src, sampler, dst_pix);
+#  define SAMPLE_BILINEAR4_MIRROR(ctx_num, src, sampler, dst_pix) \
+    SAMPLE_IMG(src, sampler, dst_pix);
 /*** END of BILINEAR MACROS ***/
 
-#  define SAMPLE_IMG1(src, sampler, dst_pix) SAMPLE_IMG(src, sampler, result);
-#  define SAMPLE_IMG3(src, sampler, dst_pix) SAMPLE_IMG(src, sampler, result);
-#  define SAMPLE_IMG4(src, sampler, dst_pix) SAMPLE_IMG(src, sampler, result);
+#  define SAMPLE_IMG1(src, sampler, dst_pix) SAMPLE_IMG(src, sampler, dst_pix);
+#  define SAMPLE_IMG3(src, sampler, dst_pix) SAMPLE_IMG(src, sampler, dst_pix);
+#  define SAMPLE_IMG4(src, sampler, dst_pix) SAMPLE_IMG(src, sampler, dst_pix);
 
 #endif
 

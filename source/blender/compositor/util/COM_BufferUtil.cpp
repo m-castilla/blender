@@ -95,6 +95,8 @@ void hostAlloc(TmpBuffer *dst, int width, int height, int elem_chs)
   dst->host.bheight = height;
   dst->host.belem_chs = elem_chs;
   dst->host.brow_bytes = BufferUtil::calcBufferRowBytes(width, elem_chs);
+  dst->host.buffer_bytes = BufferUtil::calcBufferBytes(width, height, elem_chs);
+  BLI_assert(dst->host.buffer_bytes == dst->host.brow_bytes * dst->host.bheight);
   dst->host.state = HostMemoryState::CLEARED;
 }
 

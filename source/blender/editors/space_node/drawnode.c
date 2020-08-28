@@ -1756,6 +1756,11 @@ static void node_composit_buts_inpaint(uiLayout *layout, bContext *UNUSED(C), Po
   uiItemR(layout, ptr, "distance", DEFAULT_FLAGS, NULL, ICON_NONE);
 }
 
+static void node_composit_buts_pixelate(uiLayout *layout, bContext *UNUSED(C), PointerRNA *ptr)
+{
+  uiItemR(layout, ptr, "size", DEFAULT_FLAGS, NULL, ICON_NONE);
+}
+
 static void node_composit_buts_despeckle(uiLayout *layout, bContext *UNUSED(C), PointerRNA *ptr)
 {
   uiLayout *col;
@@ -2809,6 +2814,9 @@ static void node_composit_set_butfunc(bNodeType *ntype)
       break;
     case CMP_NODE_INPAINT:
       ntype->draw_buttons = node_composit_buts_inpaint;
+      break;
+    case CMP_NODE_PIXELATE:
+      ntype->draw_buttons = node_composit_buts_pixelate;
       break;
     case CMP_NODE_DESPECKLE:
       ntype->draw_buttons = node_composit_buts_despeckle;
