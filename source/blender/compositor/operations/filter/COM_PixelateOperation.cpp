@@ -68,6 +68,6 @@ void PixelateOperation::execPixels(ExecutionManager &man)
       CCL::pixelateOp, _1, input, size);
   computeWriteSeek(man, cpu_write, "pixelateOp", [&](ComputeKernel *kernel) {
     kernel->addReadImgArgs(*input);
-    kernel->addIntArg(size);
+    kernel->addFloatArg(size);
   });
 }
