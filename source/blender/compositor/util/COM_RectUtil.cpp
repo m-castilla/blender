@@ -151,7 +151,7 @@ static void addImgRect(
     std::vector<rcti> &rects, int xmin, int width, int ymin, int height, int start_y)
 {
   rcti rect;
-  BLI_rcti_init(&rect, 0, width, start_y + ymin, start_y + ymin + height);
+  BLI_rcti_init(&rect, xmin, xmin + width, start_y + ymin, start_y + ymin + height);
   BLI_assert(!BLI_rcti_is_empty(&rect));
   rects.push_back(rect);
 }

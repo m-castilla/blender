@@ -219,7 +219,7 @@ void *AntiAliasOperation::initializeTileData(rcti *rect)
 void AntiAliasOperation::execPixels(ExecutionManager &man)
 {
   auto input = getInputOperation(0)->getPixels(this, man);
-  auto cpu_write = [&](PixelsRect &dst, const WriteRectContext &ctx) {
+  auto cpu_write = [&](PixelsRect &dst, const WriteRectContext & /*ctx*/) {
     int input_w = input->getWidth();
     int input_h = input->getHeight();
     READ_DECL(input);

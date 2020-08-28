@@ -242,7 +242,7 @@ void OpenCLDevice::memDeviceToHostCopyEnqueue(float *r_host_buffer,
                                               MemoryAccess UNUSED(mem_access),
                                               int width,
                                               int height,
-                                              int elem_chs)
+                                              int UNUSED(elem_chs))
 {
   cl_mem img = (cl_mem)device_buffer;
   size_t origin[3] = {0, 0, 0};
@@ -260,10 +260,10 @@ void OpenCLDevice::memDeviceFree(void *device_buffer)
 void OpenCLDevice::memHostToDeviceCopyEnqueue(void *r_device_buffer,
                                               float *host_buffer,
                                               size_t host_row_bytes,
-                                              MemoryAccess mem_access,
+                                              MemoryAccess UNUSED(mem_access),
                                               int width,
                                               int height,
-                                              int elem_chs)
+                                              int UNUSED(elem_chs))
 {
   cl_mem img = (cl_mem)r_device_buffer;
   size_t origin[3] = {0, 0, 0};
@@ -336,8 +336,15 @@ void OpenCLDevice::enqueueWork(cl_command_queue cl_queue,
     size_t global_work_offset[2] = {offset_x, offset_y};
     size_t global_work_size[2] = {950, 950};
     size_t local_work_size[2] = {rect_w, rect_h};
-    m_man.printIfError(clEnqueueNDRangeKernel(
-        cl_queue, kernel->getClKernel(), 2, NULL, global_work_size, NULL, 0, NULL, NULL));
+    m_man.printIfError(clEnqueueNDRangeKernel(cl_queue,
+                                              kernel->getClKernel(),
+                                              2,
+                                              global_work_offset,
+                                              global_work_size,
+                                              local_work_size,
+                                              0,
+                                              NULL,
+                                              NULL));
     clFlush(cl_queue);
   }
 }

@@ -98,6 +98,7 @@ void *OpenCLPlatform::createSampler(PixelsSampler pix_sampler)
       address = CL_ADDRESS_MIRRORED_REPEAT;
       break;
     default:
+      address = CL_ADDRESS_NONE;
       BLI_assert(!"Non implemented PixelExtend case");
   }
   switch (pix_sampler.filter) {
@@ -108,6 +109,7 @@ void *OpenCLPlatform::createSampler(PixelsSampler pix_sampler)
       filter = CL_FILTER_LINEAR;
       break;
     default:
+      filter = CL_FILTER_NEAREST;
       BLI_assert(!"Non implemented PixelInterpolation case");
   }
 
