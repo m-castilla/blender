@@ -32,7 +32,7 @@ void FastGaussianBlurOperation::execPixels(ExecutionManager &man)
   auto color = getInputOperation(0)->getPixels(this, man);
   float sx = m_data.sizex * m_size / 2.0f;
   float sy = m_data.sizey * m_size / 2.0f;
-  auto cpuWrite = [&, sx, sy](PixelsRect &dst, const WriteRectContext &ctx) {
+  auto cpuWrite = [&, sx, sy](PixelsRect &dst, const WriteRectContext & /*ctx*/) {
     PixelsRect color_rect = color->toRect(dst);
     PixelsUtil::copyEqualRects(dst, color_rect);
     PixelsImg dst_img = dst.pixelsImg();
@@ -251,7 +251,7 @@ void FastGaussianBlurValueOperation::execPixels(ExecutionManager &man)
 {
   auto color = getInputOperation(0)->getPixels(this, man);
 
-  auto cpuWrite = [&](PixelsRect &dst, const WriteRectContext &ctx) {
+  auto cpuWrite = [&](PixelsRect &dst, const WriteRectContext & /*ctx*/) {
     auto color_rect = color->toRect(dst);
     PixelsUtil::copyEqualRects(dst, color_rect);
     PixelsImg dst_img = dst.pixelsImg();

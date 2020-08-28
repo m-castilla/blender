@@ -28,7 +28,6 @@ GlareBaseOperation::GlareBaseOperation() : NodeOperation()
 void GlareBaseOperation::hashParams()
 {
   NodeOperation::hashParams();
-  hashParam(m_settings->angle);
   hashParam(m_settings->angle_ofs);
   hashParam(m_settings->colmod);
   hashParam(m_settings->fade);

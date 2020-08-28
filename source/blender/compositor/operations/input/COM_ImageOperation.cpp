@@ -104,8 +104,8 @@ void BaseImageOperation::deinitExecution()
 }
 
 ResolutionType BaseImageOperation::determineResolution(int resolution[2],
-                                                       int preferredResolution[2],
-                                                       bool setResolution)
+                                                       int /*preferredResolution*/[2],
+                                                       bool /*setResolution*/)
 {
   ImBuf *stackbuf = getImBuf();
 

@@ -17,9 +17,9 @@
  */
 #include <cstring>
 
-#include "COM_MaskOperation.h"
 #include "BKE_mask.h"
 #include "BLI_listbase.h"
+#include "COM_MaskOperation.h"
 #include "MEM_guardedalloc.h"
 
 #include "COM_kernel_cpu.h"
@@ -150,7 +150,7 @@ void MaskOperation::hashParams()
 
 void MaskOperation::execPixels(ExecutionManager &man)
 {
-  auto cpu_write = [&](PixelsRect &dst, const WriteRectContext &ctx) {
+  auto cpu_write = [&](PixelsRect &dst, const WriteRectContext & /*ctx*/) {
     WRITE_DECL(dst);
 
     CPU_LOOP_START(dst);
