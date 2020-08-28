@@ -25,6 +25,7 @@
 #include "COM_NodeOperation.h"
 #include "COM_Rect.h"
 #include "COM_defines.h"
+#include <string.h>
 
 int PixelsUtil::getNChannels(DataType dataType)
 {

@@ -24,6 +24,7 @@
 #include "COM_Pixels.h"
 #include "COM_defines.h"
 #include <functional>
+#include <memory>
 
 typedef std::function<std::shared_ptr<PixelsRect>(const rcti)> TmpRectBuilder;
 struct TmpBuffer;

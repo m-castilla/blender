@@ -16,6 +16,8 @@
  * Copyright 2011, Blender Foundation.
  */
 
+#include <cstring>
+
 #include "COM_TextureNode.h"
 #include "COM_ExecutionSystem.h"
 #include "COM_TextureOperation.h"

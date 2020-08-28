@@ -162,7 +162,7 @@
     SAMPLER_ASSERT__(sampler, NEAREST, mode); \
     type src##_nearest_##ctx_num##_x__ = coords.x; \
     type src##_nearest_##ctx_num##_y__ = coords.y; \
-    EXTEND_##mode##_##type_letter##( \
+    JOIN(EXTEND_##mode##_,type_letter)( \
         src##_img, src##_nearest_##ctx_num##_x__, src##_nearest_##ctx_num##_y__); \
     NEAREST_WRITE_F##n_chs##__(src##_nearest_##ctx_num, src##_img, dst_pix);
 

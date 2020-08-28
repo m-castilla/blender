@@ -209,9 +209,9 @@ void OpenCLKernel::addBoolArg(bool value)
 void OpenCLKernel::addInt3Arg(const CCL::int3 &value)
 {
   cl_int3 cl_i3;
-  cl_i3.x = value.x;
-  cl_i3.y = value.y;
-  cl_i3.z = value.z;
+  cl_i3.s[0]= value.x;
+  cl_i3.s[1] = value.y;
+  cl_i3.s[2] = value.z;
   m_man.printIfError(clSetKernelArg(m_cl_kernel, m_args_count, sizeof(cl_int3), &cl_i3));
   m_args_count++;
 }
@@ -226,8 +226,8 @@ void OpenCLKernel::addFloatArg(float value)
 void OpenCLKernel::addFloat2Arg(const CCL::float2 &value)
 {
   cl_float2 cl_f2;
-  cl_f2.x = value.x;
-  cl_f2.y = value.y;
+  cl_f2.s[0] = value.x;
+  cl_f2.s[1] = value.y;
   m_man.printIfError(clSetKernelArg(m_cl_kernel, m_args_count, sizeof(cl_float2), &cl_f2));
   m_args_count++;
 }
@@ -235,9 +235,9 @@ void OpenCLKernel::addFloat2Arg(const CCL::float2 &value)
 void OpenCLKernel::addFloat3Arg(const CCL::float3 &value)
 {
   cl_float3 cl_f3;
-  cl_f3.x = value.x;
-  cl_f3.y = value.y;
-  cl_f3.z = value.z;
+  cl_f3.s[0] = value.x;
+  cl_f3.s[1] = value.y;
+  cl_f3.s[2] = value.z;
   m_man.printIfError(clSetKernelArg(m_cl_kernel, m_args_count, sizeof(cl_float3), &cl_f3));
   m_args_count++;
 }
@@ -245,10 +245,10 @@ void OpenCLKernel::addFloat3Arg(const CCL::float3 &value)
 void OpenCLKernel::addFloat4Arg(const CCL::float4 &value)
 {
   cl_float4 cl_f4;
-  cl_f4.x = value.x;
-  cl_f4.y = value.y;
-  cl_f4.z = value.z;
-  cl_f4.w = value.w;
+  cl_f4.s[0] = value.x;
+  cl_f4.s[1] = value.y;
+  cl_f4.s[2] = value.z;
+  cl_f4.s[3] = value.w;
   m_man.printIfError(clSetKernelArg(m_cl_kernel, m_args_count, sizeof(cl_float4), &cl_f4));
   m_args_count++;
 }
@@ -286,10 +286,10 @@ void OpenCLKernel::addFloat3CArrayArg(const CCL::float3 *float3_array, int n_ele
     data = (cl_float3 *)MEM_mallocN(data_size, __func__);
     for (int i = 0; i < n_elems; i++) {
       const CCL::float3 &f3 = float3_array[i];
-      cl_float4 &cl_f3 = data[i];
-      cl_f3.x = f3.x;
-      cl_f3.y = f3.y;
-      cl_f3.z = f3.z;
+      cl_float3 &cl_f3 = data[i];
+      cl_f3.s[0] = f3.x;
+      cl_f3.s[1] = f3.y;
+      cl_f3.s[2] = f3.z;
     }
     m_args_datas.push_back(data);
   }
@@ -306,10 +306,10 @@ void OpenCLKernel::addFloat4CArrayArg(const CCL::float4 *float4_array, int n_ele
     for (int i = 0; i < n_elems; i++) {
       const CCL::float4 &f4 = float4_array[i];
       cl_float4 &cl_f4 = data[i];
-      cl_f4.x = f4.x;
-      cl_f4.y = f4.y;
-      cl_f4.z = f4.z;
-      cl_f4.w = f4.w;
+      cl_f4.s[0] = f4.x;
+      cl_f4.s[1] = f4.y;
+      cl_f4.s[2] = f4.z;
+      cl_f4.s[3] = f4.w;
     }
     m_args_datas.push_back(data);
   }

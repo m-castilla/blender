@@ -18,6 +18,7 @@
 
 #include "COM_SetColorOperation.h"
 #include "COM_PixelsUtil.h"
+#include <string.h>
 
 SetColorOperation::SetColorOperation() : NodeOperation(), m_color()
 {
@@ -29,3 +30,8 @@ void SetColorOperation::hashParams()
   NodeOperation::hashParams();
   hashDataAsParam(m_color, getOutputNChannels());
 }
+
+  void SetColorOperation::setChannels(const float value[4])
+  {
+    memcpy(m_color, value, sizeof(float) * 4);
+  }
