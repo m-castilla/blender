@@ -6,7 +6,7 @@
 #define ccl_addr_space
 
 /* Qualifiers for kernel code shared by CPU and compute managers */
-#define ccl_kernel void
+#define ccl_kernel static void
 #define ccl_device static inline
 #define ccl_device_noinline static
 #define ccl_device_noinline_cpu ccl_device_noinline
@@ -245,7 +245,7 @@ CCL_NAMESPACE_END
 
 #ifdef __KERNEL_SSE__
 #  define WRITE_IMG4(dst, pixel) \
-    _mm_store_ps(&dst##_img.buffer[dst##_offset], pixel.m128); \
+    _mm_storeu_ps(&dst##_img.buffer[dst##_offset], pixel.m128); \
     kernel_assert(dst##_coords.x >= dst##_img.start_x && dst##_coords.x < dst##_img.end_x); \
     kernel_assert(dst##_coords.y >= dst##_img.start_y && dst##_coords.y < dst##_img.end_y); \
     kernel_assert(dst##_offset >= (dst##_img.brow_chs_incr * dst##_img.start_y + \

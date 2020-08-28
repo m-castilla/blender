@@ -23,10 +23,10 @@
 #include <map>
 #include <set>
 #include <stdarg.h>
-#include <string>
-#include <vector>
-#include <sys/stat.h>
 #include <string.h>
+#include <string>
+#include <sys/stat.h>
+#include <vector>
 
 #if defined(_WIN32)
 #  define DIR_SEP '\\'
@@ -38,7 +38,7 @@
 using namespace std;
 namespace IncludesResolver {
 
-bool string_startswith(const string &s, const char *start)
+static bool string_startswith(const string &s, const char *start)
 {
   size_t len = strlen(start);
 
@@ -48,7 +48,7 @@ bool string_startswith(const string &s, const char *start)
     return strncmp(s.c_str(), start, len) == 0;
 }
 
-bool string_endswith(const string &s, const char *end)
+static bool string_endswith(const string &s, const char *end)
 {
   size_t len = strlen(end);
 
@@ -58,7 +58,7 @@ bool string_endswith(const string &s, const char *end)
     return strncmp(s.c_str() + s.size() - len, end, len) == 0;
 }
 
-string string_strip(const string &s)
+static string string_strip(const string &s)
 {
   string result = s;
   result.erase(0, result.find_first_not_of(' '));
@@ -66,7 +66,7 @@ string string_strip(const string &s)
   return result;
 }
 
-string string_printf(const char *format, ...)
+static string string_printf(const char *format, ...)
 {
   vector<char> str(128, 0);
 
@@ -98,7 +98,7 @@ string string_printf(const char *format, ...)
   }
 }
 
-size_t find_last_slash(const string &path)
+static size_t find_last_slash(const string &path)
 {
   for (size_t i = 0; i < path.size(); ++i) {
     size_t index = path.size() - 1 - i;
@@ -114,12 +114,12 @@ size_t find_last_slash(const string &path)
   return string::npos;
 }
 
-FILE *path_fopen(const string &path, const string &mode)
+static FILE *path_fopen(const string &path, const string &mode)
 {
   return fopen(path.c_str(), mode.c_str());
 }
 
-bool path_exists(const string &path)
+static bool path_exists(const string &path)
 {
   struct stat st;
   if (stat(path.c_str(), &st) != 0) {
@@ -128,7 +128,7 @@ bool path_exists(const string &path)
   return st.st_mode != 0;
 }
 
-string path_join(const string &dir, const string &file)
+static string path_join(const string &dir, const string &file)
 {
   if (dir.size() == 0) {
     return file;
@@ -150,7 +150,7 @@ string path_join(const string &dir, const string &file)
   return result;
 }
 
-string path_filename(const string &path)
+static string path_filename(const string &path)
 {
   size_t index = find_last_slash(path);
   if (index != string::npos) {
@@ -173,7 +173,7 @@ string path_filename(const string &path)
   return path;
 }
 
-string path_dirname(const string &path)
+static string path_dirname(const string &path)
 {
   size_t index = find_last_slash(path);
   if (index != string::npos) {
@@ -234,7 +234,7 @@ static int path_stat(const string &path, struct stat *st)
   return stat(path.c_str(), st);
 }
 
-size_t path_file_size(const string &path)
+static size_t path_file_size(const string &path)
 {
   struct stat st;
   if (path_stat(path, &st) != 0) {
@@ -243,7 +243,7 @@ size_t path_file_size(const string &path)
   return st.st_size;
 }
 
-bool path_read_binary(const string &path, vector<uint8_t> &binary)
+static bool path_read_binary(const string &path, vector<uint8_t> &binary)
 {
   /* read binary file into memory */
   FILE *f = path_fopen(path, "rb");
@@ -270,7 +270,7 @@ bool path_read_binary(const string &path, vector<uint8_t> &binary)
   return true;
 }
 
-bool path_read_text(const string &path, string &text)
+static bool path_read_text(const string &path, string &text)
 {
   vector<uint8_t> binary;
 

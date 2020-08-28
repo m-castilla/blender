@@ -150,7 +150,6 @@ set(SRC
   ${CMP_BASE}/computing/COM_ComputeManager.h
   ${CMP_BASE}/computing/COM_ComputeNoneManager.h
   ${CMP_BASE}/computing/COM_kernel_cpu.h
-  ${CMP_BASE}/computing/COM_kernel_cpu_nocompat.h
   ${CMP_BASE}/computing/COM_kernel_opencl.h
   ${CMP_BASE}/computing/kernel_util/COM_kernel_algo.h
   ${CMP_BASE}/computing/kernel_util/COM_kernel_defines.h

@@ -182,7 +182,7 @@ void PreviewOperation::execPixels(ExecutionManager &man)
 
 ResolutionType PreviewOperation::determineResolution(int resolution[2],
                                                      int preferredResolution[2],
-                                                     bool setResolution)
+                                                     bool /*setResolution*/)
 {
   NodeOperation::determineResolution(resolution, preferredResolution, false);
   int width = resolution[0];

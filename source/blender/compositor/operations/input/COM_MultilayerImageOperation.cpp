@@ -92,7 +92,7 @@ void MultilayerValueOperation::execPixels(ExecutionManager &man)
 
 void MultilayerVectorOperation::execPixels(ExecutionManager &man)
 {
-  auto cpuWrite = [&](PixelsRect &dst, const WriteRectContext &ctx) {
+  auto cpuWrite = [&](PixelsRect &dst, const WriteRectContext & /*ctx*/) {
     if (m_imageFloatBuffer == NULL) {
       PixelsUtil::setRectElem(dst, (float *)&CCL::TRANSPARENT_PIXEL);
     }
