@@ -20,6 +20,10 @@
 #define __COM_BUFFER_H__
 
 #include <string>
+#ifdef WITH_CXX_GUARDEDALLOC
+#  include "MEM_guardedalloc.h"
+#endif
+
 enum class MemoryAccess { READ, WRITE, READ_WRITE };
 enum class HostMemoryState { NONE, CLEARED, MAP_FROM_DEVICE, FILLED };
 enum class DeviceMemoryState { NONE, CLEARED, MAP_TO_HOST, FILLED };
@@ -127,6 +131,9 @@ typedef struct TmpBuffer {
       return (size_t)width * getElemBytes();
     }
   }
+#ifdef WITH_CXX_GUARDEDALLOC
+  MEM_CXX_CLASS_ALLOC_FUNCS("COM:TmpBuffer")
+#endif
 } TmpBuffer;
 // typedef struct SimpleBuffer {
 //  float *buffer;
