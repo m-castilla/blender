@@ -31,16 +31,13 @@ void PixelateNode::convertToOperations(NodeConverter &converter,
 {
   NodeInput *inputSocket = this->getInputSocket(0);
   NodeOutput *outputSocket = this->getOutputSocket(0);
-  DataType datatype = inputSocket->getDataType();
 
-  if (inputSocket->isLinked()) {
-    NodeOutput *link = inputSocket->getLink();
-    datatype = link->getDataType();
-  }
+  bNode *editorNode = this->getbNode();
+  float size = editorNode->custom3;
 
-  PixelateOperation *operation = new PixelateOperation(datatype);
-  converter.addOperation(operation);
-
-  converter.mapInputSocket(inputSocket, operation->getInputSocket(0));
-  converter.mapOutputSocket(outputSocket, operation->getOutputSocket(0));
+  PixelateOperation *op = new PixelateOperation();
+  op->setSize(size);
+  converter.addOperation(op);
+  converter.mapInputSocket(inputSocket, op->getInputSocket(0));
+  converter.mapOutputSocket(outputSocket, op->getOutputSocket(0));
 }

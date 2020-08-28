@@ -127,6 +127,7 @@ class ViewerOperation : public NodeOperation {
   }
 
  protected:
+  virtual void hashParams() override;
   virtual void execPixels(ExecutionManager &man) override;
 
  private:

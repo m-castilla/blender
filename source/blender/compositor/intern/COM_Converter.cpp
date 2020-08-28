@@ -41,8 +41,6 @@
 //#include "COM_FlipNode.h"
 //#include "COM_GammaNode.h"
 
-//#include "COM_InpaintNode.h"
-
 //#include "COM_KeyingNode.h"
 //#include "COM_KeyingScreenNode.h"
 //#include "COM_LensDistortionNode.h"
@@ -54,14 +52,12 @@
 //#include "COM_MovieDistortionNode.h"
 //#include "COM_NormalNode.h"
 //#include "COM_NormalizeNode.h"
-//#include "COM_PixelateNode.h"
 //#include "COM_PlaneTrackDeformNode.h"
 //#include "COM_RenderLayersNode.h"
 //#include "COM_RotateNode.h"
 //#include "COM_SetValueOperation.h"
 //#include "COM_SplitViewerNode.h"
 //#include "COM_Stabilize2dNode.h"
-//#include "COM_SunBeamsNode.h"
 
 //#include "COM_TransformNode.h"
 //#include "COM_VectorCurveNode.h"
@@ -96,6 +92,7 @@
 #include "COM_HueSaturationValueNode.h"
 #include "COM_IDMaskNode.h"
 #include "COM_ImageNode.h"
+#include "COM_InpaintNode.h"
 #include "COM_InvertNode.h"
 #include "COM_MaskNode.h"
 #include "COM_MathNode.h"
@@ -105,6 +102,7 @@
 #include "COM_NodeOperation.h"
 #include "COM_NodeOperationBuilder.h"
 #include "COM_OutputFileNode.h"
+#include "COM_PixelateNode.h"
 #include "COM_RenderLayersNode.h"
 #include "COM_ScaleNode.h"
 #include "COM_ScaleOperation.h"
@@ -113,6 +111,7 @@
 #include "COM_SetValueOperation.h"
 #include "COM_SocketProxyNode.h"
 #include "COM_SplitViewerNode.h"
+#include "COM_SunBeamsNode.h"
 #include "COM_SwitchNode.h"
 #include "COM_SwitchViewNode.h"
 #include "COM_TextureNode.h"
@@ -122,11 +121,10 @@
 #include "COM_TranslateNode.h"
 #include "COM_TranslateOperation.h"
 #include "COM_ValueNode.h"
+#include "COM_VectorBlurNode.h"
 #include "COM_ViewLevelsNode.h"
 #include "COM_ViewerNode.h"
 #include "COM_ZCombineNode.h"
-
-//#include "COM_VectorBlurNode.h"
 
 Node *Converter::convert(bNode *b_node)
 {
@@ -325,6 +323,18 @@ Node *Converter::convert(bNode *b_node)
     case CMP_NODE_DEFOCUS:
       node = new DefocusNode(b_node);
       break;
+    case CMP_NODE_INPAINT:
+      node = new InpaintNode(b_node);
+      break;
+    case CMP_NODE_SUNBEAMS:
+      node = new SunBeamsNode(b_node);
+      break;
+    case CMP_NODE_PIXELATE:
+      node = new PixelateNode(b_node);
+      break;
+    case CMP_NODE_VECBLUR:
+      node = new VectorBlurNode(b_node);
+      break;
       /* */
 
       /* handled by the NodeGraph */
@@ -334,15 +344,12 @@ Node *Converter::convert(bNode *b_node)
       break;
       /* */
 
-      /*
-
-    case CMP_NODE_ROTATE:
-      node = new RotateNode(b_node);
-      break;
-    case CMP_NODE_FLIP:
-      node = new FlipNode(b_node);
-      break;
-
+      // case CMP_NODE_ROTATE:
+      //  node = new RotateNode(b_node);
+      //  break;
+      // case CMP_NODE_FLIP:
+      //  node = new FlipNode(b_node);
+      //  break;
 
       // case CMP_NODE_NORMAL:
       //  node = new NormalNode(b_node);
@@ -384,9 +391,6 @@ Node *Converter::convert(bNode *b_node)
       // case CMP_NODE_CHANNEL_MATTE:
       //  node = new ChannelMatteNode(b_node);
       //  break;
-      // case CMP_NODE_INPAINT:
-      //  node = new InpaintNode(b_node);
-      //  break;
       // case CMP_NODE_LENSDIST:
       //  node = new LensDistortionNode(b_node);
       //  break;
@@ -406,9 +410,6 @@ Node *Converter::convert(bNode *b_node)
       //  node = new Stabilize2dNode(b_node);
       //  break;
 
-      // case CMP_NODE_VECBLUR:
-      //  node = new VectorBlurNode(b_node);
-      //  break;
       // case CMP_NODE_MOVIEDISTORTION:
       //  node = new MovieDistortionNode(b_node);
       //  break;
@@ -424,19 +425,14 @@ Node *Converter::convert(bNode *b_node)
       // case CMP_NODE_KEYING:
       //  node = new KeyingNode(b_node);
       //  break;
-      ///* not implemented yet */
-      // case CMP_NODE_PIXELATE:
-      //  node = new PixelateNode(b_node);
-      //  break;
+
       // case CMP_NODE_PLANETRACKDEFORM:
       //  node = new PlaneTrackDeformNode(b_node);
       //  break;
       // case CMP_NODE_CORNERPIN:
       //  node = new CornerPinNode(b_node);
       //  break;
-      // case CMP_NODE_SUNBEAMS:
-      //  node = new SunBeamsNode(b_node);
-      //  break;
+
       // case CMP_NODE_CRYPTOMATTE:
       //  node = new CryptomatteNode(b_node);
       //  break;

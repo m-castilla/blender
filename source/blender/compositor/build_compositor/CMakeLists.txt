@@ -153,8 +153,6 @@ set(SRC
   ${CMP_BASE}/computing/COM_kernel_cpu_nocompat.h
   ${CMP_BASE}/computing/COM_kernel_opencl.h
   ${CMP_BASE}/computing/kernel_util/COM_kernel_algo.h
-  # ${CMP_BASE}/computing/kernel_util/COM_kernel_buffer.cpp
-  # ${CMP_BASE}/computing/kernel_util/COM_kernel_buffer.h
   ${CMP_BASE}/computing/kernel_util/COM_kernel_defines.h
   ${CMP_BASE}/computing/kernel_util/COM_kernel_color.h
   ${CMP_BASE}/computing/kernel_util/COM_kernel_geom.h
@@ -307,14 +305,14 @@ set(SRC
   ${CMP_NODES}/filter/COM_FilterNode.h
   ${CMP_NODES}/filter/COM_GlareNode.cpp
   ${CMP_NODES}/filter/COM_GlareNode.h
-  # ${CMP_NODES}/filter/COM_InpaintNode.cpp
-  # ${CMP_NODES}/filter/COM_InpaintNode.h
-  # ${CMP_NODES}/filter/COM_PixelateNode.cpp
-  # ${CMP_NODES}/filter/COM_PixelateNode.h
-  # ${CMP_NODES}/filter/COM_SunBeamsNode.cpp
-  # ${CMP_NODES}/filter/COM_SunBeamsNode.h
-  # ${CMP_NODES}/filter/COM_VectorBlurNode.cpp
-  # ${CMP_NODES}/filter/COM_VectorBlurNode.h
+  ${CMP_NODES}/filter/COM_InpaintNode.cpp
+  ${CMP_NODES}/filter/COM_InpaintNode.h
+  ${CMP_NODES}/filter/COM_PixelateNode.cpp
+  ${CMP_NODES}/filter/COM_PixelateNode.h
+  ${CMP_NODES}/filter/COM_SunBeamsNode.cpp
+  ${CMP_NODES}/filter/COM_SunBeamsNode.h
+  ${CMP_NODES}/filter/COM_VectorBlurNode.cpp
+  ${CMP_NODES}/filter/COM_VectorBlurNode.h
 
   # layout nodes
   ${CMP_NODES}/layout/COM_SwitchNode.cpp
@@ -467,18 +465,18 @@ set(SRC
   ${CMP_OPS}/filter/COM_GlareStreaksOperation.h
   ${CMP_OPS}/filter/COM_GlareThresholdOperation.cpp
   ${CMP_OPS}/filter/COM_GlareThresholdOperation.h
-  # ${CMP_OPS}/filter/COM_InpaintOperation.cpp
-  # ${CMP_OPS}/filter/COM_InpaintOperation.h
-  # ${CMP_OPS}/filter/COM_KeyingBlurOperation.cpp
-  # ${CMP_OPS}/filter/COM_KeyingBlurOperation.h
-  # ${CMP_OPS}/filter/COM_PixelateOperation.cpp
-  # ${CMP_OPS}/filter/COM_PixelateOperation.h
-  # ${CMP_OPS}/filter/COM_SunBeamsOperation.cpp
-  # ${CMP_OPS}/filter/COM_SunBeamsOperation.h
+  ${CMP_OPS}/filter/COM_InpaintOperation.cpp
+  ${CMP_OPS}/filter/COM_InpaintOperation.h
+  ${CMP_OPS}/filter/COM_KeyingBlurOperation.cpp
+  ${CMP_OPS}/filter/COM_KeyingBlurOperation.h
+  ${CMP_OPS}/filter/COM_PixelateOperation.cpp
+  ${CMP_OPS}/filter/COM_PixelateOperation.h
+  ${CMP_OPS}/filter/COM_SunBeamsOperation.cpp
+  ${CMP_OPS}/filter/COM_SunBeamsOperation.h
   ${CMP_OPS}/filter/COM_VariableSizeBokehBlurOperation.cpp
   ${CMP_OPS}/filter/COM_VariableSizeBokehBlurOperation.h
-  # ${CMP_OPS}/filter/COM_VectorBlurOperation.cpp
-  # ${CMP_OPS}/filter/COM_VectorBlurOperation.h
+  ${CMP_OPS}/filter/COM_VectorBlurOperation.cpp
+  ${CMP_OPS}/filter/COM_VectorBlurOperation.h
 
   # distort operations
   ${CMP_OPS}/distort/COM_ScaleOperation.cpp

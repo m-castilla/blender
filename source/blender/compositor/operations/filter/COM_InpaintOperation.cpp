@@ -19,42 +19,14 @@
 #include "MEM_guardedalloc.h"
 
 #include "COM_InpaintOperation.h"
-#include "COM_OpenCLDevice.h"
+#include "COM_PixelsUtil.h"
+#include "COM_kernel_cpu.h"
 
-#include "BLI_math.h"
+#define ASSERT_XY_RANGE(x, y, width, height) \
+  BLI_assert(x >= 0 && x < width && y >= 0 && y < height)
 
-#define ASSERT_XY_RANGE(x, y) \
-  BLI_assert(x >= 0 && x < this->getWidth() && y >= 0 && y < this->getHeight())
-
-// Inpaint (simple convolve using average of known pixels)
-InpaintSimpleOperation::InpaintSimpleOperation() : NodeOperation()
+static __forceinline void clamp_xy(int &x, int &y, int width, int height)
 {
-  this->addInputSocket(COM_DT_COLOR);
-  this->addOutputSocket(COM_DT_COLOR);
-  this->setComplex(true);
-  this->m_inputImageProgram = NULL;
-  this->m_pixelorder = NULL;
-  this->m_manhattan_distance = NULL;
-  this->m_cached_buffer = NULL;
-  this->m_cached_buffer_ready = false;
-}
-void InpaintSimpleOperation::initExecution()
-{
-  this->m_inputImageProgram = this->getInputSocketReader(0);
-
-  this->m_pixelorder = NULL;
-  this->m_manhattan_distance = NULL;
-  this->m_cached_buffer = NULL;
-  this->m_cached_buffer_ready = false;
-
-  this->initMutex();
-}
-
-void InpaintSimpleOperation::clamp_xy(int &x, int &y)
-{
-  int width = this->getWidth();
-  int height = this->getHeight();
-
   if (x < 0) {
     x = 0;
   }
@@ -70,215 +42,160 @@ void InpaintSimpleOperation::clamp_xy(int &x, int &y)
   }
 }
 
-float *InpaintSimpleOperation::get_pixel(int x, int y)
+// Inpaint (simple convolve using average of known pixels)
+InpaintSimpleOperation::InpaintSimpleOperation() : NodeOperation()
 {
-  int width = this->getWidth();
-
-  ASSERT_XY_RANGE(x, y);
-
-  return &this->m_cached_buffer[y * width * COM_NUM_CHANNELS_COLOR + x * COM_NUM_CHANNELS_COLOR];
+  this->addInputSocket(SocketType::COLOR);
+  this->addOutputSocket(SocketType::COLOR);
+  m_iterations = 0;
+}
+void InpaintSimpleOperation::hashParams()
+{
+  NodeOperation::hashParams();
+  hashParam(m_iterations);
 }
 
-int InpaintSimpleOperation::mdist(int x, int y)
+void InpaintSimpleOperation::execPixels(ExecutionManager &man)
 {
-  int width = this->getWidth();
+  auto color = getInputOperation(0)->getPixels(this, man);
+  auto cpu_write = [&](PixelsRect &dst, const WriteRectContext &ctx) {
+    int width = this->getWidth();
+    int height = this->getHeight();
 
-  ASSERT_XY_RANGE(x, y);
+    short *manhattan_distance = (short *)MEM_mallocN(sizeof(short) * width * height, __func__);
+    int *offsets = (int *)MEM_callocN(sizeof(int) * ((size_t)width + height + 1),
+                                      "InpaintSimpleOperation offsets");
 
-  return this->m_manhattan_distance[y * width + x];
-}
+    // Copy color to dst, there will be several passes over dst and we must start with color pixels
+    PixelsUtil::copyEqualRects(dst, *color);
 
-bool InpaintSimpleOperation::next_pixel(int &x, int &y, int &curr, int iters)
-{
-  int width = this->getWidth();
+    CCL::float4 color_pix;
+    WRITE_DECL(dst);
 
-  if (curr >= this->m_area_size) {
-    return false;
-  }
-
-  int r = this->m_pixelorder[curr++];
-
-  x = r % width;
-  y = r / width;
-
-  if (this->mdist(x, y) > iters) {
-    return false;
-  }
-
-  return true;
-}
-
-void InpaintSimpleOperation::calc_manhattan_distance()
-{
-  int width = this->getWidth();
-  int height = this->getHeight();
-  short *m = this->m_manhattan_distance = (short *)MEM_mallocN(sizeof(short) * width * height,
-                                                               __func__);
-  int *offsets;
-
-  offsets = (int *)MEM_callocN(sizeof(int) * (width + height + 1),
-                               "InpaintSimpleOperation offsets");
-
-  for (int j = 0; j < height; j++) {
-    for (int i = 0; i < width; i++) {
-      int r = 0;
-      /* no need to clamp here */
-      if (this->get_pixel(i, j)[3] < 1.0f) {
-        r = width + height;
-        if (i > 0) {
-          r = min_ii(r, m[j * width + i - 1] + 1);
-        }
-        if (j > 0) {
-          r = min_ii(r, m[(j - 1) * width + i] + 1);
-        }
-      }
-      m[j * width + i] = r;
-    }
-  }
-
-  for (int j = height - 1; j >= 0; j--) {
-    for (int i = width - 1; i >= 0; i--) {
-      int r = m[j * width + i];
-
-      if (i + 1 < width) {
-        r = min_ii(r, m[j * width + i + 1] + 1);
-      }
-      if (j + 1 < height) {
-        r = min_ii(r, m[(j + 1) * width + i] + 1);
-      }
-
-      m[j * width + i] = r;
-
-      offsets[r]++;
-    }
-  }
-
-  offsets[0] = 0;
-
-  for (int i = 1; i < width + height + 1; i++) {
-    offsets[i] += offsets[i - 1];
-  }
-
-  this->m_area_size = offsets[width + height];
-  this->m_pixelorder = (int *)MEM_mallocN(sizeof(int) * this->m_area_size, __func__);
-
-  for (int i = 0; i < width * height; i++) {
-    if (m[i] > 0) {
-      this->m_pixelorder[offsets[m[i] - 1]++] = i;
-    }
-  }
-
-  MEM_freeN(offsets);
-}
-
-void InpaintSimpleOperation::pix_step(int x, int y)
-{
-  const int d = this->mdist(x, y);
-  float pix[3] = {0.0f, 0.0f, 0.0f};
-  float pix_divider = 0.0f;
-
-  for (int dx = -1; dx <= 1; dx++) {
-    for (int dy = -1; dy <= 1; dy++) {
-      /* changing to both != 0 gives dithering artifacts */
-      if (dx != 0 || dy != 0) {
-        int x_ofs = x + dx;
-        int y_ofs = y + dy;
-
-        this->clamp_xy(x_ofs, y_ofs);
-
-        if (this->mdist(x_ofs, y_ofs) < d) {
-
-          float weight;
-
-          if (dx == 0 || dy == 0) {
-            weight = 1.0f;
+    SET_COORDS(dst, 0, 0);
+    while (dst_coords.y < height) {
+      int y_offset = dst_coords.y * width;
+      int y_offset_prev = (dst_coords.y - 1) * width;
+      while (dst_coords.x < width) {
+        int r = 0;
+        float alpha = dst_img.buffer[dst_offset + 3];
+        if (alpha < 1.0f) {
+          r = width + height;
+          if (dst_coords.x > 0) {
+            r = CCL::min(r, manhattan_distance[y_offset + dst_coords.x - 1] + 1);
           }
-          else {
-            weight = M_SQRT1_2; /* 1.0f / sqrt(2) */
+          if (dst_coords.y > 0) {
+            r = CCL::min(r, manhattan_distance[y_offset_prev + dst_coords.x] + 1);
           }
-
-          madd_v3_v3fl(pix, this->get_pixel(x_ofs, y_ofs), weight);
-          pix_divider += weight;
         }
+        manhattan_distance[y_offset + dst_coords.x] = r;
+        INCR1_COORDS_X(dst);
+      }
+      INCR1_COORDS_Y(dst);
+      UPDATE_COORDS_X(dst, 0);
+    }
+
+    for (int j = height - 1; j >= 0; j--) {
+      int y_offset = j * width;
+      int y_offset_prev = (j + 1) * width;
+      for (int i = width - 1; i >= 0; i--) {
+        int r = manhattan_distance[j * width + i];
+
+        if (i + 1 < width) {
+          r = CCL::min(r, manhattan_distance[y_offset + i + 1] + 1);
+        }
+        if (j + 1 < height) {
+          r = CCL::min(r, manhattan_distance[y_offset_prev + i] + 1);
+        }
+
+        manhattan_distance[y_offset + i] = r;
+
+        offsets[r]++;
       }
     }
-  }
 
-  float *output = this->get_pixel(x, y);
-  if (pix_divider != 0.0f) {
-    mul_v3_fl(pix, 1.0f / pix_divider);
-    /* use existing pixels alpha to blend into */
-    interp_v3_v3v3(output, pix, output, output[3]);
-    output[3] = 1.0f;
-  }
-}
+    offsets[0] = 0;
 
-void *InpaintSimpleOperation::initializeTileData(rcti *rect)
-{
-  if (this->m_cached_buffer_ready) {
-    return this->m_cached_buffer;
-  }
-  lockMutex();
-  if (!this->m_cached_buffer_ready) {
-    MemoryBuffer *buf = (MemoryBuffer *)this->m_inputImageProgram->initializeTileData(rect);
-    this->m_cached_buffer = (float *)MEM_dupallocN(buf->getBuffer());
+    for (int i = 1; i < width + height + 1; i++) {
+      offsets[i] += offsets[i - 1];
+    }
 
-    this->calc_manhattan_distance();
+    int area_size = offsets[width + height];
+    int *pixelorder = (int *)MEM_mallocN(sizeof(int) * area_size, __func__);
+
+    for (int i = 0; i < width * height; i++) {
+      if (manhattan_distance[i] > 0) {
+        pixelorder[offsets[manhattan_distance[i] - 1]++] = i;
+      }
+    }
+
+    MEM_freeN(offsets);
+    offsets = nullptr;
+
+    CCL::float4 zero_f4 = CCL::make_float4_1(0.0f);
+    CCL::float4 one_f4 = CCL::make_float4_1(1.0f);
+    CCL::float4 sqrt1_2_f4 = CCL::make_float4_1(M_SQRT1_2_F); /* 1.0f / sqrt(2) */
+    CCL::float4 weight_f4;
 
     int curr = 0;
     int x, y;
+    while (curr < area_size) {
+      int r = pixelorder[curr];
 
-    while (this->next_pixel(x, y, curr, this->m_iterations)) {
-      this->pix_step(x, y);
+      x = r % width;
+      y = r / width;
+
+      ASSERT_XY_RANGE(x, y, width, height);
+      const int distance = manhattan_distance[y * width + x];
+      if (distance > m_iterations) {
+        break;
+      }
+      else {
+        curr++;
+      }
+
+      CCL::float4 pix_accum = zero_f4;
+      float pix_divider = 0.0f;
+      for (int dx = -1; dx <= 1; dx++) {
+        for (int dy = -1; dy <= 1; dy++) {
+          /* changing to both != 0 gives dithering artifacts */
+          if (dx != 0 || dy != 0) {
+            int x_ofs = x + dx;
+            int y_ofs = y + dy;
+
+            clamp_xy(x_ofs, y_ofs, width, height);
+            ASSERT_XY_RANGE(x_ofs, y_ofs, width, height);
+            if (manhattan_distance[y_ofs * width + x_ofs] < distance) {
+              if (dx == 0 || dy == 0) {
+                weight_f4 = one_f4;
+              }
+              else {
+                weight_f4 = sqrt1_2_f4; /* 1.0f / sqrt(2) */
+              }
+
+              SET_COORDS(dst, x_ofs, y_ofs);
+              READ_IMG4(dst, color_pix);
+              pix_accum += color_pix * weight_f4;
+              pix_divider += weight_f4.x;
+            }
+          }
+        }
+      }
+
+      if (pix_divider != 0.0f) {
+        pix_accum *= 1.0f / pix_divider;
+
+        SET_COORDS(dst, x, y);
+        READ_IMG4(dst, color_pix);
+
+        /* use existing pixels alpha to blend into */
+        pix_accum = CCL::interp_f4f4(pix_accum, color_pix, color_pix.w);
+        pix_accum.w = 1.0f;
+        WRITE_IMG4(dst, pix_accum);
+      }
     }
-    this->m_cached_buffer_ready = true;
-  }
 
-  unlockMutex();
-  return this->m_cached_buffer;
-}
-
-void InpaintSimpleOperation::executePixel(float output[4], int x, int y, void * /*data*/)
-{
-  this->clamp_xy(x, y);
-  copy_v4_v4(output, this->get_pixel(x, y));
-}
-
-void InpaintSimpleOperation::deinitExecution()
-{
-  this->m_inputImageProgram = NULL;
-  this->deinitMutex();
-  if (this->m_cached_buffer) {
-    MEM_freeN(this->m_cached_buffer);
-    this->m_cached_buffer = NULL;
-  }
-
-  if (this->m_pixelorder) {
-    MEM_freeN(this->m_pixelorder);
-    this->m_pixelorder = NULL;
-  }
-
-  if (this->m_manhattan_distance) {
-    MEM_freeN(this->m_manhattan_distance);
-    this->m_manhattan_distance = NULL;
-  }
-  this->m_cached_buffer_ready = false;
-}
-
-bool InpaintSimpleOperation::determineDependingAreaOfInterest(rcti * /*input*/,
-                                                              ReadBufferOperation *readOperation,
-                                                              rcti *output)
-{
-  if (this->m_cached_buffer_ready) {
-    return false;
-  }
-
-  rcti newInput;
-
-  newInput.xmax = getWidth();
-  newInput.xmin = 0;
-  newInput.ymax = getHeight();
-  newInput.ymin = 0;
-
-  return NodeOperation::determineDependingAreaOfInterest(&newInput, readOperation, output);
+    MEM_freeN(manhattan_distance);
+  };
+  cpuWriteSeek(man, cpu_write);
 }
