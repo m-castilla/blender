@@ -221,30 +221,9 @@ FastGaussianBlurValueOperation::FastGaussianBlurValueOperation() : NodeOperation
 
 void FastGaussianBlurValueOperation::hashParams()
 {
-<<<<<<< HEAD:source/blender/compositor/operations/COM_FastGaussianBlurOperation.cpp
-  MemoryBuffer *newData = (MemoryBuffer *)data;
-  newData->read(output, x, y);
-}
-
-bool FastGaussianBlurValueOperation::determineDependingAreaOfInterest(
-    rcti * /*input*/, ReadBufferOperation *readOperation, rcti *output)
-{
-  rcti newInput;
-
-  if (this->m_iirgaus) {
-    return false;
-  }
-
-  newInput.xmin = 0;
-  newInput.ymin = 0;
-  newInput.xmax = this->getWidth();
-  newInput.ymax = this->getHeight();
-
-  return NodeOperation::determineDependingAreaOfInterest(&newInput, readOperation, output);
-  == == == = NodeOperation::hashParams();
+  NodeOperation::hashParams();
   hashParam(m_sigma);
   hashParam(m_overlay);
->>>>>>> 350d60887b8... - Added filter nodes: Bilateral Blur, Blur, Bokeh Blur, Defocus, Denoise, Despeckle, Dilate/Erode, Directional Blur and Filter:source/blender/compositor/operations/filter/COM_FastGaussianBlurOperation.cpp
 }
 
 void FastGaussianBlurValueOperation::execPixels(ExecutionManager &man)

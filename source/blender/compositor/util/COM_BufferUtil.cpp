@@ -84,7 +84,7 @@ void deviceFree(TmpBuffer *dst)
 float *hostAlloc(int width, int height, int elem_chs)
 {
   size_t bytes = (size_t)height * width * elem_chs * sizeof(float);
-  return (float *)MEM_mallocN(bytes, "COM_BufferUtil::hostAlloc");
+  return (float *)MEM_mallocN_aligned(bytes, 16, "COM_BufferUtil::hostAlloc");
 }
 
 void hostAlloc(TmpBuffer *dst, int width, int height, int elem_chs)
