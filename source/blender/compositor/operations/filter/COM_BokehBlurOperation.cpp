@@ -53,7 +53,6 @@ CCL_NAMESPACE_BEGIN
 ccl_kernel bokehBlurOp(CCL_WRITE(dst),
                        CCL_READ(color),
                        CCL_READ(bokeh),
-                       CCL_READ(size),
                        CCL_READ(bounding),
                        CCL_SAMPLER(sampler),
                        const int pixel_size,
@@ -66,7 +65,6 @@ ccl_kernel bokehBlurOp(CCL_WRITE(dst),
 {
   READ_DECL(color);
   READ_DECL(bokeh);
-  READ_DECL(size);
   READ_DECL(bounding);
   WRITE_DECL(dst);
   float4 color_accum, multiplier_accum;
@@ -131,7 +129,6 @@ void BokehBlurOperation::execPixels(ExecutionManager &man)
 {
   auto color = getInputOperation(0)->getPixels(this, man);
   auto bokeh = getInputOperation(1)->getPixels(this, man);
-  auto size = getInputOperation(2)->getPixels(this, man);
   auto bounding = getInputOperation(3)->getPixels(this, man);
   float bokehMidX, bokehMidY;
   int pixel_size;
@@ -162,7 +159,6 @@ void BokehBlurOperation::execPixels(ExecutionManager &man)
       _1,
       color,
       bokeh,
-      size,
       bounding,
       sampler,
       pixel_size,
@@ -175,7 +171,6 @@ void BokehBlurOperation::execPixels(ExecutionManager &man)
   computeWriteSeek(man, cpu_write, "bokehBlurOp", [&](ComputeKernel *kernel) {
     kernel->addReadImgArgs(*color);
     kernel->addReadImgArgs(*bokeh);
-    kernel->addReadImgArgs(*size);
     kernel->addReadImgArgs(*bounding);
     kernel->addSamplerArg(sampler);
     kernel->addIntArg(pixel_size);
