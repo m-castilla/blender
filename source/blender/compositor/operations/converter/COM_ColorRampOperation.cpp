@@ -62,10 +62,10 @@ ccl_kernel colorRampOp(CCL_WRITE(dst),
 
   COPY_COORDS(factor, dst_coords);
 
-  READ_IMG(factor, factor_pix);
+  READ_IMG1(factor, factor_pix);
   float4 result = colorband_evaluate(
       factor_pix.x, n_bands, interp_type, hue_interp_type, color_mode, bands_colors, bands_pos);
-  WRITE_IMG(dst, result);
+  WRITE_IMG4(dst, result);
 
   CPU_LOOP_END
 }

@@ -149,13 +149,13 @@ ccl_kernel bilateralBlurOp(
     for (int xi = minx; xi < maxx; xi += quality_step) {
       // read determinator
       UPDATE_COORDS_X(color, xi);
-      READ_IMG(color, color_pix);
+      READ_IMG4(color, color_pix);
       blur_pix += color_pix;
     }
   }
 
   blur_pix *= 1.0f / blurDivider;
-  WRITE_IMG(dst, blur_pix);
+  WRITE_IMG4(dst, blur_pix);
 
   CPU_LOOP_END
 }

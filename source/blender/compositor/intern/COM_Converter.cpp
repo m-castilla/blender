@@ -461,10 +461,6 @@ NodeOperation *Converter::convertDataType(NodeOperationOutput *from, NodeOperati
     return new ConvertVectorToValueOperation();
   }
   else if (fromDatatype == DataType::VECTOR && toDatatype == DataType::COLOR) {
-<<<<<<< HEAD
->>>>>>> f7ffde26628... First commmit
-=======
->>>>>>> f7ffde26628... First commmit
     return new ConvertVectorToColorOperation();
   }
 

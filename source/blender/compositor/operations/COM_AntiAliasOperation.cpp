@@ -17,18 +17,8 @@
  */
 
 #include "COM_AntiAliasOperation.h"
-<<<<<<< HEAD
-#include "BLI_math.h"
-#include "BLI_utildefines.h"
-
-#include "MEM_guardedalloc.h"
-
-#include "RE_render_ext.h"
-=======
 #include "COM_ComputeKernel.h"
-
 #include "COM_kernel_cpu.h"
->>>>>>> 350d60887b8... - Added filter nodes: Bilateral Blur, Blur, Bokeh Blur, Defocus, Denoise, Despeckle, Dilate/Erode, Directional Blur and Filter
 
 /* An implementation of the Scale3X edge-extrapolation algorithm.
  *
@@ -111,107 +101,15 @@ static int extrapolate9(float *E0,
     }
     return 1;
   }
-<<<<<<< HEAD
-
-  return 0;
-
-=======
   else {
     return 0;
   }
->>>>>>> 350d60887b8... - Added filter nodes: Bilateral Blur, Blur, Bokeh Blur, Defocus, Denoise, Despeckle, Dilate/Erode, Directional Blur and Filter
 #undef PEQ
 #undef PCPY
 }
 
 AntiAliasOperation::AntiAliasOperation() : NodeOperation()
 {
-<<<<<<< HEAD
-  this->addInputSocket(COM_DT_VALUE);
-  this->addOutputSocket(COM_DT_VALUE);
-  this->m_valueReader = NULL;
-  this->setComplex(true);
-}
-
-void AntiAliasOperation::initExecution()
-{
-  this->m_valueReader = this->getInputSocketReader(0);
-}
-
-void AntiAliasOperation::executePixel(float output[4], int x, int y, void *data)
-{
-  MemoryBuffer *input_buffer = (MemoryBuffer *)data;
-  const int buffer_width = input_buffer->getWidth(), buffer_height = input_buffer->getHeight();
-  if (y < 0 || y >= buffer_height || x < 0 || x >= buffer_width) {
-    output[0] = 0.0f;
-  }
-  else {
-    const float *buffer = input_buffer->getBuffer();
-    const float *row_curr = &buffer[y * buffer_width];
-    if (x == 0 || x == buffer_width - 1 || y == 0 || y == buffer_height - 1) {
-      output[0] = row_curr[x];
-      return;
-    }
-    const float *row_prev = &buffer[(y - 1) * buffer_width],
-                *row_next = &buffer[(y + 1) * buffer_width];
-    float ninepix[9];
-    if (extrapolate9(&ninepix[0],
-                     &ninepix[1],
-                     &ninepix[2],
-                     &ninepix[3],
-                     &ninepix[4],
-                     &ninepix[5],
-                     &ninepix[6],
-                     &ninepix[7],
-                     &ninepix[8],
-                     &row_prev[x - 1],
-                     &row_prev[x],
-                     &row_prev[x + 1],
-                     &row_curr[x - 1],
-                     &row_curr[x],
-                     &row_curr[x + 1],
-                     &row_next[x - 1],
-                     &row_next[x],
-                     &row_next[x + 1])) {
-      /* Some rounding magic to so make weighting correct with the
-       * original coefficients.
-       */
-      unsigned char result = ((3 * ninepix[0] + 5 * ninepix[1] + 3 * ninepix[2] + 5 * ninepix[3] +
-                               6 * ninepix[4] + 5 * ninepix[5] + 3 * ninepix[6] + 5 * ninepix[7] +
-                               3 * ninepix[8]) *
-                                  255.0f +
-                              19.0f) /
-                             38.0f;
-      output[0] = result / 255.0f;
-    }
-    else {
-      output[0] = row_curr[x];
-    }
-  }
-}
-
-void AntiAliasOperation::deinitExecution()
-{
-  this->m_valueReader = NULL;
-}
-
-bool AntiAliasOperation::determineDependingAreaOfInterest(rcti *input,
-                                                          ReadBufferOperation *readOperation,
-                                                          rcti *output)
-{
-  rcti imageInput;
-  NodeOperation *operation = getInputOperation(0);
-  imageInput.xmax = input->xmax + 1;
-  imageInput.xmin = input->xmin - 1;
-  imageInput.ymax = input->ymax + 1;
-  imageInput.ymin = input->ymin - 1;
-  return operation->determineDependingAreaOfInterest(&imageInput, readOperation, output);
-}
-
-void *AntiAliasOperation::initializeTileData(rcti *rect)
-{
-  return getInputOperation(0)->initializeTileData(rect);
-=======
   this->addInputSocket(SocketType::VALUE);
   this->addOutputSocket(SocketType::VALUE);
 }
@@ -280,5 +178,4 @@ void AntiAliasOperation::execPixels(ExecutionManager &man)
     CPU_LOOP_END;
   };
   cpuWriteSeek(man, cpu_write);
->>>>>>> 350d60887b8... - Added filter nodes: Bilateral Blur, Blur, Bokeh Blur, Defocus, Denoise, Despeckle, Dilate/Erode, Directional Blur and Filter
 }

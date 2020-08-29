@@ -41,15 +41,15 @@ ccl_kernel gammaOp(CCL_WRITE(dst), CCL_READ(color), CCL_READ(gamma))
   COPY_COORDS(gamma, dst_coords);
   COPY_COORDS(color, dst_coords);
 
-  READ_IMG(gamma, gamma_pix);
-  READ_IMG(color, color_pix);
+  READ_IMG1(gamma, gamma_pix);
+  READ_IMG4(color, color_pix);
 
   /* check for negative to avoid nan's */
   color_pix.x = color_pix.x > 0.0f ? powf(color_pix.x, gamma_pix.x) : color_pix.x;
   color_pix.y = color_pix.y > 0.0f ? powf(color_pix.y, gamma_pix.x) : color_pix.y;
   color_pix.z = color_pix.z > 0.0f ? powf(color_pix.z, gamma_pix.x) : color_pix.z;
 
-  WRITE_IMG(dst, color_pix);
+  WRITE_IMG4(dst, color_pix);
 
   CPU_LOOP_END
 }

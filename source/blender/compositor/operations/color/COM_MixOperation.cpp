@@ -113,7 +113,7 @@ ccl_kernel mixBaseOp(
   color2_pix = (1.0f - value_pix.x) * color1_pix + value_pix.x * color2_pix;
   color2_pix.w = color1_pix.w;
 
-  WRITE_IMG(dst, color2_pix);
+  WRITE_IMG4(dst, color2_pix);
 
   CPU_LOOP_END
 }
@@ -169,7 +169,7 @@ ccl_kernel mixAddOp(CCL_WRITE(dst),
     color2_pix = clamp_to_normal_f4(color2_pix);
   }
 
-  WRITE_IMG(dst, color2_pix);
+  WRITE_IMG4(dst, color2_pix);
 
   CPU_LOOP_END
 }
@@ -227,7 +227,7 @@ ccl_kernel mixBlendOp(CCL_WRITE(dst),
     color2_pix = clamp_to_normal_f4(color2_pix);
   }
 
-  WRITE_IMG(dst, color2_pix);
+  WRITE_IMG4(dst, color2_pix);
 
   CPU_LOOP_END
 }
@@ -284,7 +284,7 @@ ccl_kernel mixColorBurnOp(
   color2_pix.w = color1_pix.w;
   color2_pix = clamp_to_normal_f4(color2_pix);
 
-  WRITE_IMG(dst, color2_pix);
+  WRITE_IMG4(dst, color2_pix);
 
   CPU_LOOP_END
 }
@@ -351,7 +351,7 @@ ccl_kernel mixColorOp(CCL_WRITE(dst),
     color2_pix = clamp_to_normal_f4(color2_pix);
   }
 
-  WRITE_IMG(dst, color2_pix);
+  WRITE_IMG4(dst, color2_pix);
 
   CPU_LOOP_END
 }
@@ -409,7 +409,7 @@ ccl_kernel mixDarkenOp(CCL_WRITE(dst),
     color2_pix = clamp_to_normal_f4(color2_pix);
   }
 
-  WRITE_IMG(dst, color2_pix);
+  WRITE_IMG4(dst, color2_pix);
 
   CPU_LOOP_END
 }
@@ -466,7 +466,7 @@ ccl_kernel mixDifferenceOp(CCL_WRITE(dst),
     color2_pix = clamp_to_normal_f4(color2_pix);
   }
 
-  WRITE_IMG(dst, color2_pix);
+  WRITE_IMG4(dst, color2_pix);
 
   CPU_LOOP_END
 }
@@ -526,7 +526,7 @@ ccl_kernel mixDivideOp(CCL_WRITE(dst),
     color2_pix = clamp_to_normal_f4(color2_pix);
   }
 
-  WRITE_IMG(dst, color2_pix);
+  WRITE_IMG4(dst, color2_pix);
 
   CPU_LOOP_END
 }
@@ -630,7 +630,7 @@ ccl_kernel mixDodgeOp(CCL_WRITE(dst),
     color2_pix = clamp_to_normal_f4(color2_pix);
   }
 
-  WRITE_IMG(dst, color2_pix);
+  WRITE_IMG4(dst, color2_pix);
 
   CPU_LOOP_END
 }
@@ -683,7 +683,7 @@ ccl_kernel mixGlareOp(
     color2_pix = clamp_to_normal_f4(color2_pix);
   }
 
-  WRITE_IMG(dst, color2_pix);
+  WRITE_IMG4(dst, color2_pix);
 
   CPU_LOOP_END
 }
@@ -749,7 +749,7 @@ ccl_kernel mixHueOp(CCL_WRITE(dst),
     color2_pix = clamp_to_normal_f4(color2_pix);
   }
 
-  WRITE_IMG(dst, color2_pix);
+  WRITE_IMG4(dst, color2_pix);
 
   CPU_LOOP_END
 }
@@ -808,7 +808,7 @@ ccl_kernel mixLightenOp(CCL_WRITE(dst),
     color2_pix = clamp_to_normal_f4(color2_pix);
   }
 
-  WRITE_IMG(dst, color2_pix);
+  WRITE_IMG4(dst, color2_pix);
 
   CPU_LOOP_END
 }
@@ -883,7 +883,7 @@ ccl_kernel mixLinearLightOp(CCL_WRITE(dst),
     color2_pix = clamp_to_normal_f4(color2_pix);
   }
 
-  WRITE_IMG(dst, color2_pix);
+  WRITE_IMG4(dst, color2_pix);
 
   CPU_LOOP_END
 }
@@ -940,7 +940,7 @@ ccl_kernel mixMultiplyOp(CCL_WRITE(dst),
     color2_pix = clamp_to_normal_f4(color2_pix);
   }
 
-  WRITE_IMG(dst, color2_pix);
+  WRITE_IMG4(dst, color2_pix);
 
   CPU_LOOP_END
 }
@@ -1017,7 +1017,7 @@ ccl_kernel mixOverlayOp(CCL_WRITE(dst),
     color2_pix = clamp_to_normal_f4(color2_pix);
   }
 
-  WRITE_IMG(dst, color2_pix);
+  WRITE_IMG4(dst, color2_pix);
 
   CPU_LOOP_END
 }
@@ -1082,7 +1082,7 @@ ccl_kernel mixSaturationOp(CCL_WRITE(dst),
     color2_pix = clamp_to_normal_f4(color2_pix);
   }
 
-  WRITE_IMG(dst, color2_pix);
+  WRITE_IMG4(dst, color2_pix);
 
   CPU_LOOP_END
 }
@@ -1141,7 +1141,7 @@ ccl_kernel mixScreenOp(CCL_WRITE(dst),
     color2_pix = clamp_to_normal_f4(color2_pix);
   }
 
-  WRITE_IMG(dst, color2_pix);
+  WRITE_IMG4(dst, color2_pix);
 
   CPU_LOOP_END
 }
@@ -1203,7 +1203,7 @@ ccl_kernel mixSoftLightOp(CCL_WRITE(dst),
     color2_pix = clamp_to_normal_f4(color2_pix);
   }
 
-  WRITE_IMG(dst, color2_pix);
+  WRITE_IMG4(dst, color2_pix);
 
   CPU_LOOP_END
 }
@@ -1261,7 +1261,7 @@ ccl_kernel mixSubstractOp(CCL_WRITE(dst),
     color2_pix = clamp_to_normal_f4(color2_pix);
   }
 
-  WRITE_IMG(dst, color2_pix);
+  WRITE_IMG4(dst, color2_pix);
 
   CPU_LOOP_END
 }
@@ -1321,7 +1321,7 @@ ccl_kernel mixValueOp(CCL_WRITE(dst),
     color2_pix = clamp_to_normal_f4(color2_pix);
   }
 
-  WRITE_IMG(dst, color2_pix);
+  WRITE_IMG4(dst, color2_pix);
 
   CPU_LOOP_END
 }

@@ -415,9 +415,6 @@ static void convolve(PixelsRect &dst, PixelsRect &src, PixelsRect &ckrn, Executi
         FHT2D(data2, log2_h, log2_w, 0, 1);
         // data again transposed, so in order again
 
-        // TODO: delete
-        BLI_assert(ch != 1 || data2[32 * 128] == 5.82076609e-11);
-
         // overlap-add result
         for (y = 0; y < (int)h2; y++) {
           const int yy = ybl * ybsz + y - hh;
