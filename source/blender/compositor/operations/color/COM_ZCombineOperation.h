@@ -16,13 +16,8 @@
  * Copyright 2011, Blender Foundation.
  */
 
-<<<<<<< HEAD
 #pragma once
 
-=======
-#ifndef __COM_ZCOMBINEOPERATION_H__
-#define __COM_ZCOMBINEOPERATION_H__
->>>>>>> f7ffde26628... First commmit
 #include "COM_MixOperation.h"
 
 /**
@@ -52,8 +47,3 @@ class ZCombineMaskAlphaOperation : public ZCombineMaskOperation {
  protected:
   virtual void execPixels(ExecutionManager &man) override;
 };
-<<<<<<< HEAD
-=======
-
-#endif
->>>>>>> f7ffde26628... First commmit
