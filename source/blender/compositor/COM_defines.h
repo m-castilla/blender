@@ -159,7 +159,7 @@ enum class DetermineResolutionMode { FromInput, FitOutput };
 
 // This option might not work for all opencl drivers. If you see in console output "comand line
 // argument "-g" or "-s" not supported" disable this option.
-#define ENABLE_OPENCL_DEBUG 1
+#define ENABLE_OPENCL_DEBUG 0
 enum class ComDebugLevel {
   NORMAL,  // without graphviz output
   FULL     // with graphviz output

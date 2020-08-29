@@ -29,10 +29,6 @@ class SunBeamsOperation : public NodeOperation {
   {
     m_data = data;
   }
-  WriteType getWriteType() const override
-  {
-    return WriteType::SINGLE_THREAD;
-  }
 
  protected:
   bool canCompute() const override

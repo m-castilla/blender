@@ -66,7 +66,7 @@ template<int fxu, int fxv, int fyu, int fyv> struct BufferLineAccumulator {
 
   /* utility functions implementing the matrix transform to/from sector space */
 
-  static inline void buffer_to_sector(const float source[2], int x, int y, int &u, int &v)
+  static __forceinline void buffer_to_sector(const float source[2], int x, int y, int &u, int &v)
   {
     int x0 = (int)source[0];
     int y0 = (int)source[1];
@@ -76,7 +76,8 @@ template<int fxu, int fxv, int fyu, int fyv> struct BufferLineAccumulator {
     v = x * fxv + y * fyv;
   }
 
-  static inline void buffer_to_sector(const float source[2], float x, float y, float &u, float &v)
+  static __forceinline void buffer_to_sector(
+      const float source[2], float x, float y, float &u, float &v)
   {
     int x0 = (int)source[0];
     int y0 = (int)source[1];
@@ -86,7 +87,7 @@ template<int fxu, int fxv, int fyu, int fyv> struct BufferLineAccumulator {
     v = x * fxv + y * fyv;
   }
 
-  static inline void sector_to_buffer(const float source[2], int u, int v, int &x, int &y)
+  static __forceinline void sector_to_buffer(const float source[2], int u, int v, int &x, int &y)
   {
     int x0 = (int)source[0];
     int y0 = (int)source[1];
@@ -113,17 +114,17 @@ template<int fxu, int fxv, int fyu, int fyv> struct BufferLineAccumulator {
    * \param num: Total steps in the loop
    * \param v, dv: Vertical offset in sector space, for line offset perpendicular to the loop axis
    */
-  static float *init_buffer_iterator(PixelsImg &input_img,
-                                     const float source[2],
-                                     const float co[2],
-                                     float dist_min,
-                                     float dist_max,
-                                     int &x,
-                                     int &y,
-                                     int &num,
-                                     float &v,
-                                     float &dv,
-                                     float &falloff_factor)
+  static __forceinline float *init_buffer_iterator(PixelsImg &input_img,
+                                                   const float source[2],
+                                                   const float co[2],
+                                                   float dist_min,
+                                                   float dist_max,
+                                                   int &x,
+                                                   int &y,
+                                                   int &num,
+                                                   float &v,
+                                                   float &dv,
+                                                   float &falloff_factor)
   {
     float pu, pv;
     buffer_to_sector(source, co[0], co[1], pu, pv);
@@ -158,18 +159,18 @@ template<int fxu, int fxv, int fyu, int fyv> struct BufferLineAccumulator {
    * The loop runs backwards(!) over the primary sector space axis u, i.e. increasing distance to
    * pt. After each step it decrements v by dv < 1, adding a buffer shift when necessary.
    */
-  static void eval(PixelsImg &input_img,
-                   PixelsRect &dst_rect,
-                   CCL::float4 &output,
-                   const float co[2],
-                   const float source[2],
-                   float dist_min,
-                   float dist_max)
+  static __forceinline void eval(PixelsImg &input_img,
+                                 CCL::float4 &output,
+                                 const float co[2],
+                                 const float source[2],
+                                 float dist_min,
+                                 float dist_max)
   {
     int row_elems = input_img.row_elems;
     int x, y, num;
     float v, dv;
     float falloff_factor;
+    float weight, alpha_weight;
     CCL::float4 zero_f4 = CCL::make_float4_1(0.0f);
     CCL::float4 border;
     CCL::float4 buf_pix;
@@ -194,19 +195,19 @@ template<int fxu, int fxv, int fyu, int fyv> struct BufferLineAccumulator {
     float v_local = v - floorf(v);
 
     for (int i = 0; i < num; i++) {
-      float weight = 1.0f - (float)i * falloff_factor;
+      weight = 1.0f - (float)i * falloff_factor;
       weight *= weight;
 
       /* range check, use last valid color when running beyond the image border */
-      if (x >= dst_rect.xmin && x < dst_rect.xmax && y >= dst_rect.ymin && y < dst_rect.ymax) {
-        float alpha_weight = buffer[3] * weight;
+      if (x >= 0 && x < input_img.row_elems && y >= 0 && y < input_img.col_elems) {
+        alpha_weight = buffer[3] * weight;
         buf_pix = CCL::make_float4_a(buffer);
         output += buf_pix * alpha_weight;
         /* use as border color in case subsequent pixels are out of bounds */
         border = buf_pix;
       }
       else {
-        float alpha_weight = border.w * weight;
+        alpha_weight = border.w * weight;
         buf_pix = border;
         output += buf_pix * alpha_weight;
       }
@@ -252,12 +253,8 @@ template<int fxu, int fxv, int fyu, int fyv> struct BufferLineAccumulator {
  * due to using compile time constants instead of a local matrix variable defining the sector
  * space.
  */
-static CCL::float4 accumulate_line(PixelsImg &input_img,
-                                   PixelsRect &dst,
-                                   const float co[2],
-                                   const float source[2],
-                                   float dist_min,
-                                   float dist_max)
+static __forceinline CCL::float4 accumulate_line(
+    PixelsImg &input_img, const float co[2], const float source[2], float dist_min, float dist_max)
 {
   /* coordinates relative to source */
   float pt_ofs[2] = {co[0] - source[0], co[1] - source[1]};
@@ -282,25 +279,24 @@ static CCL::float4 accumulate_line(PixelsImg &input_img,
     if (pt_ofs[0] > 0.0f) {
       if (pt_ofs[1] > 0.0f) {
         /* 2 */
-        BufferLineAccumulator<0, 1, 1, 0>::eval(
-            input_img, dst, output, co, source, dist_min, dist_max);
+        BufferLineAccumulator<0, 1, 1, 0>::eval(input_img, output, co, source, dist_min, dist_max);
       }
       else {
         /* 7 */
         BufferLineAccumulator<0, 1, -1, 0>::eval(
-            input_img, dst, output, co, source, dist_min, dist_max);
+            input_img, output, co, source, dist_min, dist_max);
       }
     }
     else {
       if (pt_ofs[1] > 0.0f) {
         /* 3 */
         BufferLineAccumulator<0, -1, 1, 0>::eval(
-            input_img, dst, output, co, source, dist_min, dist_max);
+            input_img, output, co, source, dist_min, dist_max);
       }
       else {
         /* 6 */
         BufferLineAccumulator<0, -1, -1, 0>::eval(
-            input_img, dst, output, co, source, dist_min, dist_max);
+            input_img, output, co, source, dist_min, dist_max);
       }
     }
   }
@@ -308,25 +304,24 @@ static CCL::float4 accumulate_line(PixelsImg &input_img,
     if (pt_ofs[0] > 0.0f) {
       if (pt_ofs[1] > 0.0f) {
         /* 1 */
-        BufferLineAccumulator<1, 0, 0, 1>::eval(
-            input_img, dst, output, co, source, dist_min, dist_max);
+        BufferLineAccumulator<1, 0, 0, 1>::eval(input_img, output, co, source, dist_min, dist_max);
       }
       else {
         /* 8 */
         BufferLineAccumulator<1, 0, 0, -1>::eval(
-            input_img, dst, output, co, source, dist_min, dist_max);
+            input_img, output, co, source, dist_min, dist_max);
       }
     }
     else {
       if (pt_ofs[1] > 0.0f) {
         /* 4 */
         BufferLineAccumulator<-1, 0, 0, 1>::eval(
-            input_img, dst, output, co, source, dist_min, dist_max);
+            input_img, output, co, source, dist_min, dist_max);
       }
       else {
         /* 5 */
         BufferLineAccumulator<-1, 0, 0, -1>::eval(
-            input_img, dst, output, co, source, dist_min, dist_max);
+            input_img, output, co, source, dist_min, dist_max);
       }
     }
   }
@@ -345,8 +340,7 @@ void SunBeamsOperation::execPixels(ExecutionManager &man)
 
     const float co[2] = {(float)dst_coords.x, (float)dst_coords.y};
 
-    color_pix = accumulate_line(
-        color_img, dst, co, this->m_source_px, 0.0f, this->m_ray_length_px);
+    color_pix = accumulate_line(color_img, co, this->m_source_px, 0.0f, this->m_ray_length_px);
     WRITE_IMG4(dst, color_pix);
 
     CPU_LOOP_END;

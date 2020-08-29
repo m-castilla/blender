@@ -122,7 +122,7 @@ ccl_kernel bokehImageOp(CCL_WRITE(dst),
                           make_float4(insideBokehMax, insideBokehMed, insideBokehMin, alpha) :
                           make_float4(insideBokehMin, insideBokehMed, insideBokehMax, alpha);
 
-  WRITE_IMG(dst, result_pix);
+  WRITE_IMG4(dst, result_pix);
 
   CPU_LOOP_END
 }

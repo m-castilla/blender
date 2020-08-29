@@ -115,7 +115,7 @@ ccl_kernel zCombineAlphaOp(
   color2_pix = alpha1 * color1_pix + alpha1_inv * color2_pix;
   color2_pix.w = fmaxf(alpha1, alpha2);
 
-  WRITE_IMG(dst, color2_pix);
+  WRITE_IMG4(dst, color2_pix);
 
   CPU_LOOP_END;
 }
@@ -213,7 +213,7 @@ ccl_kernel zCombineMaskAlphaOp(CCL_WRITE(dst), CCL_READ(mask), CCL_READ(color1),
   color2_pix = mfac * color1_pix + fac * color2_pix;
   color2_pix.w = fmaxf(alpha1, alpha2);
 
-  WRITE_IMG(dst, color2_pix);
+  WRITE_IMG4(dst, color2_pix);
 
   CPU_LOOP_END
 }

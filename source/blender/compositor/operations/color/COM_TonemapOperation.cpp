@@ -147,7 +147,7 @@ void TonemapOperation::execPixels(ExecutionManager &man)
       }
       color_pix.w = alpha;
 
-      WRITE_IMG(dst, color_pix);
+      WRITE_IMG4(dst, color_pix);
 
       CPU_LOOP_END;
     }
@@ -194,7 +194,7 @@ void PhotoreceptorTonemapOperation::execPixels(ExecutionManager &man)
 
       color_pix.w = alpha;
 
-      WRITE_IMG(dst, color_pix);
+      WRITE_IMG4(dst, color_pix);
 
       CPU_LOOP_END;
     }
