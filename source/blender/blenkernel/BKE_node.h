@@ -53,6 +53,7 @@ struct Light;
 struct ListBase;
 struct MTex;
 struct Main;
+struct Depsgraph;
 struct Material;
 struct PointerRNA;
 struct RenderData;
@@ -1193,6 +1194,7 @@ void ntreeGPUMaterialNodes(struct bNodeTree *localtree,
 #define CMP_NODE_CRYPTOMATTE 323
 #define CMP_NODE_DENOISE 324
 #define CMP_NODE_MEMORYCACHE 325
+#define CMP_NODE_VIDEO_SEQ 326
 
 /* channel toggles */
 #define CMP_CHAN_RGB 1
@@ -1223,7 +1225,9 @@ void ntreeGPUMaterialNodes(struct bNodeTree *localtree,
 #define CMP_TRACKPOS_ABSOLUTE_FRAME 3
 
 /* API */
-void ntreeCompositExecTree(struct Scene *scene,
+void ntreeCompositExecTree(struct Main *main,
+                           struct Depsgraph *depsgraph,
+                           struct Scene *scene,
                            struct bNodeTree *ntree,
                            struct RenderData *rd,
                            int rendering,
@@ -1364,8 +1368,6 @@ void free_nodesystem(void);
 
 /* -------------------------------------------------------------------- */
 /* evaluation support, */
-
-struct Depsgraph;
 
 void BKE_nodetree_shading_params_eval(struct Depsgraph *depsgraph,
                                       struct bNodeTree *ntree_dst,

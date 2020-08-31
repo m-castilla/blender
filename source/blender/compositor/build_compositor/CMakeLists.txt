@@ -218,6 +218,8 @@ set(SRC
   ${CMP_NODES}/input/COM_TrackPositionNode.h
   ${CMP_NODES}/input/COM_ValueNode.cpp
   ${CMP_NODES}/input/COM_ValueNode.h
+  ${CMP_NODES}/input/COM_VideoSequencerNode.cpp
+  ${CMP_NODES}/input/COM_VideoSequencerNode.h
 
   # output nodes
   ${CMP_NODES}/output/COM_CompositorNode.cpp
@@ -352,6 +354,8 @@ set(SRC
   ${CMP_OPS}/input/COM_TextureOperation.h
   ${CMP_OPS}/input/COM_TrackPositionOperation.cpp
   ${CMP_OPS}/input/COM_TrackPositionOperation.h
+  ${CMP_OPS}/input/COM_VideoSequencerOperation.cpp
+  ${CMP_OPS}/input/COM_VideoSequencerOperation.h
 
   # output operations
   ${CMP_OPS}/output/COM_CalculateMeanOperation.cpp

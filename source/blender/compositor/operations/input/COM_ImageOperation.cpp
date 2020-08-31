@@ -34,7 +34,7 @@
 BaseImageOperation::BaseImageOperation() : NodeOperation()
 {
   this->m_image = NULL;
-  this->m_buffer = NULL;
+  this->m_im_buffer = NULL;
   this->m_imageFloatBuffer = NULL;
   this->m_imageByteBuffer = NULL;
   this->m_imageUser = NULL;
@@ -59,32 +59,33 @@ ImageDepthOperation::ImageDepthOperation() : BaseImageOperation()
   this->addOutputSocket(SocketType::VALUE);
 }
 
-ImBuf *BaseImageOperation::getImBuf()
+ImBuf *BaseImageOperation::assureImBuf()
 {
-  ImBuf *ibuf;
-  ImageUser iuser = *this->m_imageUser;
+  if (m_im_buffer == nullptr) {
+    ImageUser iuser = *this->m_imageUser;
+    if (this->m_image == NULL) {
+      return NULL;
+    }
 
-  if (this->m_image == NULL) {
-    return NULL;
+    /* local changes to the original ImageUser */
+    if (BKE_image_is_multilayer(this->m_image) == false) {
+      iuser.multi_index = BKE_scene_multiview_view_id_get(this->m_rd, this->m_viewName);
+    }
+
+    m_im_buffer = BKE_image_acquire_ibuf(this->m_image, &iuser, NULL);
+    if (m_im_buffer == NULL || (m_im_buffer->rect == NULL && m_im_buffer->rect_float == NULL)) {
+      BKE_image_release_ibuf(this->m_image, m_im_buffer, NULL);
+      return NULL;
+    }
   }
 
-  /* local changes to the original ImageUser */
-  if (BKE_image_is_multilayer(this->m_image) == false) {
-    iuser.multi_index = BKE_scene_multiview_view_id_get(this->m_rd, this->m_viewName);
-  }
-
-  ibuf = BKE_image_acquire_ibuf(this->m_image, &iuser, NULL);
-  if (ibuf == NULL || (ibuf->rect == NULL && ibuf->rect_float == NULL)) {
-    BKE_image_release_ibuf(this->m_image, ibuf, NULL);
-    return NULL;
-  }
-  return ibuf;
+  return m_im_buffer;
 }
 
 void BaseImageOperation::initExecution()
 {
-  ImBuf *stackbuf = getImBuf();
-  this->m_buffer = stackbuf;
+  ImBuf *stackbuf = assureImBuf();
+  this->m_im_buffer = stackbuf;
   if (stackbuf) {
     this->m_imageFloatBuffer = stackbuf->rect_float;
     this->m_imageByteBuffer = stackbuf->rect;
@@ -100,14 +101,14 @@ void BaseImageOperation::deinitExecution()
 {
   this->m_imageFloatBuffer = NULL;
   this->m_imageByteBuffer = NULL;
-  BKE_image_release_ibuf(this->m_image, this->m_buffer, NULL);
+  BKE_image_release_ibuf(this->m_image, this->m_im_buffer, NULL);
 }
 
 ResolutionType BaseImageOperation::determineResolution(int resolution[2],
                                                        int /*preferredResolution*/[2],
                                                        bool /*setResolution*/)
 {
-  ImBuf *stackbuf = getImBuf();
+  ImBuf *stackbuf = assureImBuf();
 
   resolution[0] = 0;
   resolution[1] = 0;
@@ -117,7 +118,6 @@ ResolutionType BaseImageOperation::determineResolution(int resolution[2],
     resolution[1] = stackbuf->y;
   }
 
-  BKE_image_release_ibuf(this->m_image, stackbuf, NULL);
   return ResolutionType::Fixed;
 }
 
@@ -177,7 +177,7 @@ void ImageOperation::execPixels(ExecutionManager &man)
                                                      dst_img.row_elems,
                                                      dst_img.col_elems,
                                                      dst_img.elem_chs,
-                                                     m_buffer->rect_colorspace,
+                                                     m_im_buffer->rect_colorspace,
                                                      false);
     }
   };
