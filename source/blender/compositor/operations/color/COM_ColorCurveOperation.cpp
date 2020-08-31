@@ -61,7 +61,6 @@ void ColorCurveOperation::execPixels(ExecutionManager &man)
     CurveMapping *cumap = this->m_curveMapping;
 
     float bwmul[3];
-    float output[4];
 
     float fac = factor_img.buffer[factor_offset];
 
@@ -71,21 +70,24 @@ void ColorCurveOperation::execPixels(ExecutionManager &man)
         &black_img.buffer[black_offset], &white_img.buffer[white_offset], bwmul);
 
     if (fac >= 1.0f) {
-      BKE_curvemapping_evaluate_premulRGBF_ex(
-          cumap, output, &color_img.buffer[color_offset], &black_img.buffer[black_offset], bwmul);
+      BKE_curvemapping_evaluate_premulRGBF_ex(cumap,
+                                              (float *)&color_pix,
+                                              &color_img.buffer[color_offset],
+                                              &black_img.buffer[black_offset],
+                                              bwmul);
     }
     else if (fac <= 0.0f) {
-      copy_v3_v3(output, &color_img.buffer[color_offset]);
+      copy_v3_v3((float *)&color_pix, &color_img.buffer[color_offset]);
     }
     else {
       float col[4];
       BKE_curvemapping_evaluate_premulRGBF_ex(
           cumap, col, &color_img.buffer[color_offset], &black_img.buffer[black_offset], bwmul);
-      interp_v3_v3v3(output, &color_img.buffer[color_offset], col, fac);
+      interp_v3_v3v3((float *)&color_pix, &color_img.buffer[color_offset], col, fac);
     }
-    output[3] = color_img.buffer[color_offset + 3];
+    color_pix.w = color_img.buffer[color_offset + 3];
 
-    copy_v4_v4(&dst_img.buffer[dst_offset], output);
+    WRITE_IMG(dst, color_pix);
 
     CPU_LOOP_END;
   };
@@ -140,23 +142,23 @@ void ConstantLevelColorCurveOperation::execPixels(ExecutionManager &man)
     COPY_COORDS(color, dst_coords);
     COPY_COORDS(factor, dst_coords);
 
-    float output[4];
     float fac = factor_img.buffer[factor_offset];
 
     if (fac >= 1.0f) {
       BKE_curvemapping_evaluate_premulRGBF(
-          this->m_curveMapping, output, &color_img.buffer[color_offset]);
+          this->m_curveMapping, (float *)&color_pix, &color_img.buffer[color_offset]);
     }
     else if (fac <= 0.0f) {
-      copy_v3_v3(output, &color_img.buffer[color_offset]);
+      copy_v3_v3((float *)&color_pix, &color_img.buffer[color_offset]);
     }
     else {
       float col[4];
       BKE_curvemapping_evaluate_premulRGBF(
           this->m_curveMapping, col, &color_img.buffer[color_offset]);
-      interp_v3_v3v3(output, &color_img.buffer[color_offset], col, fac);
+      interp_v3_v3v3((float *)&color_pix, &color_img.buffer[color_offset], col, fac);
     }
-    output[3] = color_img.buffer[color_offset + 3];
+    color_pix.w = color_img.buffer[color_offset + 3];
+    WRITE_IMG(dst, color_pix);
 
     CPU_LOOP_END;
   };

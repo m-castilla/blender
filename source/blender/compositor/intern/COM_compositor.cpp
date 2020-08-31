@@ -39,7 +39,9 @@ static ThreadMutex s_compositorMutex;
 static bool is_compositorMutex_init = false;
 static boost::uuids::random_generator uuid_generator;
 
-void COM_execute(RenderData *rd,
+void COM_execute(struct Main *main,
+                 struct Depsgraph *depsgraph,
+                 RenderData *rd,
                  Scene *scene,
                  bNodeTree *editingtree,
                  int rendering,
@@ -47,9 +49,6 @@ void COM_execute(RenderData *rd,
                  const ColorManagedDisplaySettings *displaySettings,
                  const char *viewName)
 {
-  if (!GlobalMan) {
-    GlobalMan.reset(new GlobalManager());
-  }
   /* initialize mutex, TODO this mutex init is actually not thread safe and
    * should be done somewhere as part of blender startup, all the other
    * initializations can be done lazily */
@@ -67,12 +66,24 @@ void COM_execute(RenderData *rd,
     return;
   }
 
+  if (!GlobalMan) {
+    GlobalMan.reset(new GlobalManager());
+  }
+
   DebugInfo::start_benchmark();
 
   /* build context */
   const std::string execution_id = boost::lexical_cast<std::string>(uuid_generator());
-  CompositorContext context = CompositorContext::build(
-      execution_id, rd, scene, editingtree, rendering, viewSettings, displaySettings, viewName);
+  CompositorContext context = CompositorContext::build(execution_id,
+                                                       main,
+                                                       depsgraph,
+                                                       rd,
+                                                       scene,
+                                                       editingtree,
+                                                       rendering,
+                                                       viewSettings,
+                                                       displaySettings,
+                                                       viewName);
   int m_cpu_work_threads = BLI_system_thread_count();
   context.setNCpuWorkThreads(m_cpu_work_threads);
 
@@ -82,14 +93,9 @@ void COM_execute(RenderData *rd,
 
   GlobalMan->initialize(context);
 
-  WorkScheduler::initialize(context);
-  WorkScheduler::start(context);
-
   ExecutionSystem *system = new ExecutionSystem(context);
-  system->execute();
 
-  WorkScheduler::stop();
-  WorkScheduler::deinitialize();
+  system->execute();
 
   GlobalMan->deinitialize(context);
   delete system;

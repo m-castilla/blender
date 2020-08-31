@@ -105,6 +105,11 @@ void ExecutionSystem::set_operations(const Operations &operations, const Groups 
 
 void ExecutionSystem::execute()
 {
+  ExecutionManager man(m_context, m_groups);
+
+  WorkScheduler::initialize(m_context);
+  WorkScheduler::start(m_context);
+
   m_bNodeTree->stats_draw(m_bNodeTree->sdh, TIP_("Compositing | Initializing execution"));
 
   DebugInfo::execute_started(this);
@@ -116,7 +121,6 @@ void ExecutionSystem::execute()
     operation->initExecution();
   }
 
-  ExecutionManager man(m_context, m_groups);
   man.setOperationMode(OperationMode::Optimize);
   execGroups(man);
 
@@ -132,6 +136,9 @@ void ExecutionSystem::execute()
     NodeOperation *operation = this->m_operations[index];
     operation->deinitExecution();
   }
+
+  WorkScheduler::stop();
+  WorkScheduler::deinitialize();
 }
 
 void ExecutionSystem::execGroups(ExecutionManager &man)

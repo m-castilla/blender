@@ -33,7 +33,7 @@
  */
 class BaseImageOperation : public NodeOperation {
  protected:
-  ImBuf *m_buffer;
+  ImBuf *m_im_buffer;
   Image *m_image;
   ImageUser *m_imageUser;
   float *m_imageFloatBuffer;
@@ -55,7 +55,7 @@ class BaseImageOperation : public NodeOperation {
 
                                              bool setResolution) override;
 
-  virtual ImBuf *getImBuf();
+  virtual ImBuf *assureImBuf();
 
  public:
   void initExecution();

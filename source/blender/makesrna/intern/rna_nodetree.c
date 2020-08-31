@@ -5983,6 +5983,18 @@ static void def_cmp_render_layers(StructRNA *srna)
   RNA_def_property_update(prop, NC_NODE | NA_EDITED, "rna_Node_view_layer_update");
 }
 
+static void def_cmp_video_sequencer(StructRNA *srna)
+{
+  PropertyRNA *prop;
+
+  prop = RNA_def_property(srna, "channel", PROP_INT, PROP_NONE);
+  RNA_def_property_int_sdna(prop, NULL, "custom1");
+  RNA_def_property_range(prop, 0, 9999);
+  RNA_def_property_ui_range(prop, 0, 9999, 1, -1);
+  RNA_def_property_ui_text(prop, "Channel", "Video Sequencer Channel (0 = Combined Output)");
+  RNA_def_property_update(prop, NC_NODE | NA_EDITED, "rna_Node_update");
+}
+
 static void rna_def_cmp_output_file_slot_file(BlenderRNA *brna)
 {
   StructRNA *srna;
