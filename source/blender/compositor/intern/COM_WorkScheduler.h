@@ -46,7 +46,7 @@ class WorkScheduler {
    * \brief initialize the WorkScheduler
    *
    */
-  static void initialize(CompositorContext &ctx);
+  static void initialize(const CompositorContext &ctx);
 
   /**
    * \brief deinitialize the WorkScheduler

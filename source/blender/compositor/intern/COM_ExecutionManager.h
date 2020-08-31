@@ -76,7 +76,7 @@ class ExecutionManager {
   const rcti *getOpViewerBorder(NodeOperation *op);
   void updateProgress(int n_exec_subworks = 0, int n_total_subworks = 0);
 
-  #ifdef WITH_CXX_GUARDEDALLOC
+#ifdef WITH_CXX_GUARDEDALLOC
   MEM_CXX_CLASS_ALLOC_FUNCS("COM:ExecutionManager");
 #endif
 };

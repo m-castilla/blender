@@ -123,6 +123,7 @@ set(SRC
   composite/nodes/node_composite_valToRgb.c
   composite/nodes/node_composite_value.c
   composite/nodes/node_composite_vecBlur.c
+  composite/nodes/node_composite_videoseq.c
   composite/nodes/node_composite_viewer.c
   composite/nodes/node_composite_zcombine.c
 
