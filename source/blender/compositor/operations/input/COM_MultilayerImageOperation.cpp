@@ -42,7 +42,7 @@ ImBuf *MultilayerBaseOperation::getImBuf()
   this->m_imageUser->pass = this->m_passId;
 
   if (BKE_image_multilayer_index(this->m_image->rr, this->m_imageUser)) {
-    ImBuf *ibuf = BaseImageOperation::getImBuf();
+    ImBuf *ibuf = BaseImageOperation::assureImBuf();
     this->m_imageUser->view = view;
     return ibuf;
   }

@@ -339,7 +339,9 @@ extern "C" {
  */
 /* clang-format off */
 
-void COM_execute(RenderData *rd,
+void COM_execute(struct Main *main,
+                 struct Depsgraph *depsgrah,
+                 RenderData *rd,
                  Scene *scene,
                  bNodeTree *editingtree,
                  int rendering,

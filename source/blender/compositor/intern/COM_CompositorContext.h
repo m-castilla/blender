@@ -49,6 +49,9 @@ class CompositorContext {
    */
   CompositorQuality m_quality;
 
+  struct Main *m_main;
+  struct Depsgraph *m_depsgraph;
+
   Scene *m_scene;
 
   /**
@@ -98,6 +101,8 @@ class CompositorContext {
    * \brief constructor initializes the context with default values.
    */
   static CompositorContext build(const std::string &execution_id,
+                                 struct Main *main,
+                                 struct Depsgraph *depsgraph,
                                  RenderData *rd,
                                  Scene *scene,
                                  bNodeTree *editingtree,
@@ -105,6 +110,24 @@ class CompositorContext {
                                  const ColorManagedViewSettings *viewSettings,
                                  const ColorManagedDisplaySettings *displaySettings,
                                  const char *viewName);
+
+  struct Main *getMain() const
+  {
+    return m_main;
+  }
+  void setMain(struct Main *main)
+  {
+    m_main = main;
+  }
+
+  struct Depsgraph *getDepsgraph() const
+  {
+    return m_depsgraph;
+  }
+  void setDepsgraph(struct Depsgraph *depsgraph)
+  {
+    m_depsgraph = depsgraph;
+  }
 
   PixelsSampler getDefaultSampler() const
   {
@@ -178,12 +201,23 @@ class CompositorContext {
     return this->m_rendering;
   }
 
-  /**
-   * \brief set the scene of the context
-   */
   void setRenderData(RenderData *rd)
   {
     this->m_rd = rd;
+  }
+
+  const RenderData *getRenderData() const
+  {
+    return this->m_rd;
+  }
+
+  int getRenderWidth() const
+  {
+    return m_rd->xsch;
+  }
+  int getRenderHeight() const
+  {
+    return m_rd->ysch;
   }
 
   void setbNodeTree(bNodeTree *bnodetree)
@@ -197,14 +231,6 @@ class CompositorContext {
   bNodeTree *getbNodeTree() const
   {
     return this->m_bnodetree;
-  }
-
-  /**
-   * \brief get the scene of the context
-   */
-  const RenderData *getRenderData() const
-  {
-    return this->m_rd;
   }
 
   void setScene(Scene *scene)

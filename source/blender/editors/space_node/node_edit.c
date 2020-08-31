@@ -270,7 +270,9 @@ static void compo_startjob(void *cjv,
   /* 1 is do_previews */
 
   if ((cj->scene->r.scemode & R_MULTIVIEW) == 0) {
-    ntreeCompositExecTree(cj->scene,
+    ntreeCompositExecTree(cj->bmain,
+                          cj->compositor_depsgraph,
+                          cj->scene,
                           ntree,
                           &cj->scene->r,
                           false,
@@ -284,7 +286,9 @@ static void compo_startjob(void *cjv,
       if (BKE_scene_multiview_is_render_view_active(&scene->r, srv) == false) {
         continue;
       }
-      ntreeCompositExecTree(cj->scene,
+      ntreeCompositExecTree(cj->bmain,
+                            cj->compositor_depsgraph,
+                            cj->scene,
                             ntree,
                             &cj->scene->r,
                             false,

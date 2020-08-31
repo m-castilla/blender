@@ -1404,7 +1404,9 @@ static void do_render_composite(Render *re)
 
         RenderView *rv;
         for (rv = re->result->views.first; rv; rv = rv->next) {
-          ntreeCompositExecTree(re->pipeline_scene_eval,
+          ntreeCompositExecTree(re->main,
+                                re->pipeline_depsgraph,
+                                re->pipeline_scene_eval,
                                 ntree,
                                 &re->r,
                                 true,

@@ -38,9 +38,13 @@ CompositorContext::CompositorContext()
   m_bnodetree = nullptr;
   m_rendering = false;
   m_viewName = nullptr;
+  m_main = nullptr;
+  m_depsgraph = nullptr;
 }
 
 CompositorContext CompositorContext::build(const std::string &execution_id,
+                                           struct Main *main,
+                                           struct Depsgraph *depsgraph,
                                            RenderData *rd,
                                            Scene *scene,
                                            bNodeTree *editingtree,
@@ -52,6 +56,8 @@ CompositorContext CompositorContext::build(const std::string &execution_id,
   const size_t DEFAULT_BUFFER_CACHE_BYTES = (size_t)2048 * 1024 * 1024;  // 1024 * 1024 = MB
 
   CompositorContext context;
+  context.setMain(main);
+  context.setDepsgraph(depsgraph);
   context.setbNodeTree(editingtree);
 
   /* Make sure node tree has previews.

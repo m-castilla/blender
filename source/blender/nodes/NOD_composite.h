@@ -50,7 +50,6 @@ void register_node_type_cmp_viewer(void);
 void register_node_type_cmp_splitviewer(void);
 void register_node_type_cmp_output_file(void);
 void register_node_type_cmp_view_levels(void);
-void register_node_type_cmp_memcache(void);
 
 void register_node_type_cmp_curve_rgb(void);
 void register_node_type_cmp_mix_rgb(void);
@@ -135,6 +134,9 @@ void register_node_type_cmp_pixelate(void);
 void register_node_type_cmp_trackpos(void);
 void register_node_type_cmp_planetrackdeform(void);
 void register_node_type_cmp_cornerpin(void);
+
+void register_node_type_cmp_memcache(void);
+void register_node_type_cmp_videoseq(void);
 
 void node_cmp_rlayers_outputs(struct bNodeTree *ntree, struct bNode *node);
 void node_cmp_rlayers_register_pass(struct bNodeTree *ntree,

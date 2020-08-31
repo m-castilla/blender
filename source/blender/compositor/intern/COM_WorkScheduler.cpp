@@ -96,7 +96,7 @@ void WorkScheduler::stop()
 #endif
 }
 
-void WorkScheduler::initialize(CompositorContext &ctx)
+void WorkScheduler::initialize(const CompositorContext &ctx)
 {
 #if COM_CURRENT_THREADING_MODEL == COM_TM_QUEUE
   /* deinitialize if number of threads doesn't match */

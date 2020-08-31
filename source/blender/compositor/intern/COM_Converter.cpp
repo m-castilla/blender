@@ -122,6 +122,7 @@
 #include "COM_TranslateOperation.h"
 #include "COM_ValueNode.h"
 #include "COM_VectorBlurNode.h"
+#include "COM_VideoSequencerNode.h"
 #include "COM_ViewLevelsNode.h"
 #include "COM_ViewerNode.h"
 #include "COM_ZCombineNode.h"
@@ -187,6 +188,9 @@ Node *Converter::convert(bNode *b_node)
       break;
     case CMP_NODE_BOKEHIMAGE:
       node = new BokehImageNode(b_node);
+      break;
+    case CMP_NODE_VIDEO_SEQ:
+      node = new VideoSequencerNode(b_node);
       break;
       /* */
 

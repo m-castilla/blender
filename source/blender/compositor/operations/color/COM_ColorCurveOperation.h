@@ -30,6 +30,10 @@ class ColorCurveOperation : public CurveBaseOperation {
   void deinitExecution();
 
  protected:
+  virtual bool canCompute() const
+  {
+    return false;
+  }
   void execPixels(ExecutionManager &man) override;
 };
 
@@ -54,6 +58,10 @@ class ConstantLevelColorCurveOperation : public CurveBaseOperation {
   }
 
  protected:
+  virtual bool canCompute() const
+  {
+    return false;
+  }
   virtual void hashParams() override;
   virtual void execPixels(ExecutionManager &man) override;
 };
