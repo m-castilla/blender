@@ -37,6 +37,8 @@ class VideoSequencerOperation : public NodeOperation {
   ImBuf *m_seq_frame;
   int m_n_frame;
   int m_n_channel;
+  Scene *m_scene;
+  bool m_is_rendering;
 
   /**
    * Determine the output resolution. The resolution is retrieved from the Renderer
