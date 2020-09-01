@@ -32,6 +32,7 @@ set(SRC_EXEC
   defmerger.cpp
 )
 
+
   # for winstuff.cw and winstuff_dir.c. winstuff.c has a dependency on blender kernel from not needed code for a binary other than blender. 
   # With this we avoid such dependency. And it indicates that this is a binary that is not blender.
   add_definitions(-DUSE_STANDALONE)
@@ -52,13 +53,15 @@ set(LIB_EXEC
   bf_defmerger
   bf_blenlib
   bf_intern_guardedalloc
-  ${ZLIB_LIBRARIES}
+${FREETYPE_LIBRARY}
+${ZLIB_LIBRARIES}
   ${PLATFORM_LINKLIBS}
 )
+
+link_directories(${FREETYPE_LIBPATH})
+
+setup_platform_linker_flags()
 
 add_executable(defmerger ${SRC_EXEC})
 
 target_link_libraries(defmerger ${LIB_EXEC})
-
-
-
