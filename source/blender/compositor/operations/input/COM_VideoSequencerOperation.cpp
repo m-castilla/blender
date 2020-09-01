@@ -17,7 +17,7 @@
  */
 
 #include "COM_VideoSequencerOperation.h"
-#include "BKE_Image.h"
+#include "BKE_image.h"
 #include "BKE_scene.h"
 #include "BKE_sequencer.h"
 #include "BLI_listbase.h"
@@ -29,8 +29,10 @@
 #include "COM_PixelsUtil.h"
 #include "COM_kernel_cpu.h"
 #include "DNA_scene_types.h"
+#include "DNA_sequence_types.h"
 #include "IMB_imbuf.h"
 #include "IMB_imbuf_types.h"
+#include "IMB_metadata.h"
 #include "RE_pipeline.h"
 #include "RE_render_ext.h"
 #include "RE_shader_ext.h"
@@ -40,6 +42,9 @@ VideoSequencerOperation::VideoSequencerOperation()
     : NodeOperation(), m_seq_frame(nullptr), m_n_frame(0), m_n_channel(0)
 {
   this->addOutputSocket(SocketType::COLOR);
+  auto context = GlobalMan->getContext();
+  m_scene = context->getScene();
+  m_is_rendering = context->isRendering();
 }
 
 void VideoSequencerOperation::initExecution()
@@ -57,6 +62,7 @@ void VideoSequencerOperation::hashParams()
     hashParam((size_t)m_seq_frame->rect_float);
     hashParam((size_t)m_seq_frame->rect);
   }
+  hashParam(m_is_rendering);
   hashParam(m_n_frame);
   hashParam(m_n_channel);
 }
@@ -64,6 +70,10 @@ void VideoSequencerOperation::hashParams()
 void VideoSequencerOperation::deinitExecution()
 {
   if (m_seq_frame) {
+    Editing *ed = m_scene->ed;
+    if (ed) {
+      BKE_sequencer_free_imbuf(m_scene, &ed->seqbase, false);
+    }
     IMB_freeImBuf(m_seq_frame);
     m_seq_frame = nullptr;
   }
@@ -75,10 +85,9 @@ void VideoSequencerOperation::assureSequencerRender()
     auto context = GlobalMan->getContext();
     auto scene = context->getScene();
     m_n_frame = context->getFramenumber();
-    bool rendering = context->isRendering();
 
     Render *render = nullptr;
-    if (rendering) {
+    if (m_is_rendering) {
       render = RE_GetSceneRender(scene);
     }
 
@@ -89,8 +98,8 @@ void VideoSequencerOperation::assureSequencerRender()
                                     render->scene,
                                     getWidth(),
                                     getHeight(),
-                                    100,
-                                    rendering,
+                                    0,
+                                    m_is_rendering,
                                     &seq_data);
       RE_ReleaseResult(render);
     }
@@ -100,14 +109,22 @@ void VideoSequencerOperation::assureSequencerRender()
                                     scene,
                                     getWidth(),
                                     getHeight(),
-                                    25,
-                                    rendering,
+                                    0,
+                                    m_is_rendering,
                                     &seq_data);
     }
 
-    m_seq_frame = BKE_sequencer_give_ibuf(&seq_data, m_n_frame, m_n_channel);
-    if (m_seq_frame) {
-      BKE_sequencer_imbuf_from_sequencer_space(scene, m_seq_frame);
+    Editing *ed = m_scene->ed;
+    ListBase *seqbasep = &ed->seqbase;
+    // ImBuf *seq_out = BKE_sequencer_give_ibuf(&seq_data, m_n_frame, m_n_channel);
+    ImBuf *seq_out = BKE_sequencer_give_ibuf_seqbase(&seq_data, m_n_frame, m_n_channel, seqbasep);
+    if (seq_out) {
+      m_seq_frame = IMB_dupImBuf(seq_out);
+      IMB_metadata_copy(m_seq_frame, seq_out);
+      IMB_freeImBuf(seq_out);
+      if (m_seq_frame->rect_float) {
+        BKE_sequencer_imbuf_from_sequencer_space(scene, m_seq_frame);
+      }
     }
   }
 }
@@ -167,7 +184,7 @@ void VideoSequencerOperation::execPixels(ExecutionManager &man)
   cpuWriteSeek(man, cpuWrite);
 
   if (man.getOperationMode() == OperationMode::Exec) {
-    // needs colorspace conversion as "BKE_sequencer_imbuf_from_sequencer_space" which has bee
+    // needs colorspace conversion as "BKE_sequencer_imbuf_from_sequencer_space" which has been
     // called in "assureSequencerRender" only works for float buffers
     if (m_seq_frame && !m_seq_frame->rect_float && man.canExecPixels()) {
       Scene *scene = GlobalMan->getContext()->getScene();
@@ -185,12 +202,12 @@ ResolutionType VideoSequencerOperation::determineResolution(int resolution[2],
                                                             bool /*setResolution*/)
 {
   auto context = GlobalMan->getContext();
-  float scale = context->getInputsScale();
-  resolution[0] = context->getRenderWidth() * scale;
-  resolution[1] = context->getRenderHeight() * scale;
+  // float scale = context->getInputsScale();
+  resolution[0] = context->getRenderWidth();
+  resolution[1] = context->getRenderHeight();
 
-  // we consider it determined as is determined by inputs scale and we don't want to inputs scale
-  // to be applied again. We do this so that we request a smaller size to the sequencer if inputs
-  // scale is reduced
-  return ResolutionType::Determined;
+  // In the future we should use input scale and consider the resolution as Determined so that we
+  // request smaller sequencer renders, and avoiding inputs scale to be applied after this
+  // operation.
+  return ResolutionType::Fixed;
 }
