@@ -1,0 +1,15 @@
+name: C/C++ CI
+
+on:
+  push:
+    branches: [ compositor-up ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest, windows-latest, macos-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: make release
+      run: make release
