@@ -70,10 +70,6 @@ void VideoSequencerOperation::hashParams()
 void VideoSequencerOperation::deinitExecution()
 {
   if (m_seq_frame) {
-    Editing *ed = m_scene->ed;
-    if (ed) {
-      BKE_sequencer_free_imbuf(m_scene, &ed->seqbase, false);
-    }
     IMB_freeImBuf(m_seq_frame);
     m_seq_frame = nullptr;
   }
@@ -98,7 +94,7 @@ void VideoSequencerOperation::assureSequencerRender()
                                     render->scene,
                                     getWidth(),
                                     getHeight(),
-                                    0,
+                                    100,
                                     m_is_rendering,
                                     &seq_data);
       RE_ReleaseResult(render);
@@ -109,19 +105,16 @@ void VideoSequencerOperation::assureSequencerRender()
                                     scene,
                                     getWidth(),
                                     getHeight(),
-                                    0,
+                                    100,
                                     m_is_rendering,
                                     &seq_data);
     }
+    seq_data.task_id = m_is_rendering ? SEQ_TASK_MAIN_RENDER : SEQ_TASK_PREFETCH_RENDER;
 
-    Editing *ed = m_scene->ed;
-    ListBase *seqbasep = &ed->seqbase;
-    // ImBuf *seq_out = BKE_sequencer_give_ibuf(&seq_data, m_n_frame, m_n_channel);
-    ImBuf *seq_out = BKE_sequencer_give_ibuf_seqbase(&seq_data, m_n_frame, m_n_channel, seqbasep);
+    ImBuf *seq_out = BKE_sequencer_give_ibuf(&seq_data, m_n_frame, m_n_channel);
+
     if (seq_out) {
-      m_seq_frame = IMB_dupImBuf(seq_out);
-      IMB_metadata_copy(m_seq_frame, seq_out);
-      IMB_freeImBuf(seq_out);
+      m_seq_frame = seq_out;
       if (m_seq_frame->rect_float) {
         BKE_sequencer_imbuf_from_sequencer_space(scene, m_seq_frame);
       }
@@ -202,12 +195,22 @@ ResolutionType VideoSequencerOperation::determineResolution(int resolution[2],
                                                             bool /*setResolution*/)
 {
   auto context = GlobalMan->getContext();
-  // float scale = context->getInputsScale();
-  resolution[0] = context->getRenderWidth();
-  resolution[1] = context->getRenderHeight();
+  float scale = context->getInputsScale();
+  int w = context->getRenderWidth();
+  int h = context->getRenderHeight();
+  int min_dim = w < h ? w : h;
 
-  // In the future we should use input scale and consider the resolution as Determined so that we
-  // request smaller sequencer renders, and avoiding inputs scale to be applied after this
-  // operation.
-  return ResolutionType::Fixed;
+  // don't allow a resolution lower than 100 pixels (except if min dim is lower) on any dimension
+  // to avoid crashes when requesting renders from the sequencer
+  float min_scale_size = min_dim > 100 ? 100 : min_dim;
+  float min_scale = min_scale_size / (float)min_dim;
+  if (min_scale < 0.05f) {
+    min_scale = 0.05f;  // don't allow less than 5%, could cause rounding issues when requesting
+                        // render from sequencer
+  }
+  scale = scale > min_scale ? scale : min_scale;
+  resolution[0] = w * scale;
+  resolution[1] = h * scale;
+
+  return ResolutionType::Determined;
 }

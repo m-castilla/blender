@@ -242,6 +242,7 @@ void *COM_linker_hack = NULL;
 void ntreeCompositExecTree(Main *main,
                            Depsgraph *depsgraph,
                            Scene *scene,
+                           ViewLayer *view_layer,
                            bNodeTree *ntree,
                            RenderData *rd,
                            int rendering,
@@ -251,11 +252,27 @@ void ntreeCompositExecTree(Main *main,
                            const char *view_name)
 {
 #ifdef WITH_COMPOSITOR
-  COM_execute(
-      main, depsgraph, rd, scene, ntree, rendering, view_settings, display_settings, view_name);
+  COM_execute(main,
+              depsgraph,
+              rd,
+              scene,
+              view_layer,
+              ntree,
+              rendering,
+              view_settings,
+              display_settings,
+              view_name);
 #else
-  UNUSED_VARS(
-      main, depsgraph, scene, ntree, rd, rendering, view_settings, display_settings, view_name);
+  UNUSED_VARS(main,
+              depsgraph,
+              scene,
+              view_layer,
+              ntree,
+              rd,
+              rendering,
+              view_settings,
+              display_settings,
+              view_name);
 #endif
 
   UNUSED_VARS(do_preview);

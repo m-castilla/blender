@@ -51,7 +51,7 @@ class CompositorContext {
 
   struct Main *m_main;
   struct Depsgraph *m_depsgraph;
-
+  ViewLayer *m_view_layer;
   Scene *m_scene;
 
   /**
@@ -105,6 +105,7 @@ class CompositorContext {
                                  struct Depsgraph *depsgraph,
                                  RenderData *rd,
                                  Scene *scene,
+                                 ViewLayer *view_layer,
                                  bNodeTree *editingtree,
                                  bool rendering,
                                  const ColorManagedViewSettings *viewSettings,
@@ -123,6 +124,14 @@ class CompositorContext {
   struct Depsgraph *getDepsgraph() const
   {
     return m_depsgraph;
+  }
+  ViewLayer *getViewLayer() const
+  {
+    return m_view_layer;
+  }
+  void setViewLayer(ViewLayer *view_layer)
+  {
+    m_view_layer = view_layer;
   }
   void setDepsgraph(struct Depsgraph *depsgraph)
   {
