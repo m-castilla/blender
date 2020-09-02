@@ -24,7 +24,10 @@
 #include "COM_IncludesResolver.h"
 #include "MEM_guardedalloc.h"
 #include <algorithm>
+#include <fstream>
+#include <streambuf>
 #include <string.h>
+#include <string>
 
 namespace DefMerger {
 
@@ -59,8 +62,8 @@ std::string defmerge(const char *tag,
     BLI_split_dir_part(dst_path, dir_path, FILE_MAX);
     BLI_split_file_part(dst_path, file_name, FILE_MAX);
     result = IncludesResolver::path_source_replace_includes(result, dir_path, file_name);
-/*Remove carriage returns which outputs file with double carriage on windows. They get probably
-added because cycles "path_source_replace_includes" reads source files as binaries instead of text.
+/*Remove carriage returns which outputs file with double carriage on windows. They get
+added because source files are readed as binaries instead of text.
 So windows new lines are not converted properly from \r\n  to \n on reading, so on writing it would
 result in \r\r\n */
 #ifdef _WIN32
@@ -73,6 +76,13 @@ result in \r\r\n */
     fclose(dst_file);
   }
   return result;
+}
+
+std::string readFileAsStr(const char *path)
+{
+  std::ifstream stream(path);
+  std::string str((std::istreambuf_iterator<char>(stream)), std::istreambuf_iterator<char>());
+  return str;
 }
 
 void mergeFileorDir(const char *path, const char *search_tag, std::string &result)
@@ -107,8 +117,8 @@ void mergeFileorDir(const char *path, const char *search_tag, std::string &resul
         return std::tolower(c);
       });
       if (ext_str == ".c" || ext_str == ".cpp" || ext_str == ".h" || ext_str == ".hpp") {
-        size_t file_size;
-        const char *file_str = (const char *)BLI_file_read_text_as_mem(path, 0, &file_size);
+        std::string file_str_orig = readFileAsStr(path);
+        const char *file_str = file_str_orig.c_str();
         const char *macro_start_cur = file_str;
         const char *macro_end_cur;
         const char *macro_end = "";
@@ -122,7 +132,6 @@ void mergeFileorDir(const char *path, const char *search_tag, std::string &resul
             }
           }
         } while (macro_start_cur != NULL);
-        MEM_freeN((void *)file_str);
       }
     }
   }
