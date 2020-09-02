@@ -1406,6 +1406,7 @@ static void do_render_composite(Render *re)
           ntreeCompositExecTree(re->main,
                                 re->pipeline_depsgraph,
                                 re->pipeline_scene_eval,
+                                re->active_view_layer,
                                 ntree,
                                 &re->r,
                                 true,
