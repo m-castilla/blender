@@ -268,11 +268,11 @@ static void compo_startjob(void *cjv,
 
   // XXX BIF_store_spare();
   /* 1 is do_previews */
-
   if ((cj->scene->r.scemode & R_MULTIVIEW) == 0) {
     ntreeCompositExecTree(cj->bmain,
                           cj->compositor_depsgraph,
                           cj->scene,
+                          cj->view_layer,
                           ntree,
                           &cj->scene->r,
                           false,
@@ -289,6 +289,7 @@ static void compo_startjob(void *cjv,
       ntreeCompositExecTree(cj->bmain,
                             cj->compositor_depsgraph,
                             cj->scene,
+                            cj->view_layer,
                             ntree,
                             &cj->scene->r,
                             false,

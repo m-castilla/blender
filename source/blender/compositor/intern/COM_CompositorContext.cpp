@@ -47,6 +47,7 @@ CompositorContext CompositorContext::build(const std::string &execution_id,
                                            struct Depsgraph *depsgraph,
                                            RenderData *rd,
                                            Scene *scene,
+                                           ViewLayer *view_layer,
                                            bNodeTree *editingtree,
                                            bool rendering,
                                            const ColorManagedViewSettings *viewSettings,
@@ -59,6 +60,7 @@ CompositorContext CompositorContext::build(const std::string &execution_id,
   context.setMain(main);
   context.setDepsgraph(depsgraph);
   context.setbNodeTree(editingtree);
+  context.setViewLayer(view_layer);
 
   /* Make sure node tree has previews.
    * Don't create previews in advance, this is done when adding preview operations.
