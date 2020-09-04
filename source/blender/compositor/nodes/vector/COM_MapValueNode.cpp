@@ -35,7 +35,9 @@ void MapValueNode::convertToOperations(NodeConverter &converter,
   NodeOutput *valueSocket = this->getOutputSocket(0);
 
   MapValueOperation *convertProg = new MapValueOperation();
-  convertProg->setSettings(storage);
+  if (storage) {
+    convertProg->setSettings(storage);
+  }
   converter.addOperation(convertProg);
 
   converter.mapInputSocket(colorSocket, convertProg->getInputSocket(0));

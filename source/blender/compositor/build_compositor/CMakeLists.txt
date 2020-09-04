@@ -36,18 +36,18 @@ set(INC
   ${CMP_NODES}/color
   ${CMP_NODES}/converter
   ${CMP_NODES}/filter
+  ${CMP_NODES}/vector
   # ${CMP_NODES}/matte
-    # ${CMP_NODES}/vector
   ${CMP_NODES}/distort
   ${CMP_NODES}/layout
   ${CMP_OPS}
   ${CMP_OPS}/input
   ${CMP_OPS}/output
   ${CMP_OPS}/color
-  # ${CMP_OPS}/matte
   ${CMP_OPS}/converter
-  # ${CMP_OPS}/vector
   ${CMP_OPS}/filter
+  ${CMP_OPS}/vector
+  # ${CMP_OPS}/matte
   ${CMP_OPS}/distort
   ${CMP_BASE}/util
   ${CMP_BASE}/computing
@@ -315,6 +315,18 @@ set(SRC
   ${CMP_NODES}/filter/COM_VectorBlurNode.cpp
   ${CMP_NODES}/filter/COM_VectorBlurNode.h
 
+  # vector nodes
+  ${CMP_NODES}/vector/COM_MapRangeNode.cpp
+  ${CMP_NODES}/vector/COM_MapRangeNode.h
+  ${CMP_NODES}/vector/COM_MapValueNode.cpp
+  ${CMP_NODES}/vector/COM_MapValueNode.h
+  ${CMP_NODES}/vector/COM_NormalizeNode.cpp
+  ${CMP_NODES}/vector/COM_NormalizeNode.h
+  ${CMP_NODES}/vector/COM_NormalNode.cpp
+  ${CMP_NODES}/vector/COM_NormalNode.h
+  ${CMP_NODES}/vector/COM_VectorCurveNode.cpp
+  ${CMP_NODES}/vector/COM_VectorCurveNode.h
+
   # layout nodes
   ${CMP_NODES}/layout/COM_SwitchNode.cpp
   ${CMP_NODES}/layout/COM_SwitchNode.h
@@ -481,12 +493,23 @@ set(SRC
   ${CMP_OPS}/filter/COM_VectorBlurOperation.cpp
   ${CMP_OPS}/filter/COM_VectorBlurOperation.h
 
+  # vector nodes
+  ${CMP_OPS}/vector/COM_DotProductOperation.cpp
+  ${CMP_OPS}/vector/COM_DotProductOperation.h
+  ${CMP_OPS}/vector/COM_MapRangeOperation.cpp
+  ${CMP_OPS}/vector/COM_MapRangeOperation.h
+  ${CMP_OPS}/vector/COM_MapValueOperation.cpp
+  ${CMP_OPS}/vector/COM_MapValueOperation.h
+  ${CMP_OPS}/vector/COM_NormalizeOperation.cpp
+  ${CMP_OPS}/vector/COM_NormalizeOperation.h
+  ${CMP_OPS}/vector/COM_VectorCurveOperation.cpp
+  ${CMP_OPS}/vector/COM_VectorCurveOperation.h
+  
   # distort operations
   ${CMP_OPS}/distort/COM_ScaleOperation.cpp
   ${CMP_OPS}/distort/COM_ScaleOperation.h
   ${CMP_OPS}/distort/COM_TranslateOperation.cpp
   ${CMP_OPS}/distort/COM_TranslateOperation.h
-
 
 )
 

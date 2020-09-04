@@ -45,22 +45,16 @@
 //#include "COM_KeyingScreenNode.h"
 //#include "COM_LensDistortionNode.h"
 //#include "COM_LuminanceMatteNode.h"
-//#include "COM_MapRangeNode.h"
 //#include "COM_MapUVNode.h"
-//#include "COM_MapValueNode.h"
 
 //#include "COM_MovieDistortionNode.h"
-//#include "COM_NormalNode.h"
-//#include "COM_NormalizeNode.h"
 //#include "COM_PlaneTrackDeformNode.h"
-//#include "COM_RenderLayersNode.h"
 //#include "COM_RotateNode.h"
 //#include "COM_SetValueOperation.h"
 //#include "COM_SplitViewerNode.h"
 //#include "COM_Stabilize2dNode.h"
 
 //#include "COM_TransformNode.h"
-//#include "COM_VectorCurveNode.h"
 
 #include "COM_AlphaOverNode.h"
 #include "COM_BilateralBlurNode.h"
@@ -94,6 +88,8 @@
 #include "COM_ImageNode.h"
 #include "COM_InpaintNode.h"
 #include "COM_InvertNode.h"
+#include "COM_MapRangeNode.h"
+#include "COM_MapValueNode.h"
 #include "COM_MaskNode.h"
 #include "COM_MathNode.h"
 #include "COM_MemoryCacheNode.h"
@@ -101,6 +97,8 @@
 #include "COM_MovieClipNode.h"
 #include "COM_NodeOperation.h"
 #include "COM_NodeOperationBuilder.h"
+#include "COM_NormalNode.h"
+#include "COM_NormalizeNode.h"
 #include "COM_OutputFileNode.h"
 #include "COM_PixelateNode.h"
 #include "COM_RenderLayersNode.h"
@@ -122,6 +120,7 @@
 #include "COM_TranslateOperation.h"
 #include "COM_ValueNode.h"
 #include "COM_VectorBlurNode.h"
+#include "COM_VectorCurveNode.h"
 #include "COM_VideoSequencerNode.h"
 #include "COM_ViewLevelsNode.h"
 #include "COM_ViewerNode.h"
@@ -281,6 +280,24 @@ Node *Converter::convert(bNode *b_node)
       break;
       /* */
 
+      /* Vector nodes */
+    case CMP_NODE_NORMAL:
+      node = new NormalNode(b_node);
+      break;
+    case CMP_NODE_NORMALIZE:
+      node = new NormalizeNode(b_node);
+      break;
+    case CMP_NODE_CURVE_VEC:
+      node = new VectorCurveNode(b_node);
+      break;
+    case CMP_NODE_MAP_VALUE:
+      node = new MapValueNode(b_node);
+      break;
+    case CMP_NODE_MAP_RANGE:
+      node = new MapRangeNode(b_node);
+      break;
+      /* */
+
       /*Distort nodes*/
     case CMP_NODE_TRANSLATE:
       node = new TranslateNode(b_node);
@@ -355,21 +372,13 @@ Node *Converter::convert(bNode *b_node)
       //  node = new FlipNode(b_node);
       //  break;
 
-      // case CMP_NODE_NORMAL:
-      //  node = new NormalNode(b_node);
-      //  break;
-      // case CMP_NODE_NORMALIZE:
-      //  node = new NormalizeNode(b_node);
-      //  break;
       // case CMP_NODE_MASK_BOX:
       //  node = new BoxMaskNode(b_node);
       //  break;
       // case CMP_NODE_MASK_ELLIPSE:
       //  node = new EllipseMaskNode(b_node);
       //  break;
-      // case CMP_NODE_CURVE_VEC:
-      //  node = new VectorCurveNode(b_node);
-      //  break;
+
       // case CMP_NODE_MAP_UV:
       //  node = new MapUVNode(b_node);
       //  break;
@@ -400,12 +409,6 @@ Node *Converter::convert(bNode *b_node)
       //  break;
       // case CMP_NODE_COLOR_SPILL:
       //  node = new ColorSpillNode(b_node);
-      //  break;
-      // case CMP_NODE_MAP_VALUE:
-      //  node = new MapValueNode(b_node);
-      //  break;
-      // case CMP_NODE_MAP_RANGE:
-      //  node = new MapRangeNode(b_node);
       //  break;
       // case CMP_NODE_TRANSFORM:
       //  node = new TransformNode(b_node);

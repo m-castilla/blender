@@ -19,16 +19,36 @@
 #pragma once
 
 #include "COM_NodeOperation.h"
+#include "DNA_texture_types.h"
 
-class DotproductOperation : public NodeOperation {
+/**
+ * this program converts an input color to an output value.
+ * it assumes we are in sRGB color space.
+ */
+class MapValueOperation : public NodeOperation {
  private:
-  SocketReader *m_input1Operation;
-  SocketReader *m_input2Operation;
+  float m_min;
+  float m_max;
+  float m_size;
+  float m_loc;
+  int m_flag;
 
  public:
-  DotproductOperation();
-  void executePixelSampled(float output[4], float x, float y, PixelSampler sampler);
+  /**
+   * Default constructor
+   */
+  MapValueOperation();
 
-  void initExecution();
-  void deinitExecution();
+  void setSettings(TexMapping *settings)
+  {
+    m_min = settings->min[0];
+    m_max = settings->max[0];
+    m_size = settings->size[0];
+    m_loc = settings->loc[0];
+    m_flag = settings->flag;
+  }
+
+ protected:
+  void hashParams() override;
+  void execPixels(ExecutionManager &man) override;
 };

@@ -9,7 +9,8 @@ const cl_image_format IMAGE_FORMAT_COLOR = {
     CL_FLOAT,
 };
 const cl_image_format IMAGE_FORMAT_VECTOR = {
-    CL_RGB,
+    CL_RGBA,  // CL_RGB and CL_float not supported in most implementations, we have to use CL_RGBA
+              // which is always supported
     CL_FLOAT,
 };
 const cl_image_format IMAGE_FORMAT_VALUE = {

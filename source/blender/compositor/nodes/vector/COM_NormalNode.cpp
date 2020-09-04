@@ -18,6 +18,7 @@
 
 #include "COM_NormalNode.h"
 #include "BKE_node.h"
+#include "BLI_math.h"
 #include "COM_DotproductOperation.h"
 #include "COM_ExecutionSystem.h"
 #include "COM_SetVectorOperation.h"
@@ -42,7 +43,6 @@ void NormalNode::convertToOperations(NodeConverter &converter,
   operationSet->setX(normal[0]);
   operationSet->setY(normal[1]);
   operationSet->setZ(normal[2]);
-  operationSet->setW(0.0f);
   converter.addOperation(operationSet);
 
   converter.mapOutputSocket(outputSocket, operationSet->getOutputSocket(0));

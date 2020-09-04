@@ -40,6 +40,11 @@ CCL_NAMESPACE_BEGIN
 #define CCL_COLBAND_HUE_CCW 3
 /* **************** END of ColorBand ********************* */
 
+/* Textures */
+#define TEXMAP_CLIP_MIN 1
+#define TEXMAP_CLIP_MAX 2
+/* END of Textures */
+
 ccl_constant float4 BLACK_PIXEL = make_float4(0, 0, 0, 1);
 ccl_constant float4 TRANSPARENT_PIXEL = make_float4(0, 0, 0, 0);
 

@@ -337,9 +337,6 @@ void NodeOperationBuilder::add_operation_input_constants()
         pending_inputs.push_back(input);
         input->setHasUserLink(false);
       }
-      else {
-        input->setHasUserLink(true);
-      }
     }
   }
   for (Inputs::const_iterator it = pending_inputs.begin(); it != pending_inputs.end(); ++it) {

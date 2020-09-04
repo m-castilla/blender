@@ -17,36 +17,34 @@
  */
 
 #include "COM_VectorCurveOperation.h"
-
 #include "BKE_colortools.h"
+#include "COM_ComputeKernel.h"
+#include "COM_kernel_cpu.h"
 
 VectorCurveOperation::VectorCurveOperation() : CurveBaseOperation()
 {
-  this->addInputSocket(COM_DT_VECTOR);
-  this->addOutputSocket(COM_DT_VECTOR);
-
-  this->m_inputProgram = NULL;
-}
-void VectorCurveOperation::initExecution()
-{
-  CurveBaseOperation::initExecution();
-  this->m_inputProgram = this->getInputSocketReader(0);
+  this->addInputSocket(SocketType::VECTOR);
+  this->addOutputSocket(SocketType::VECTOR);
 }
 
-void VectorCurveOperation::executePixelSampled(float output[4],
-                                               float x,
-                                               float y,
-                                               PixelSampler sampler)
+void VectorCurveOperation::execPixels(ExecutionManager &man)
 {
-  float input[4];
+  auto vector = getInputOperation(0)->getPixels(this, man);
 
-  this->m_inputProgram->readSampled(input, x, y, sampler);
+  auto cpu_write = [&](PixelsRect &dst, const WriteRectContext &ctx) {
+    READ_DECL(vector);
+    WRITE_DECL(dst);
+    CCL::float3 dst_pix;
 
-  BKE_curvemapping_evaluate_premulRGBF(this->m_curveMapping, output, input);
-}
+    CPU_LOOP_START(dst);
 
-void VectorCurveOperation::deinitExecution()
-{
-  CurveBaseOperation::deinitExecution();
-  this->m_inputProgram = NULL;
+    COPY_COORDS(vector, dst_coords);
+
+    BKE_curvemapping_evaluate_premulRGBF(m_curveMapping, (float *)&dst_pix, (float *)&vector);
+
+    WRITE_IMG3(dst, dst_pix);
+
+    CPU_LOOP_END;
+  };
+  cpuWriteSeek(man, cpu_write);
 }
