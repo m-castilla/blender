@@ -166,7 +166,7 @@ ccl_kernel convertColorToVectorOp(CCL_WRITE(dst), CCL_READ(color))
   READ_IMG4(color, color_pix);
   WRITE_IMG3(dst, color_pix);
 
-  CPU_LOOP_END
+  CPU_LOOP_END;
 }
 CCL_NAMESPACE_END
 #undef OPENCL_CODE

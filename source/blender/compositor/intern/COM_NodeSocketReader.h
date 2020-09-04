@@ -246,7 +246,7 @@ class NodeOperationInput {
   // Used to distinguish between real user connections and default value added connections
   bool hasUserLink()
   {
-    return m_has_user_link;
+    return isConnected() && m_has_user_link;
   }
   void setHasUserLink(bool has_user_link)
   {

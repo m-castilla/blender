@@ -1402,11 +1402,12 @@ static void do_render_composite(Render *re)
         }
 
         RenderView *rv;
+        ViewLayer *view_layer = BLI_findlink(&re->view_layers, re->active_view_layer);
         for (rv = re->result->views.first; rv; rv = rv->next) {
           ntreeCompositExecTree(re->main,
                                 re->pipeline_depsgraph,
                                 re->pipeline_scene_eval,
-                                re->active_view_layer,
+                                view_layer,
                                 ntree,
                                 &re->r,
                                 true,
@@ -1415,7 +1416,6 @@ static void do_render_composite(Render *re)
                                 &re->scene->display_settings,
                                 rv->name);
         }
-
         ntree->stats_draw = NULL;
         ntree->test_break = NULL;
         ntree->progress = NULL;

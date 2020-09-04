@@ -103,9 +103,6 @@ void ExecutionManager::execWriteJob(
       int n_total_works = m_context.getNCpuWorkThreads() * 8;
       n_total_works = std::min(n_total_works, height);
       std::vector<rcti> splits = RectUtil::splitImgRectInEqualRects(n_total_works, width, height);
-      m_n_subworks = splits.size();
-      m_n_exec_subworks = 0;
-
       for (auto &rect : splits) {
         if (xmin > 0) {
           rect.xmin += xmin;
@@ -122,9 +119,11 @@ void ExecutionManager::execWriteJob(
       }
     }
 
-    int n_passes = op->getNPasses();
     int current_pass = 0;
+    int n_passes = op->getNPasses();
     while (current_pass < n_passes) {
+      m_n_subworks = works.size();
+      m_n_exec_subworks = 0;
       for (auto work : works) {
         work->reset();
         WriteRectContext ctx;
