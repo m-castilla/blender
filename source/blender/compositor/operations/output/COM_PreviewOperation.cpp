@@ -184,16 +184,32 @@ ResolutionType PreviewOperation::determineResolution(int resolution[2],
                                                      int preferredResolution[2],
                                                      bool /*setResolution*/)
 {
+  int preview_size = GlobalMan->getContext()->getPreviewSize();
+  bool any_user_input = false;
+  for (auto input : m_inputs) {
+    if (input->hasUserLink()) {
+      any_user_input = true;
+      break;
+    }
+  }
+  if (any_user_input) {
+    preferredResolution[0] = preview_size;
+    preferredResolution[1] = preview_size;
+  }
+  else {
+    preferredResolution[0] = 0;
+    preferredResolution[1] = 0;
+  }
   NodeOperation::determineResolution(resolution, preferredResolution, false);
   int width = resolution[0];
   int height = resolution[1];
   float divider = 0.0f;
+
   if (width == 0 || height == 0) {
     resolution[0] = 0;
     resolution[1] = 0;
   }
   else {
-    int preview_size = GlobalMan->getContext()->getPreviewSize();
     if (width > height) {
       divider = preview_size / (float)width;
     }
