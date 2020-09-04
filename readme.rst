@@ -64,15 +64,26 @@ Other changes
 TODO
 ========
 - Get to work all the remaining nodes. 
-- Many algorithms have a lot of room to improve performance, some of them are single threaded or can't be executed with OpenCL or both, but it's not easy. I may have to find a way to slice parts of the algorithms adding them as works with a range of values and execute them as threads or OpenCL kernels while keeping all the abstractions I've made as much as possible. I'll think about it once I've got all nodes working and have a better understading of all the algorithms.
 - Fixing bugs.
+- Better documentation if required.
+- Implement relative space.
+- Many algorithms have a lot of room to improve performance, some of them are single threaded or can't be executed with OpenCL or both. Finding a way to slice parts of the algorithms adding them as works with a range of values and execute them as threads or OpenCL kernels while keeping all the abstractions as much as possible. 
+- Implement frequently requested features?, maybe picking from here https://devtalk.blender.org/t/compositor-improvements/13264/36
 
-From here is rather unknown, depends on my situation and seeing if this solution is really considered an improvement or an acceptable solution for blender or not.   But I'd like to keep doing things like:
+How to build this branch
+========
+First, is better if you already know how to build blender, see https://wiki.blender.org/wiki/Building_Blender
 
-- Better document it if required.
-- Implement frequently requested features?, maybe picking from here -> https://devtalk.blender.org/t/compositor-improvements/13264/36
-- Having fun implementing trippy image algorithms?
-
+| ``git clone https://github.com/m-castilla/blender.git``  
+| ``cd blender``  
+| ``git config submodule.release/datafiles/locale.url git://git.blender.org/blender-translations.git``  
+| ``git config submodule.release/scripts/addons.url git://git.blender.org/blender-addons.git``
+| ``git config submodule.release/scripts/addons_contrib.url git://git.blender.org/blender-addons-contrib.git``
+| ``git config submodule.source/tools.url git://git.blender.org/blender-dev-tools.git``
+| ``git checkout compositor-up``
+| ``make update``
+| ``make``
+  
 Final words
 ===========
 If someone may want to try it, I'll appreciate it if you report any issue you may find as there will be for sure. But don't use it with production files please, it's very experimental yet.
