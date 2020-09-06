@@ -267,10 +267,10 @@ CCL_NAMESPACE_END
 #endif
 
 #define READ_IMG(src, pixel) \
-  if (src##_img.elem_chs3 == 4) { \
+  if (src##_img.elem_chs == 4) { \
     READ_IMG4(src, pixel); \
   } \
-  else if (src##_img.elem_chs3 == 1) { \
+  else if (src##_img.elem_chs == 1) { \
     READ_IMG1(src, pixel); \
   } \
   else { \
@@ -278,10 +278,10 @@ CCL_NAMESPACE_END
   }
 
 #define WRITE_IMG(dst, pixel) \
-  if (dst##_img.elem_chs3 == 4) { \
+  if (dst##_img.elem_chs == 4) { \
     WRITE_IMG4(dst, pixel); \
   } \
-  else if (dst##_img.elem_chs3 == 1) { \
+  else if (dst##_img.elem_chs == 1) { \
     WRITE_IMG1(dst, pixel); \
   } \
   else { \
