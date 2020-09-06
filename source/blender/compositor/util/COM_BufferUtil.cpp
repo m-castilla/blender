@@ -48,7 +48,7 @@ std::unique_ptr<TmpBuffer> createNonStdTmpBuffer(float *host_buffer,
 
   auto buf = new TmpBuffer();
   buf->is_host_recyclable = false;
-  buf->elem_chs3 = n_used_channels;
+  buf->elem_chs = n_used_channels;
   buf->host.buffer = host_buffer;
   buf->width = width;
   buf->height = height;
@@ -56,7 +56,7 @@ std::unique_ptr<TmpBuffer> createNonStdTmpBuffer(float *host_buffer,
   buf->host.brow_bytes = BufferUtil::calcNonStdBufferRowBytes(width, n_buffer_channels);
   buf->host.bheight = height;
   buf->host.bwidth = width;
-  buf->host.belem_chs3 = n_buffer_channels;
+  buf->host.belem_chs = n_buffer_channels;
   if (host_buffer == nullptr) {
     buf->host.state = HostMemoryState::NONE;
   }
@@ -67,7 +67,7 @@ std::unique_ptr<TmpBuffer> createNonStdTmpBuffer(float *host_buffer,
   buf->device.buffer = nullptr;
   buf->device.bwidth = 0;
   buf->device.bheight = 0;
-  buf->device.belem_chs3 = 0;
+  buf->device.belem_chs = 0;
   buf->device.state = DeviceMemoryState::NONE;
 
   buf->orig_host.buffer = nullptr;
@@ -104,7 +104,7 @@ void deviceAlloc(
   dst->device.buffer = device->memDeviceAlloc(device_access, width, height, alloc_host);
   dst->device.bwidth = width;
   dst->device.bheight = height;
-  dst->device.belem_chs3 = COM_NUM_CHANNELS_STD;
+  dst->device.belem_chs = COM_NUM_CHANNELS_STD;
   dst->device.has_map_alloc = alloc_host;
   dst->device.state = DeviceMemoryState::CLEARED;
   ASSERT_VALID_STD_TMP_BUFFER(dst, width, height);
@@ -129,7 +129,7 @@ void hostNonStdAlloc(TmpBuffer *dst, int width, int height, int belem_chs)
   dst->host.buffer = hostAlloc(width, height, belem_chs);
   dst->host.bwidth = width;
   dst->host.bheight = height;
-  dst->host.belem_chs3 = belem_chs;
+  dst->host.belem_chs = belem_chs;
   dst->host.brow_bytes = BufferUtil::calcNonStdBufferRowBytes(width, belem_chs);
   dst->host.buffer_bytes = BufferUtil::calcNonStdBufferBytes(width, height, belem_chs);
   BLI_assert(dst->host.buffer_bytes == dst->host.brow_bytes * dst->host.bheight);
@@ -180,7 +180,7 @@ void deviceMapToHostEnqueue(TmpBuffer *buf, MemoryAccess host_access)
   }
   buf->host.bwidth = buf->width;
   buf->host.bheight = buf->height;
-  buf->host.belem_chs3 = COM_NUM_CHANNELS_STD;
+  buf->host.belem_chs = COM_NUM_CHANNELS_STD;
 
   // set default brow_bytes, this may be changed later by memDeviceToHostMapEnqueue
   buf->host.brow_bytes = BufferUtil::calcStdBufferRowBytes(buf->width);

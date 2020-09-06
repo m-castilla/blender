@@ -85,7 +85,7 @@ PixelsImg PixelsRect::pixelsImg()
 
     PixelsImg img = PixelsImg::create(tmp_buffer->host.buffer,
                                       tmp_buffer->getBufferRowBytes(),
-                                      tmp_buffer->elem_chs3,
+                                      tmp_buffer->elem_chs,
                                       tmp_buffer->getBufferElemChs(),
                                       *this,
                                       false);

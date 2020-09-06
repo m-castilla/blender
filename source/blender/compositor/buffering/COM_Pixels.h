@@ -77,7 +77,7 @@ typedef struct PixelsImg {
   /* rect end */
   const float *const end;
   /* element channels used*/
-  const int elem_chs3;
+  const int elem_chs;
   /* Per pixel element channels in the buffer (might be greater than used channels to allow
    * different image formats compatibility in all devices)*/
   const int belem_chs;

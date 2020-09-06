@@ -404,10 +404,10 @@ bool BufferManager::prepareForWrite(bool is_write_computed, OpReads *reads)
       work_enqueued |= m_recycler->takeStdRecycle(recycle_type, buf, width, height, elem_chs);
       BLI_assert(recycle_type != BufferRecycleType::HOST_CLEAR ||
                  (buf->host.buffer != nullptr && buf->host.bwidth > 0 && buf->host.bheight > 0 &&
-                  buf->host.belem_chs3 > 0));
+                  buf->host.belem_chs > 0));
       BLI_assert(recycle_type == BufferRecycleType::HOST_CLEAR ||
                  (buf->device.buffer != nullptr && buf->device.bwidth > 0 &&
-                  buf->device.bheight > 0 && buf->device.belem_chs3 > 0));
+                  buf->device.bheight > 0 && buf->device.belem_chs > 0));
     }
   }
   return work_enqueued;
@@ -424,7 +424,7 @@ bool BufferManager::prepareForRead(bool is_compute_written, OpReads *reads)
       BLI_assert(buf->device.state == DeviceMemoryState::FILLED);
       if (buf->host.state == HostMemoryState::NONE) {
         work_enqueued |= m_recycler->takeStdRecycle(
-            BufferRecycleType::HOST_CLEAR, buf, buf->width, buf->height, buf->elem_chs3);
+            BufferRecycleType::HOST_CLEAR, buf, buf->width, buf->height, buf->elem_chs);
       }
       BufferUtil::deviceToHostCopyEnqueue(buf);
     }
@@ -432,7 +432,7 @@ bool BufferManager::prepareForRead(bool is_compute_written, OpReads *reads)
       BLI_assert(buf->device.state == DeviceMemoryState::NONE);
       BLI_assert(buf->host.state == HostMemoryState::FILLED);
       work_enqueued |= m_recycler->takeStdRecycle(
-          BufferRecycleType::DEVICE_CLEAR, buf, buf->width, buf->height, buf->elem_chs3);
+          BufferRecycleType::DEVICE_CLEAR, buf, buf->width, buf->height, buf->elem_chs);
       BufferUtil::hostToDeviceCopyEnqueue(buf);
     }
     work_enqueued = true;
@@ -448,7 +448,7 @@ bool BufferManager::prepareForRead(bool is_compute_written, OpReads *reads)
         else if (buf->host.state == HostMemoryState::FILLED) {
           BLI_assert(buf->device.state == DeviceMemoryState::NONE);
           work_enqueued |= m_recycler->takeStdRecycle(
-              BufferRecycleType::DEVICE_CLEAR, buf, buf->width, buf->height, buf->elem_chs3);
+              BufferRecycleType::DEVICE_CLEAR, buf, buf->width, buf->height, buf->elem_chs);
           BLI_assert(buf->device.state == DeviceMemoryState::CLEARED);
           BufferUtil::hostToDeviceCopyEnqueue(buf);
         }
@@ -500,7 +500,7 @@ CacheBuffer *BufferManager::getCache(NodeOperation *op)
     host.brow_bytes = BufferUtil::calcStdBufferRowBytes(cache->width);
     host.bwidth = op->getWidth();
     host.bheight = op->getHeight();
-    host.belem_chs3 = n_used_chs;
+    host.belem_chs = n_used_chs;
     host.buffer = BufferUtil::hostAlloc(cache->width, cache->height, COM_NUM_CHANNELS_STD);
     host.state = HostMemoryState::CLEARED;
 
@@ -530,12 +530,12 @@ TmpBuffer *BufferManager::getCustomBuffer(NodeOperation *op)
   BLI_assert(custom != nullptr && custom->host.buffer != nullptr);
   BLI_assert(custom->height == op->getHeight());
   BLI_assert(custom->width == op->getWidth());
-  BLI_assert(custom->elem_chs3 == n_used_chs);
+  BLI_assert(custom->elem_chs == n_used_chs);
   BLI_assert(custom->host.bheight >= custom->height);
   BLI_assert(custom->host.bwidth >= custom->width);
-  BLI_assert(custom->host.belem_chs3 >= n_used_chs);
+  BLI_assert(custom->host.belem_chs >= n_used_chs);
   BLI_assert(custom->host.brow_bytes ==
-             BufferUtil::calcNonStdBufferRowBytes(custom->host.bwidth, custom->host.belem_chs3));
+             BufferUtil::calcNonStdBufferRowBytes(custom->host.bwidth, custom->host.belem_chs));
   BLI_assert(custom->host.state == HostMemoryState::CLEARED ||
              custom->host.state == HostMemoryState::FILLED);
   if (custom->host.state == HostMemoryState::CLEARED) {

@@ -52,7 +52,7 @@ typedef struct HostBuffer {
   /**
    * Physical buffer channels by element.
    */
-  int belem_chs3;
+  int belem_chs;
   HostMemoryState state;
 } HostBuffer;
 typedef struct DeviceBuffer {
@@ -69,7 +69,7 @@ typedef struct DeviceBuffer {
   /**
    * Physical buffer channels by element.
    */
-  int belem_chs3;
+  int belem_chs;
   DeviceMemoryState state;
 } DeviceBuffer;
 
@@ -101,7 +101,7 @@ typedef struct TmpBuffer {
   /**
    * Currently used channels by element in Host and Device buffers
    */
-  int elem_chs3;
+  int elem_chs;
 
   std::string execution_id;
 
@@ -112,7 +112,7 @@ typedef struct TmpBuffer {
 
   inline size_t getBufferElemChs() const
   {
-    return device.state != DeviceMemoryState::NONE ? COM_NUM_CHANNELS_STD : host.belem_chs3;
+    return device.state != DeviceMemoryState::NONE ? COM_NUM_CHANNELS_STD : host.belem_chs;
   }
   inline size_t getBufferElemBytes() const
   {
