@@ -88,7 +88,7 @@ class PixelsRect : public rcti {
   }
   inline int getElemChs()
   {
-    return is_single_elem ? single_elem_chs : tmp_buffer->elem_chs3;
+    return is_single_elem ? single_elem_chs : tmp_buffer->elem_chs;
   }
   inline int getBufferElemChs()
   {
