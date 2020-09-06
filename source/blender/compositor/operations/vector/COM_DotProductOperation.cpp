@@ -16,7 +16,7 @@
  * Copyright 2011, Blender Foundation.
  */
 
-#include "COM_DotproductOperation.h"
+#include "COM_DotProductOperation.h"
 #include "COM_ComputeKernel.h"
 #include "COM_kernel_cpu.h"
 
