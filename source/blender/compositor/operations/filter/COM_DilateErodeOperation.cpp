@@ -361,16 +361,16 @@ void DilateStepOperation::hashParams()
 
 void DilateStepOperation::execPixels(ExecutionManager &man)
 {
-  auto color = getInputOperation(0)->getPixels(this, man);
+  auto mask_pixels = getInputOperation(0)->getPixels(this, man);
 
   auto cpuWrite = [&](PixelsRect &dst, const WriteRectContext &ctx) {
     PixelsImg dst_img = dst.pixelsImg();
-    PixelsImg color_img = color->pixelsImg();
+    PixelsImg mask_img = mask_pixels->pixelsImg();
 
     int x, y, i;
-    int width = color_img.row_elems;
-    int height = color_img.col_elems;
-    float *buffer = color_img.buffer;
+    int width = mask_img.row_elems;
+    int height = mask_img.col_elems;
+    float *mask = mask_img.buffer;
 
     int half_window = this->m_iterations;
     int window = half_window * 2 + 1;
@@ -404,8 +404,10 @@ void DilateStepOperation::execPixels(ExecutionManager &man)
       for (x = 0; x < bwidth + 5 * half_window; x++) {
         buf[x] = -FLT_MAX;
       }
+      size_t mask_y_offset = y * mask_img.brow_chs_incr;
       for (x = xmin; x < xmax; x++) {
-        buf[x - dst_img.start_x + window - 1] = buffer[(y * width + x)];
+        buf[x - dst_img.start_x + window - 1] =
+            mask[(mask_y_offset + x * mask_img.belem_chs_incr)];
       }
 
       for (i = 0; i < (bwidth + 3 * half_window) / window; i++) {
@@ -418,8 +420,9 @@ void DilateStepOperation::execPixels(ExecutionManager &man)
         }
 
         start = half_window + (i - 1) * window + 1;
+        size_t rectf_y_offset = bwidth * (y - ymin);
         for (x = -std::min(0, start); x < window - std::max(0, start + window - bwidth); x++) {
-          rectf[bwidth * (y - ymin) + (start + x)] = std::max(temp[x], temp[x + window - 1]);
+          rectf[rectf_y_offset + (start + x)] = std::max(temp[x], temp[x + window - 1]);
         }
       }
     }
@@ -458,7 +461,7 @@ void DilateStepOperation::execPixels(ExecutionManager &man)
     int xmax_added_window = xmax - dst_img.end_x;
     int ymin_added_window = dst_img.start_y - ymin;
     int ymax_added_window = ymax - dst_img.end_y;
-    auto rectf_tmp = BufferUtil::createUnmanagedTmpBuffer(rectf, rectf_w, rectf_h, 1, true);
+    auto rectf_tmp = BufferUtil::createNonStdTmpBuffer(rectf, true, rectf_w, rectf_h, 1);
     PixelsRect rectf_pr = PixelsRect(rectf_tmp.get(),
                                      xmin_added_window,
                                      rectf_w - xmax_added_window,
@@ -580,7 +583,7 @@ void ErodeStepOperation::execPixels(ExecutionManager &man)
     int xmax_added_window = xmax - dst_img.end_x;
     int ymin_added_window = dst_img.start_y - ymin;
     int ymax_added_window = ymax - dst_img.end_y;
-    auto rectf_tmp = BufferUtil::createUnmanagedTmpBuffer(rectf, rectf_w, rectf_h, 1, true);
+    auto rectf_tmp = BufferUtil::createNonStdTmpBuffer(rectf, true, rectf_w, rectf_h, 1);
     PixelsRect rectf_pr = PixelsRect(rectf_tmp.get(),
                                      xmin_added_window,
                                      rectf_w - xmax_added_window,

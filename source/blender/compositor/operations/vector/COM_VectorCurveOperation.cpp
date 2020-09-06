@@ -31,7 +31,7 @@ void VectorCurveOperation::execPixels(ExecutionManager &man)
 {
   auto vector = getInputOperation(0)->getPixels(this, man);
 
-  auto cpu_write = [&](PixelsRect &dst, const WriteRectContext &ctx) {
+  auto cpu_write = [&](PixelsRect &dst, const WriteRectContext &) {
     READ_DECL(vector);
     WRITE_DECL(dst);
     CCL::float3 dst_pix;
@@ -39,8 +39,9 @@ void VectorCurveOperation::execPixels(ExecutionManager &man)
     CPU_LOOP_START(dst);
 
     COPY_COORDS(vector, dst_coords);
+    READ_IMG3(vector, vector_pix);
 
-    BKE_curvemapping_evaluate_premulRGBF(m_curveMapping, (float *)&dst_pix, (float *)&vector);
+    BKE_curvemapping_evaluate_premulRGBF(m_curveMapping, (float *)&dst_pix, (float *)&vector_pix);
 
     WRITE_IMG3(dst, dst_pix);
 

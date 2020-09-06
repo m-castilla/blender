@@ -131,14 +131,16 @@ void AntiAliasOperation::execPixels(ExecutionManager &man)
       dst_img.buffer[dst_offset] = 0.0f;
     }
     else {
-      const float *row_curr = &input_img.buffer[input_coords.y * input_w];
+      const float *row_curr = &input_img.buffer[input_coords.y * input_img.brow_chs_incr];
       if (input_coords.x == 0 || input_coords.x == input_w - 1 || input_coords.y == 0 ||
           input_coords.y == input_h - 1) {
-        dst_img.buffer[dst_offset] = row_curr[input_coords.x];
+        size_t x_offset = input_coords.x * input_img.belem_chs_incr;
+        dst_img.buffer[dst_offset] = row_curr[x_offset];
       }
       else {
-        const float *row_prev = &input_img.buffer[(input_coords.y - 1) * input_w],
-                    *row_next = &input_img.buffer[(input_coords.y + 1) * input_w];
+        const float *row_prev = &input_img.buffer[(input_coords.y - 1) * input_img.brow_chs_incr],
+                    *row_next = &input_img.buffer[(input_coords.y + 1) * input_img.brow_chs_incr];
+        size_t x_offset = input_coords.x * input_img.belem_chs_incr;
         float ninepix[9];
         if (extrapolate9(&ninepix[0],
                          &ninepix[1],
@@ -149,15 +151,15 @@ void AntiAliasOperation::execPixels(ExecutionManager &man)
                          &ninepix[6],
                          &ninepix[7],
                          &ninepix[8],
-                         &row_prev[input_coords.x - 1],
-                         &row_prev[input_coords.x],
-                         &row_prev[input_coords.x + 1],
-                         &row_curr[input_coords.x - 1],
-                         &row_curr[input_coords.x],
-                         &row_curr[input_coords.x + 1],
-                         &row_next[input_coords.x - 1],
-                         &row_next[input_coords.x],
-                         &row_next[input_coords.x + 1])) {
+                         &row_prev[x_offset - 1],
+                         &row_prev[x_offset],
+                         &row_prev[x_offset + 1],
+                         &row_curr[x_offset - 1],
+                         &row_curr[x_offset],
+                         &row_curr[x_offset + 1],
+                         &row_next[x_offset - 1],
+                         &row_next[x_offset],
+                         &row_next[x_offset + 1])) {
           /* Some rounding magic to so make weighting correct with the
            * original coefficients.
            */
@@ -170,7 +172,7 @@ void AntiAliasOperation::execPixels(ExecutionManager &man)
           dst_img.buffer[dst_offset] = result / 255.0f;
         }
         else {
-          dst_img.buffer[dst_offset] = row_curr[input_coords.x];
+          dst_img.buffer[dst_offset] = row_curr[x_offset];
         }
       }
     }

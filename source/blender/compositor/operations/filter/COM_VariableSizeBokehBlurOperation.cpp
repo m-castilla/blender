@@ -84,6 +84,7 @@ void VariableSizeBokehBlurOperation::execPixels(ExecutionManager &man)
   const float max_dim = CCL::max(m_width, m_height);
   const float scalar = this->m_do_size_scale ? (max_dim / 100.0f) : 1.0f;
   int quality_step = QualityStepHelper::getStep();
+  PixelsSampler sampler = PixelsSampler{PixelInterpolation::NEAREST, PixelExtend::CLIP};
   auto cpu_write = [&](PixelsRect &dst, const WriteRectContext &ctx) {
     if (ctx.current_pass == 0) {
       float max_size = getMaxSize(size, dst);
@@ -110,9 +111,6 @@ void VariableSizeBokehBlurOperation::execPixels(ExecutionManager &man)
 
       CPU_LOOP_START(dst);
 
-      COPY_COORDS(color, dst_coords);
-      COPY_COORDS(size, dst_coords);
-
 #ifdef COM_DEFOCUS_SEARCH
       float search[4];
       this->m_inputSearchProgram->read(search,
@@ -130,6 +128,8 @@ void VariableSizeBokehBlurOperation::execPixels(ExecutionManager &man)
       int maxy = CCL::min(dst_coords.y + maxBlurScalar, (int)m_height);
 #endif
 
+      COPY_COORDS(color, dst_coords);
+      COPY_COORDS(size, dst_coords);
       READ_IMG4(color, orig_color_pix);
       READ_IMG1(size, size_pix);
 
@@ -137,11 +137,8 @@ void VariableSizeBokehBlurOperation::execPixels(ExecutionManager &man)
       multiplier_accum = one_f4;
 
       float size_center = size_pix.x * scalar;
-
       if (size_center > this->m_threshold) {
         SET_COORDS(size, minx, miny);
-        COPY_COORDS(color, size_coords);
-        COPY_COORDS(bokeh, size_coords);
         int bokeh_x, bokeh_y;
         for (int ny = miny; ny < maxy; ny += quality_step) {
           float dy = ny - dst_coords.y;
@@ -156,8 +153,9 @@ void VariableSizeBokehBlurOperation::execPixels(ExecutionManager &man)
                             (dx / size_value) * (float)((COM_BLUR_BOKEH_PIXELS / 2) - 1);
                   bokeh_y = (float)(COM_BLUR_BOKEH_PIXELS / 2) +
                             (dy / size_value) * (float)((COM_BLUR_BOKEH_PIXELS / 2) - 1);
-                  SET_COORDS(bokeh, bokeh_x, bokeh_y);
-                  READ_IMG4(bokeh, bokeh_pix);
+                  SET_SAMPLE_COORDS(bokeh, bokeh_x, bokeh_y);
+                  COPY_COORDS(color, size_coords);
+                  SAMPLE_NEAREST4_CLIP(0, bokeh, sampler, bokeh_pix);
                   READ_IMG4(color, color_pix);
                   color_accum += bokeh_pix * color_pix;
                   multiplier_accum += bokeh_pix;

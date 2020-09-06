@@ -276,7 +276,7 @@ OutputStereoOperation::OutputStereoOperation(const RenderData *rd,
           rd, tree, datatype, format, path, viewSettings, displaySettings, viewName)
 {
   BLI_strncpy(this->m_name, name, sizeof(this->m_name));
-  this->m_channels = PixelsUtil::getNChannels(datatype);
+  this->m_channels = PixelsUtil::getNUsedChannels(datatype);
 }
 
 void *OutputStereoOperation::get_handle(const char *filename)

@@ -27,7 +27,7 @@ class MultilayerBaseOperation : public BaseImageOperation {
   RenderLayer *m_renderlayer;
 
  protected:
-  ImBuf *getImBuf();
+  virtual void requestImBuf() override;
   virtual void hashParams() override;
 
  public:

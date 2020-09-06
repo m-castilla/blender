@@ -170,8 +170,10 @@ void OpenCLDevice::waitQueueToFinish()
   clFinish(m_queue);
 }
 
-void *OpenCLDevice::memDeviceAlloc(
-    MemoryAccess mem_access, int width, int height, int elem_chs, bool alloc_for_host_map)
+void *OpenCLDevice::memDeviceAlloc(MemoryAccess mem_access,
+                                   int width,
+                                   int height,
+                                   bool alloc_for_host_map)
 {
   cl_int error;
   int mem_flags = m_platform.getMemoryAccessFlag(mem_access);
@@ -180,7 +182,7 @@ void *OpenCLDevice::memDeviceAlloc(
   }
   cl_mem cl_img = clCreateImage2D(m_platform.getContext(),
                                   mem_flags,
-                                  m_platform.getImageFormat(elem_chs),
+                                  m_platform.getImageFormat(),
                                   width,
                                   height,
                                   0,
@@ -194,7 +196,6 @@ float *OpenCLDevice::memDeviceToHostMapEnqueue(void *device_buffer,
                                                MemoryAccess host_mem_access,
                                                int width,
                                                int height,
-                                               int elem_chs,
                                                size_t &r_map_row_pitch)
 {
   cl_int error;
@@ -224,8 +225,7 @@ float *OpenCLDevice::memDeviceToHostMapEnqueue(void *device_buffer,
                                           NULL,
                                           NULL,
                                           &error);
-  BLI_assert(r_map_row_pitch >= BufferUtil::calcBufferRowBytes(width, elem_chs));
-  UNUSED_VARS(elem_chs);
+  BLI_assert(r_map_row_pitch >= BufferUtil::calcStdBufferRowBytes(width));
   m_man.printIfError(error);
   return map;
 }
@@ -237,14 +237,8 @@ void OpenCLDevice::memDeviceToHostUnmapEnqueue(void *device_buffer, float *host_
       clEnqueueUnmapMemObject(m_queue, img, (void *)host_mapped_buffer, 0, NULL, NULL));
 }
 
-void OpenCLDevice::memDeviceToHostCopyEnqueue(float *r_host_buffer,
-                                              void *device_buffer,
-
-                                              size_t host_row_bytes,
-                                              MemoryAccess UNUSED(mem_access),
-                                              int width,
-                                              int height,
-                                              int UNUSED(elem_chs))
+void OpenCLDevice::memDeviceToHostCopyEnqueue(
+    float *r_host_buffer, void *device_buffer, size_t host_row_bytes, int width, int height)
 {
   cl_mem img = (cl_mem)device_buffer;
   size_t origin[3] = {0, 0, 0};
@@ -259,13 +253,8 @@ void OpenCLDevice::memDeviceFree(void *device_buffer)
   m_man.printIfError(clReleaseMemObject(img));
 }
 
-void OpenCLDevice::memHostToDeviceCopyEnqueue(void *r_device_buffer,
-                                              float *host_buffer,
-                                              size_t host_row_bytes,
-                                              MemoryAccess UNUSED(mem_access),
-                                              int width,
-                                              int height,
-                                              int UNUSED(elem_chs))
+void OpenCLDevice::memHostToDeviceCopyEnqueue(
+    void *r_device_buffer, float *host_buffer, size_t host_row_bytes, int width, int height)
 {
   cl_mem img = (cl_mem)r_device_buffer;
   size_t origin[3] = {0, 0, 0};
@@ -356,8 +345,8 @@ OpenCLDevice::OneElemImg OpenCLDevice::getOneElemImg(int idx)
   BLI_assert(idx < MAX_ONE_ELEM_IMGS);
   auto &elem = m_one_elem_imgs[idx];
   if (!elem.img) {
-    elem.img = (cl_mem)memDeviceAlloc(MemoryAccess::READ, 1, 1, 4, false);
-    elem.elem_data = (float *)MEM_mallocN(sizeof(float) * 4, __func__);
+    elem.img = (cl_mem)memDeviceAlloc(MemoryAccess::READ, 1, 1, false);
+    elem.elem_data = (float *)MEM_mallocN(sizeof(float) * COM_NUM_CHANNELS_STD, __func__);
   }
   return elem;
 }

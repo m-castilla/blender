@@ -71,7 +71,7 @@ class SetColorOperation : public NodeOperation {
   {
     m_color[3] = value;
   }
-  void setChannels(const float value[4]);
+  void setChannels(const float value[COM_NUM_CHANNELS_COLOR]);
   BufferType getBufferType() const override
   {
     return BufferType::NO_BUFFER_NO_WRITE;

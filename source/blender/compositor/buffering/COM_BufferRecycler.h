@@ -45,11 +45,21 @@ class BufferRecycler {
   void setExecutionId(const std::string &execution_id);
 
   TmpBuffer *createTmpBuffer(bool is_host_recyclable = true);
-  TmpBuffer *createTmpBuffer(
-      bool is_host_recyclable, float *host_buffer, int width, int height, int n_channels);
+  TmpBuffer *createNonStdTmpBuffer(bool is_host_recyclable,
+                                   float *host_buffer,
+                                   int width,
+                                   int height,
+                                   int n_used_chs,
+                                   int n_buf_chs = 0);
+  TmpBuffer *createStdTmpBuffer(
+      bool is_host_recyclable, float *host_buffer, int width, int height, int n_used_chs);
 
+  /* Only for host recycles that are not inteded to be used with devices buffers */
+  void takeNonStdRecycle(
+      TmpBuffer *dst, int width, int height, int n_used_chs, int n_buffer_chs = 0);
   /* returns whether there has been work enqueued to device*/
-  bool takeRecycle(BufferRecycleType type, TmpBuffer *dst, int width, int height, int elem_chs);
+  bool takeStdRecycle(
+      BufferRecycleType type, TmpBuffer *dst, int width, int height, int n_used_chs);
   void giveRecycle(TmpBuffer *src);
 
   void recycleCurrentExecNonRecycledBuffers();
@@ -58,6 +68,12 @@ class BufferRecycler {
   void assertRecycledEqualsCreatedBuffers();
 
  private:
+  bool takeNonStdRecycle(BufferRecycleType type,
+                         TmpBuffer *dst,
+                         int width,
+                         int height,
+                         int n_used_chs,
+                         int n_buffer_chs);
   void checkRecycledBufferCreated(TmpBuffer *recycled);
   bool isCreatedBufferRecycled(TmpBuffer *created_buf);
   void deleteBuffers(bool deleteRecycledBuffers);

@@ -80,9 +80,9 @@ DataType NodeSocketReader::getOutputDataType() const
   return getOutputSocket()->getDataType();
 }
 
-int NodeSocketReader::getOutputNChannels() const
+int NodeSocketReader::getOutputNUsedChannels() const
 {
-  return getOutputSocket()->getNChannels();
+  return PixelsUtil::getNUsedChannels(getOutputDataType());
 }
 
 NodeOperationInput *NodeSocketReader::addInputSocket(SocketType socket_type,
@@ -167,8 +167,16 @@ ResolutionType NodeSocketReader::determineResolution(int resolution[2],
   }
 
   if (resolution[0] <= 0 || resolution[1] <= 0) {
-    resolution[0] = local_preferred[0];
-    resolution[1] = local_preferred[1];
+    // if is an input operation, set the preferred as by default (if this method is not override),
+    // input is considered as generated with no predetermined resolutions
+    if (getNumberOfInputSockets() == 0) {
+      resolution[0] = local_preferred[0];
+      resolution[1] = local_preferred[1];
+    }
+    else {
+      resolution[0] = 0;
+      resolution[1] = 0;
+    }
   }
 
   return ResolutionType::Determined;
@@ -268,7 +276,7 @@ bool NodeOperationInput::hasDataType() const
 
 int NodeOperationInput::getNChannels() const
 {
-  return PixelsUtil::getNChannels(getDataType());
+  return COM_NUM_CHANNELS_STD;
 }
 
 NodeOperation *NodeOperationInput::getLinkedOp()
@@ -328,9 +336,9 @@ bool NodeOperationOutput::hasDataType() const
   }
 }
 
-int NodeOperationOutput::getNChannels() const
+int NodeOperationOutput::getNUsedChannels() const
 {
-  return PixelsUtil::getNChannels(getDataType());
+  return PixelsUtil::getNUsedChannels(getDataType());
 }
 
 void NodeOperationOutput::determineResolution(int resolution[2],

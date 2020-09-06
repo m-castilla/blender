@@ -30,7 +30,7 @@ class MovieClipBaseOperation : public NodeOperation {
  protected:
   MovieClip *m_movieClip;
   MovieClipUser *m_movieClipUser;
-  ImBuf *m_movieClipBuffer;
+  ImBuf *m_clip_imbuf;
   int m_framenumber;
   bool m_cacheFrame;
 

@@ -282,8 +282,7 @@ static void convolve(PixelsRect &dst, PixelsRect &src, PixelsRect &ckrn, Executi
   float *colp;
 
   TmpBuffer *rdst_tmp = recycler->createTmpBuffer(true);
-  recycler->takeRecycle(
-      BufferRecycleType::HOST_CLEAR, rdst_tmp, src.getWidth(), src.getHeight(), src.getElemChs());
+  recycler->takeNonStdRecycle(rdst_tmp, src.getWidth(), src.getHeight(), src.getElemChs());
   PixelsRect rdst_rect = PixelsRect(rdst_tmp, 0, src.getWidth(), 0, src.getHeight());
   PixelsImg rdst_img = rdst_rect.pixelsImg();
   memset(rdst_img.buffer, 0, rdst_img.brow_bytes * rdst_img.col_elems);
@@ -300,9 +299,9 @@ static void convolve(PixelsRect &dst, PixelsRect &src, PixelsRect &ckrn, Executi
   size_t data1_n_elems = (size_t)3 * w2 * h2;
   size_t data2_n_elems = (size_t)w2 * h2;
   TmpBuffer *data1_tmp = recycler->createTmpBuffer(true);
-  recycler->takeRecycle(BufferRecycleType::HOST_CLEAR, data1_tmp, data1_n_elems, 1, 1);
+  recycler->takeNonStdRecycle(data1_tmp, data1_n_elems, 1, 1);
   TmpBuffer *data2_tmp = recycler->createTmpBuffer(true);
-  recycler->takeRecycle(BufferRecycleType::HOST_CLEAR, data2_tmp, data2_n_elems, 1, 1);
+  recycler->takeNonStdRecycle(data2_tmp, data2_n_elems, 1, 1);
 
   // if someday fReal is changed to double, instead of using takeRecycle which returns float
   // buffers, we should create manually buffers of type double
@@ -392,13 +391,13 @@ static void convolve(PixelsRect &dst, PixelsRect &src, PixelsRect &ckrn, Executi
             continue;
           }
           fp = &data2[y * w2];
-          colp = &src_buf[(size_t)yy * imageWidth * src_img.elem_chs_incr];
+          colp = &src_buf[(size_t)yy * imageWidth * src_img.belem_chs_incr];
           for (x = 0; x < xbsz; x++) {
             int xx = xbl * xbsz + x;
             if (xx >= imageWidth) {
               continue;
             }
-            fp[x] = colp[xx * src_img.elem_chs_incr + ch];
+            fp[x] = colp[xx * src_img.belem_chs_incr + ch];
           }
         }
 
@@ -457,7 +456,7 @@ void GlareFogGlowOperation::generateGlare(PixelsRect &dst,
   rcti kernelRect;
   BLI_rcti_init(&kernelRect, 0, sz, 0, sz);
   TmpBuffer *ckrn_buf = recycler->createTmpBuffer(true);
-  recycler->takeRecycle(BufferRecycleType::HOST_CLEAR, ckrn_buf, sz, sz, COM_NUM_CHANNELS_COLOR);
+  recycler->takeNonStdRecycle(ckrn_buf, sz, sz, COM_NUM_CHANNELS_COLOR);
   PixelsRect ckrn_rect = PixelsRect(ckrn_buf, kernelRect);
   PixelsRect *ckrn = &ckrn_rect;
   READ_DECL(ckrn);

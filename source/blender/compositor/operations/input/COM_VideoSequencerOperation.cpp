@@ -58,7 +58,7 @@ void VideoSequencerOperation::hashParams()
 {
   NodeOperation::hashParams();
   assureSequencerRender();
-  if (m_seq_frame) {
+  if (BufferUtil::isImBufAvailable(m_seq_frame)) {
     hashParam((size_t)m_seq_frame->rect_float);
     hashParam((size_t)m_seq_frame->rect);
   }
@@ -111,10 +111,9 @@ void VideoSequencerOperation::assureSequencerRender()
     }
     seq_data.task_id = m_is_rendering ? SEQ_TASK_MAIN_RENDER : SEQ_TASK_PREFETCH_RENDER;
 
-    ImBuf *seq_out = BKE_sequencer_give_ibuf(&seq_data, m_n_frame, m_n_channel);
+    m_seq_frame = BKE_sequencer_give_ibuf(&seq_data, m_n_frame, m_n_channel);
 
-    if (seq_out) {
-      m_seq_frame = seq_out;
+    if (m_seq_frame) {
       if (m_seq_frame->rect_float) {
         BKE_sequencer_imbuf_from_sequencer_space(scene, m_seq_frame);
       }
@@ -124,62 +123,27 @@ void VideoSequencerOperation::assureSequencerRender()
 
 void VideoSequencerOperation::execPixels(ExecutionManager &man)
 {
-  float norm_mult = 1.0 / 255.0;
   if (man.canExecPixels()) {
     assureSequencerRender();
   }
 
-  TmpBuffer *dst_buffer = nullptr;
+  bool byte_buffer_used = false;
+  TmpBuffer *dst_buffer;
   auto cpuWrite = [&](PixelsRect &dst, const WriteRectContext & /*ctx*/) {
     dst_buffer = dst.tmp_buffer;
-    float *float_buf = m_seq_frame ? m_seq_frame->rect_float : nullptr;
-    unsigned int *byte_buf = m_seq_frame ? m_seq_frame->rect : nullptr;
     int n_channels = m_seq_frame ? m_seq_frame->channels : 4;
     if (n_channels == 0) {
       n_channels = 4;
     }
-    size_t n_channels_sz = n_channels;
-    size_t m_width_sz = dst.getWidth();
-    if (float_buf == nullptr && byte_buf == nullptr) {
-      PixelsUtil::setRectElem(dst, (float *)&CCL::TRANSPARENT_PIXEL);
-    }
-    else if (float_buf) {
-      auto buf = BufferUtil::createUnmanagedTmpBuffer(
-          float_buf, dst.getWidth(), dst.getHeight(), n_channels, true);
-      PixelsRect src_rect = PixelsRect(buf.get(), dst);
-      PixelsUtil::copyEqualRectsNChannels(dst, src_rect, n_channels);
-    }
-    else {
-      unsigned char *uchar_buf = (unsigned char *)byte_buf;
-      CCL::float4 src_pixel;
-      size_t src_offset;
-
-      WRITE_DECL(dst);
-      CPU_LOOP_START(dst);
-
-      src_offset = n_channels == dst_img.elem_chs ?
-                       dst_offset :
-                       m_width_sz * dst_coords.y * n_channels_sz + dst_coords.x * n_channels_sz;
-
-      src_pixel = CCL::make_float4(uchar_buf[src_offset],
-                                   uchar_buf[src_offset + 1],
-                                   uchar_buf[src_offset + 2],
-                                   uchar_buf[src_offset + 3]);
-
-      // normalize
-      src_pixel *= norm_mult;
-
-      WRITE_IMG4(dst, src_pixel);
-
-      CPU_LOOP_END;
-    }
+    byte_buffer_used = PixelsUtil::copyImBufRect(dst, m_seq_frame, n_channels, n_channels);
   };
   cpuWriteSeek(man, cpuWrite);
 
   if (man.getOperationMode() == OperationMode::Exec) {
-    // needs colorspace conversion as "BKE_sequencer_imbuf_from_sequencer_space" which has been
-    // called in "assureSequencerRender" only works for float buffers
-    if (m_seq_frame && !m_seq_frame->rect_float && man.canExecPixels()) {
+    // if byte buffer is used, needs colorspace conversion as
+    // "BKE_sequencer_imbuf_from_sequencer_space" which has been called in "assureSequencerRender"
+    // only works for float buffers
+    if (byte_buffer_used && man.canExecPixels()) {
       Scene *scene = GlobalMan->getContext()->getScene();
       m_seq_frame->rect_float = dst_buffer->host.buffer;
       BKE_sequencer_imbuf_from_sequencer_space(scene, m_seq_frame);

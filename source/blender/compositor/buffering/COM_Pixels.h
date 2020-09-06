@@ -76,10 +76,15 @@ typedef struct PixelsImg {
   float *start;
   /* rect end */
   const float *const end;
-  /* element channels (pixel increment)*/
-  const int elem_chs;
-  /* element bytes */
+  /* element channels used*/
+  const int elem_chs3;
+  /* Per pixel element channels in the buffer (might be greater than used channels to allow
+   * different image formats compatibility in all devices)*/
+  const int belem_chs;
+  /* used element bytes */
   const size_t elem_bytes;
+  /* buffer element bytes */
+  const size_t belem_bytes;
   /* rect row elements (rect width)*/
   const int row_elems;
   /* rect row elements (rect height)*/
@@ -98,22 +103,24 @@ typedef struct PixelsImg {
   /* buffer row bytes (buffer row elems * elem channels)*/
   const size_t brow_bytes;
 
-  /* brow_chs offset increment to be applied independently of PixelsImg being a single elem or a
-   * full buffer*/
+  /* row channels increment to be applied to jump an entire row independently of PixelsImg being a
+   * single elem or a full buffer*/
   size_t brow_chs_incr;
-  /* elem_chs offset increment to be applied independently of PixelsImg being a single elem or a
-   * full buffer*/
-  size_t elem_chs_incr;
+  /* elem channels increment to be applied to jump an entire element independently of PixelsImg
+   * being a single elem or a full buffer*/
+  size_t belem_chs_incr;
 
   static PixelsImg create(float *buffer,
                           size_t buffer_row_bytes,
                           int n_channels,
+                          int n_buffer_channels,
                           int width,
                           int height,
                           bool is_single_elem = false);
   static PixelsImg create(float *buffer,
                           size_t buffer_row_bytes,
                           int n_channels,
+                          int n_buffer_channels,
                           const rcti &rect,
                           bool is_single_elem = false);
 #ifdef WITH_CXX_GUARDEDALLOC

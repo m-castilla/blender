@@ -115,9 +115,8 @@ static float *init_buffer(unsigned int width, unsigned int height, DataType data
 {
   // When initializing the tree during initial load the width and height can be zero.
   if (width != 0 && height != 0) {
-    int size = PixelsUtil::getNChannels(datatype);
-    return (float *)MEM_mallocN((size_t)width * height * size * sizeof(float),
-                                "OutputFile buffer");
+    int n_chs = PixelsUtil::getNUsedChannels(datatype);
+    return BufferUtil::hostAlloc(width, height, n_chs);
   }
   else {
     return NULL;
@@ -159,13 +158,10 @@ void OutputSingleLayerOperation::initExecution()
 void OutputSingleLayerOperation::execPixels(ExecutionManager &man)
 {
   auto img_pixels = getInputOperation(0)->getPixels(this, man);
-  int n_channels = PixelsUtil::getNChannels(m_datatype);
+  int n_channels = PixelsUtil::getNUsedChannels(m_datatype);
   auto cpuWrite = [&, this](PixelsRect &dst, const WriteRectContext & /*ctx*/) {
-    auto out_buffer = BufferUtil::createUnmanagedTmpBuffer(
-        m_outputBuffer, getWidth(), getHeight(), n_channels, false);
-    PixelsRect out_rect(out_buffer.get(), dst);
-    PixelsRect img_rect = img_pixels->toRect(dst);
-    PixelsUtil::copyEqualRects(out_rect, img_rect);
+    PixelsRect image_rect = img_pixels->toRect(dst);
+    PixelsUtil::copyBufferRect(m_outputBuffer, dst, n_channels, n_channels, image_rect);
   };
   cpuWriteSeek(man, cpuWrite);
 }
@@ -178,7 +174,7 @@ void OutputSingleLayerOperation::deinitExecution()
     char filename[FILE_MAX];
     const char *suffix;
 
-    ibuf->channels = PixelsUtil::getNChannels(m_datatype);
+    ibuf->channels = PixelsUtil::getNUsedChannels(m_datatype);
     ibuf->rect_float = this->m_outputBuffer;
     ibuf->mall |= IB_rectfloat;
     ibuf->dither = this->m_rd->dither_intensity;
@@ -272,13 +268,9 @@ void OutputOpenExrMultiLayerOperation::execPixels(ExecutionManager &man)
       OutputOpenExrLayer &layer = this->m_layers[i];
       if (layer.imageInput) {
         auto &input_pixels = layers_pixs[i];
-        int n_channels = PixelsUtil::getNChannels(layer.datatype);
-        auto out_buffer = BufferUtil::createUnmanagedTmpBuffer(
-            layer.outputBuffer, getWidth(), getHeight(), n_channels, false);
-
-        PixelsRect input_rect = input_pixels->toRect(dst);
-        PixelsRect out_rect(out_buffer.get(), dst);
-        PixelsUtil::copyEqualRects(out_rect, input_rect);
+        int n_channels = PixelsUtil::getNUsedChannels(layer.datatype);
+        PixelsRect pixels_rect = input_pixels->toRect(dst);
+        PixelsUtil::copyBufferRect(layer.outputBuffer, dst, n_channels, n_channels, pixels_rect);
       }
     }
   };

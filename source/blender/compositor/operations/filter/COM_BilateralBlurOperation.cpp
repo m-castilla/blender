@@ -202,7 +202,7 @@ void BilateralBlurOperation::execPixels(ExecutionManager &man)
       kernel->addIntArg(getHeight());
       kernel->addIntArg(m_space_ceil);
       kernel->addIntArg(QualityStepHelper::getStep());
-      kernel->addIntArg(m_data->sigma_color);
+      kernel->addFloatArg(m_data->sigma_color);
     });
   }
 }

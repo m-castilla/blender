@@ -33,22 +33,22 @@ MultilayerBaseOperation::MultilayerBaseOperation(int passindex, int view) : Base
   m_renderlayer = nullptr;
 }
 
-ImBuf *MultilayerBaseOperation::getImBuf()
+void MultilayerBaseOperation::requestImBuf()
 {
-  /* temporarily changes the view to get the right ImBuf */
-  int view = this->m_imageUser->view;
+  if (m_imbuf == nullptr) {
+    /* temporarily changes the view to get the right ImBuf */
+    int view = this->m_imageUser->view;
 
-  this->m_imageUser->view = this->m_view;
-  this->m_imageUser->pass = this->m_passId;
+    this->m_imageUser->view = this->m_view;
+    this->m_imageUser->pass = this->m_passId;
 
-  if (BKE_image_multilayer_index(this->m_image->rr, this->m_imageUser)) {
-    ImBuf *ibuf = BaseImageOperation::assureImBuf();
+    if (BKE_image_multilayer_index(this->m_image->rr, this->m_imageUser)) {
+      BaseImageOperation::requestImBuf();
+      this->m_imageUser->view = view;
+    }
+
     this->m_imageUser->view = view;
-    return ibuf;
   }
-
-  this->m_imageUser->view = view;
-  return NULL;
 }
 
 void MultilayerBaseOperation::hashParams()
@@ -61,31 +61,16 @@ void MultilayerBaseOperation::hashParams()
 void MultilayerColorOperation::execPixels(ExecutionManager &man)
 {
   auto cpuWrite = [&](PixelsRect &dst, const WriteRectContext & /*ctx*/) {
-    if (m_imageFloatBuffer == NULL) {
-      PixelsUtil::setRectElem(dst, (float *)&CCL::TRANSPARENT_PIXEL);
-    }
-    else {
-      auto buf = BufferUtil::createUnmanagedTmpBuffer(
-          m_imageFloatBuffer, m_imagewidth, m_imageheight, m_numberOfChannels, true);
-      PixelsRect src_rect = PixelsRect(buf.get(), dst);
-      PixelsUtil::copyEqualRectsNChannels(src_rect, dst, m_numberOfChannels);
-    }
+    PixelsUtil::copyImBufRect(dst, m_imbuf, COM_NUM_CHANNELS_COLOR, COM_NUM_CHANNELS_COLOR);
   };
   return cpuWriteSeek(man, cpuWrite);
 }
 
 void MultilayerValueOperation::execPixels(ExecutionManager &man)
 {
-  auto cpuWrite = [&](PixelsRect &dst, const WriteRectContext &ctx) {
-    if (m_imageFloatBuffer == NULL) {
-      PixelsUtil::setRectElem(dst, (float *)&CCL::TRANSPARENT_PIXEL);
-    }
-    else {
-      auto buf = BufferUtil::createUnmanagedTmpBuffer(
-          m_imageFloatBuffer, m_imagewidth, m_imageheight, m_numberOfChannels, true);
-      PixelsRect src_rect = PixelsRect(buf.get(), dst);
-      PixelsUtil::copyEqualRectsNChannels(src_rect, dst, COM_NUM_CHANNELS_VALUE);
-    }
+  auto cpuWrite = [&](PixelsRect &dst, const WriteRectContext &) {
+    PixelsUtil::copyImBufRectNChannels(
+        dst, m_imbuf, COM_NUM_CHANNELS_VALUE, COM_NUM_CHANNELS_COLOR);
   };
   return cpuWriteSeek(man, cpuWrite);
 }
@@ -93,15 +78,8 @@ void MultilayerValueOperation::execPixels(ExecutionManager &man)
 void MultilayerVectorOperation::execPixels(ExecutionManager &man)
 {
   auto cpuWrite = [&](PixelsRect &dst, const WriteRectContext & /*ctx*/) {
-    if (m_imageFloatBuffer == NULL) {
-      PixelsUtil::setRectElem(dst, (float *)&CCL::TRANSPARENT_PIXEL);
-    }
-    else {
-      auto buf = BufferUtil::createUnmanagedTmpBuffer(
-          m_imageFloatBuffer, m_imagewidth, m_imageheight, m_numberOfChannels, true);
-      PixelsRect src_rect = PixelsRect(buf.get(), dst);
-      PixelsUtil::copyEqualRectsNChannels(src_rect, dst, COM_NUM_CHANNELS_VECTOR);
-    }
+    PixelsUtil::copyImBufRectNChannels(
+        dst, m_imbuf, COM_NUM_CHANNELS_VECTOR, COM_NUM_CHANNELS_COLOR);
   };
   return cpuWriteSeek(man, cpuWrite);
 }

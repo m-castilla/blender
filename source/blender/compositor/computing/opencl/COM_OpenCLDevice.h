@@ -61,31 +61,24 @@ class OpenCLDevice : public ComputeDevice {
                 std::function<void(ComputeKernel *)> add_kernel_args_func) override;
   void waitQueueToFinish() override;
 
-  void *memDeviceAlloc(
-      MemoryAccess mem_access, int width, int height, int elem_chs, bool alloc_for_host_map);
+  void *memDeviceAlloc(MemoryAccess mem_access,
+                       int width,
+                       int height,
+                       bool alloc_for_host_map) override;
   float *memDeviceToHostMapEnqueue(void *device_buffer,
                                    MemoryAccess mem_access,
                                    int width,
                                    int height,
-                                   int elem_chs,
                                    size_t &r_map_row_pitch);
-  void memDeviceToHostUnmapEnqueue(void *device_buffer, float *host_mapped_buffer);
-  void memDeviceToHostCopyEnqueue(float *r_host_buffer,
-                                  void *device_buffer,
-                                  size_t host_row_bytes,
-                                  MemoryAccess mem_access,
-                                  int width,
-                                  int height,
-                                  int elem_chs);
-  void memDeviceFree(void *device_buffer);
+  void memDeviceToHostUnmapEnqueue(void *device_buffer, float *host_mapped_buffer) override;
+  void memDeviceToHostCopyEnqueue(
+      float *r_host_buffer, void *device_buffer, size_t host_row_bytes, int width, int height);
+  void memDeviceFree(void *device_buffer) override;
   void memHostToDeviceCopyEnqueue(void *device_buffer,
                                   float *host_buffer,
                                   size_t host_row_bytes,
-                                  MemoryAccess mem_access,
                                   int width,
-                                  int height,
-                                  int elem_chs);
-
+                                  int height) override;
   int getNComputeUnits() override
   {
     return m_compute_units;

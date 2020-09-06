@@ -44,7 +44,7 @@ class OpenCLPlatform : public ComputePlatform {
     return m_program;
   }
 
-  const cl_image_format *getImageFormat(int elem_chs) const;
+  const cl_image_format *getImageFormat() const;
   int getMemoryAccessFlag(MemoryAccess mem_access) const;
 
  protected:

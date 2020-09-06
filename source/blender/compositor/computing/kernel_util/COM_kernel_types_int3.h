@@ -26,12 +26,16 @@ CCL_NAMESPACE_BEGIN
 struct ccl_try_align(16) int3
 {
 #ifdef __KERNEL_SSE__
+
+#  pragma warning(push)
+#  pragma warning(disable : 4201)
   union {
     __m128i m128;
     struct {
       int x, y, z, w;
     };
   };
+#  pragma warning(pop)
 
   __forceinline int3();
   __forceinline int3(const int3 &a);

@@ -19,6 +19,7 @@
 #ifndef __COM_BUFFER_H__
 #define __COM_BUFFER_H__
 
+#include "COM_defines.h"
 #include <string>
 #ifdef WITH_CXX_GUARDEDALLOC
 #  include "MEM_guardedalloc.h"
@@ -51,7 +52,7 @@ typedef struct HostBuffer {
   /**
    * Physical buffer channels by element.
    */
-  int belem_chs;
+  int belem_chs3;
   HostMemoryState state;
 } HostBuffer;
 typedef struct DeviceBuffer {
@@ -68,7 +69,7 @@ typedef struct DeviceBuffer {
   /**
    * Physical buffer channels by element.
    */
-  int belem_chs;
+  int belem_chs3;
   DeviceMemoryState state;
 } DeviceBuffer;
 
@@ -98,10 +99,9 @@ typedef struct TmpBuffer {
    */
   int height;
   /**
-   * Currently used channels by element in Host and Device buffers (for Host this may be greater
-   * than host belem_chs because total buffer bytes size may allow it)
+   * Currently used channels by element in Host and Device buffers
    */
-  int elem_chs;
+  int elem_chs3;
 
   std::string execution_id;
 
@@ -110,25 +110,29 @@ typedef struct TmpBuffer {
   int n_take_recycles;
   /**/
 
-  inline size_t getElemBytes() const
+  inline size_t getBufferElemChs() const
   {
-    return (size_t)elem_chs * sizeof(float);
+    return device.state != DeviceMemoryState::NONE ? COM_NUM_CHANNELS_STD : host.belem_chs3;
+  }
+  inline size_t getBufferElemBytes() const
+  {
+    return (size_t)getBufferElemChs() * sizeof(float);
   }
   inline size_t getMinBufferBytes() const
   {
-    return (size_t)width * height * getElemBytes();
+    return (size_t)width * height * getBufferElemBytes();
   }
   inline size_t getMinBufferRowBytes() const
   {
-    return (size_t)width * getElemBytes();
+    return (size_t)width * getBufferElemBytes();
   }
-  inline size_t getUsedBufferRowBytes() const
+  inline size_t getBufferRowBytes() const
   {
     if (host.state == HostMemoryState::MAP_FROM_DEVICE) {
       return host.brow_bytes;
     }
     else {
-      return (size_t)width * getElemBytes();
+      return (size_t)width * getBufferElemBytes();
     }
   }
 #ifdef WITH_CXX_GUARDEDALLOC
