@@ -289,8 +289,8 @@ void PixelsUtil::copyEqualRectsNChannels(PixelsRect &wr1, PixelsRect &rr1, int n
   if (rr1.is_single_elem) {
     setRectElem(wr1, rr1.single_elem, n_channels);
   }
-  else if (wr1.tmp_buffer->elem_chs3 == rr1.tmp_buffer->elem_chs3 &&
-           wr1.tmp_buffer->elem_chs3 == n_channels) {
+  else if (wr1.tmp_buffer->elem_chs == rr1.tmp_buffer->elem_chs &&
+           wr1.tmp_buffer->elem_chs == n_channels) {
     copyEqualRects(wr1, rr1);
   }
   else {
@@ -328,8 +328,8 @@ void PixelsUtil::copyEqualRectsChannel(PixelsRect &wr1,
   else {
     PixelsImg w1 = wr1.pixelsImg();
     PixelsImg c1 = cr1.pixelsImg();
-    BLI_assert(w1.row_elems == c1.row_elems && w1.elem_chs3 > wr_channel &&
-               c1.elem_chs3 > cr_channel);
+    BLI_assert(w1.row_elems == c1.row_elems && w1.elem_chs > wr_channel &&
+               c1.elem_chs > cr_channel);
     float *w1_cur = w1.start + wr_channel;
     float *c1_cur = c1.start + cr_channel;
     float *w1_row_end = w1.start + w1.row_chs;
@@ -352,7 +352,7 @@ void PixelsUtil::setRectChannel(PixelsRect &wr1, int channel, float channel_valu
   // write rect should never be single element
   BLI_assert(!wr1.is_single_elem);
   PixelsImg w1 = wr1.pixelsImg();
-  BLI_assert(w1.elem_chs3 > channel);
+  BLI_assert(w1.elem_chs > channel);
   float *w1_cur = w1.start + channel;
   float *w1_row_end = w1.start + w1.row_chs;
   while (w1_cur < w1.end) {
@@ -368,7 +368,7 @@ void PixelsUtil::setRectChannel(PixelsRect &wr1, int channel, float channel_valu
 
 void PixelsUtil::setRectElem(PixelsRect &wr1, const float *elem)
 {
-  setRectElem(wr1, elem, wr1.tmp_buffer->elem_chs3);
+  setRectElem(wr1, elem, wr1.tmp_buffer->elem_chs);
 }
 
 void PixelsUtil::setRectElem(PixelsRect &wr1, const float elem)
@@ -382,7 +382,7 @@ void PixelsUtil::setRectElem(PixelsRect &wr1, const float *elem, int n_channels)
   BLI_assert(!wr1.is_single_elem);
   PixelsImg w1 = wr1.pixelsImg();
   BLI_assert(w1.elem_bytes >= sizeof(float) && w1.elem_bytes % sizeof(float) == 0);
-  BLI_assert(w1.elem_chs3 >= n_channels);
+  BLI_assert(w1.elem_chs >= n_channels);
   float *w1_cur = w1.start;
   float *w1_row_end = w1.start + w1.row_chs;
   size_t chs_bytes = n_channels * sizeof(float);
@@ -413,7 +413,7 @@ void PixelsUtil::saveAsImage(PixelsRect &rect, std::string filename)
       copy_from_device = true;
     }
     else if (buf->host.state == HostMemoryState::NONE) {
-      BufferUtil::hostNonStdAlloc(buf, rect.getWidth(), rect.getHeight(), buf->host.belem_chs3);
+      BufferUtil::hostNonStdAlloc(buf, rect.getWidth(), rect.getHeight(), buf->host.belem_chs);
       copy_from_device = true;
     }
   }

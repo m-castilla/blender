@@ -268,14 +268,14 @@ ccl_device_inline void sample(const PixelsImg &src_img,
                               const PixelsSampler &sampler,
                               CCL::float2 src_coordsf)
 {
-  if (src_img.elem_chs3 == 4) {
+  if (src_img.elem_chs == 4) {
     SAMPLE_IMG4(src, sampler, dst_pix);
   }
-  else if (src_img.elem_chs3 == 1) {
+  else if (src_img.elem_chs == 1) {
     SAMPLE_IMG1(src, sampler, dst_pix);
   }
   else {
-    kernel_assert(src_img.elem_chs3 == 3);
+    kernel_assert(src_img.elem_chs == 3);
     SAMPLE_IMG3(src, sampler, dst_pix);
   }
 }
