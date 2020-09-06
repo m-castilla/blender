@@ -36,7 +36,7 @@ void GaussianAlphaYBlurOperation::initExecution()
 #define OPENCL_CODE
 CCL_NAMESPACE_BEGIN
 ccl_kernel gaussianAlphaYBlurOp(CCL_WRITE(dst),
-                                CCL_READ(value),
+                                CCL_READ(input),
                                 ccl_constant float *gausstab,
                                 ccl_constant float *distbuf_inv,
                                 BOOL do_invert,
@@ -44,7 +44,7 @@ ccl_kernel gaussianAlphaYBlurOp(CCL_WRITE(dst),
                                 int height,
                                 int quality_step)
 {
-  READ_DECL(value);
+  READ_DECL(input);
   WRITE_DECL(dst);
 
   CPU_LOOP_START(dst);
@@ -59,17 +59,17 @@ ccl_kernel gaussianAlphaYBlurOp(CCL_WRITE(dst),
   float multiplier_accum = 0.0f;
 
   /* dilate */
-  COPY_COORDS(value, dst_coords);
-  READ_IMG1(value, value_pix);
+  COPY_COORDS(input, dst_coords);
+  READ_IMG1(input, input_pix);
   float value_max = finv_test(
-      value_pix.x, do_invert); /* init with the current color to avoid unneeded lookups */
+      input_pix.x, do_invert); /* init with the current color to avoid unneeded lookups */
   float distfacinv_max = 1.0f; /* 0 to 1 */
 
-  UPDATE_COORDS_Y(value, ymin);
-  while (value_coords.y < ymax) {
-    const int index = (value_coords.y - dst_coords.y) + filter_size;
-    READ_IMG1(value, value_pix);
-    float value = finv_test(value_pix.x, do_invert);
+  UPDATE_COORDS_Y(input, ymin);
+  while (input_coords.y < ymax) {
+    const int index = (input_coords.y - dst_coords.y) + filter_size;
+    READ_IMG1(input, input_pix);
+    float value = finv_test(input_pix.x, do_invert);
     float multiplier;
 
     /* gauss */
@@ -88,15 +88,15 @@ ccl_kernel gaussianAlphaYBlurOp(CCL_WRITE(dst),
         distfacinv_max = multiplier;
       }
     }
-    INCR_COORDS_Y(value, quality_step);
+    INCR_COORDS_Y(input, quality_step);
   }
 
   /* blend between the max value and gauss blue - gives nice feather */
   const float value_blur = alpha_accum / multiplier_accum;
   const float value_final = (value_max * distfacinv_max) + (value_blur * (1.0f - distfacinv_max));
-  value_pix.x = finv_test(value_final, do_invert);
+  input_pix.x = finv_test(value_final, do_invert);
 
-  WRITE_IMG1(dst, value_pix);
+  WRITE_IMG1(dst, input_pix);
 
   CPU_LOOP_END
 }

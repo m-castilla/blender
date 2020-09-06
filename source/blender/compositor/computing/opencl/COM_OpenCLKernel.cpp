@@ -136,7 +136,7 @@ void OpenCLKernel::addReadImgArgs(PixelsRect &pixels)
     size_t size[3] = {1, 1, 1};
 
     // write 1 entire pixel (4 channels) even if single elem has less channels
-    size_t row_bytes = BufferUtil::calcBufferRowBytes(1, 4);
+    size_t row_bytes = BufferUtil::calcStdBufferRowBytes(1);
     int elem_chs = pixels.getElemChs();
     for (int i = 0; i < elem_chs; i++) {
       elem.elem_data[i] = pixels.single_elem[i];

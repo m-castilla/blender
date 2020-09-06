@@ -32,30 +32,21 @@ class ComputeDevice {
                         std::function<void(ComputeKernel *)> add_kernel_args_func) = 0;
   virtual void waitQueueToFinish() = 0;
 
-  virtual void *memDeviceAlloc(
-      MemoryAccess mem_access, int width, int height, int elem_chs, bool alloc_for_host_map) = 0;
+  virtual void *memDeviceAlloc(MemoryAccess mem_access,
+                               int width,
+                               int height,
+                               bool alloc_for_host_map) = 0;
   virtual float *memDeviceToHostMapEnqueue(void *device_buffer,
                                            MemoryAccess mem_access,
                                            int width,
                                            int height,
-                                           int elem_chs,
                                            size_t &r_map_row_pitch) = 0;
   virtual void memDeviceToHostUnmapEnqueue(void *device_buffer, float *host_mapped_buffer) = 0;
-  virtual void memDeviceToHostCopyEnqueue(float *r_host_buffer,
-                                          void *device_buffer,
-                                          size_t host_row_bytes,
-                                          MemoryAccess mem_access,
-                                          int width,
-                                          int height,
-                                          int elem_chs) = 0;
+  virtual void memDeviceToHostCopyEnqueue(
+      float *r_host_buffer, void *device_buffer, size_t host_row_bytes, int width, int height) = 0;
   virtual void memDeviceFree(void *device_buffer) = 0;
-  virtual void memHostToDeviceCopyEnqueue(void *r_device_buffer,
-                                          float *host_buffer,
-                                          size_t host_row_bytes,
-                                          MemoryAccess mem_access,
-                                          int width,
-                                          int height,
-                                          int elem_chs) = 0;
+  virtual void memHostToDeviceCopyEnqueue(
+      void *r_device_buffer, float *host_buffer, size_t host_row_bytes, int width, int height) = 0;
 
   virtual ComputeDeviceType getDeviceType() = 0;
   virtual int getNComputeUnits() = 0;

@@ -195,7 +195,7 @@ std::shared_ptr<PixelsRect> NodeOperation::getPixels(NodeOperation *reader_op,
       }
       else {
         execPixels(man);
-        auto result = GlobalMan->BufferMan->readSeek(this, man);
+        result = GlobalMan->BufferMan->readSeek(this, man);
         return result.pixels;
       }
     }

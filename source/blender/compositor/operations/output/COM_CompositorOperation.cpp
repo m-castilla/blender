@@ -129,30 +129,25 @@ void CompositorOperation::deinitExecution()
 
 void CompositorOperation::execPixels(ExecutionManager &man)
 {
-  auto img_pixels = getInputOperation(0)->getPixels(this, man);
-  auto depth_pixels = getInputOperation(2)->getPixels(this, man);
-  auto alpha_pixels = std::shared_ptr<PixelsRect>();
+  auto image = getInputOperation(0)->getPixels(this, man);
+  auto depth = getInputOperation(2)->getPixels(this, man);
+  auto alpha = std::shared_ptr<PixelsRect>();
   if (m_useAlphaInput) {
-    alpha_pixels = getInputOperation(1)->getPixels(this, man);
+    alpha = getInputOperation(1)->getPixels(this, man);
   }
   auto cpuWrite = [&, this](PixelsRect &dst, const WriteRectContext & /*ctx*/) {
     float *out = this->m_outputBuffer;
     float *z = this->m_depthBuffer;
-    auto out_buffer = BufferUtil::createUnmanagedTmpBuffer(
-        out, getWidth(), getHeight(), COM_NUM_CHANNELS_COLOR, false);
-    PixelsRect out_rect(out_buffer.get(), dst);
-    PixelsRect img_rect = img_pixels->toRect(dst);
-    PixelsUtil::copyEqualRects(out_rect, img_rect);
+    PixelsRect image_rect = image->toRect(dst);
+    PixelsUtil::copyBufferRect(
+        out, dst, COM_NUM_CHANNELS_COLOR, COM_NUM_CHANNELS_COLOR, image_rect);
 
-    auto z_buffer = BufferUtil::createUnmanagedTmpBuffer(
-        z, getWidth(), getHeight(), COM_NUM_CHANNELS_VALUE, false);
-    PixelsRect z_rect(z_buffer.get(), dst);
-    PixelsRect depth_rect = depth_pixels->toRect(dst);
-    PixelsUtil::copyEqualRects(z_rect, depth_rect);
+    PixelsRect depth_rect = depth->toRect(dst);
+    PixelsUtil::copyBufferRect(z, dst, COM_NUM_CHANNELS_VALUE, COM_NUM_CHANNELS_VALUE, depth_rect);
 
     if (m_useAlphaInput) {
-      PixelsRect alpha_rect = alpha_pixels->toRect(dst);
-      PixelsUtil::copyEqualRectsChannel(out_rect, 3, alpha_rect, 0);
+      PixelsRect alpha_rect = alpha->toRect(dst);
+      PixelsUtil::copyBufferRectChannel(out, 3, dst, COM_NUM_CHANNELS_COLOR, alpha_rect, 0);
     }
   };
   cpuWriteSeek(man, cpuWrite);

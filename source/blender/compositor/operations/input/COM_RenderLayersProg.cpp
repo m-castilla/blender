@@ -74,18 +74,6 @@ void RenderLayersProg::hashParams()
   hashParam(m_layerId);
   hashParam(std::string(m_passName));
   hashParam(std::string(m_viewName));
-
-  // if (m_inputBuffer != nullptr) {
-  //  auto bufferStart = m_inputBuffer;
-  //  int increment = 1;
-  //  size_t buffer_length = (size_t)getWidth() * getHeight() * m_elementsize;
-  //  if (typeid(this) == typeid(RenderLayersAlphaProg)) {
-  //    bufferStart += 3;
-  //    increment = 4;
-  //    buffer_length -= 3;
-  //  }
-  //  hashDataAsParam(bufferStart, buffer_length, increment);
-  //}
 }
 
 void RenderLayersProg::deinitExecution()
@@ -93,9 +81,11 @@ void RenderLayersProg::deinitExecution()
   this->m_inputBuffer = NULL;
 }
 
-float *RenderLayersProg::getCustomBuffer()
+TmpBuffer *RenderLayersProg::getCustomBuffer()
 {
-  return m_inputBuffer;
+  return BufferUtil::createNonStdTmpBuffer(
+             m_inputBuffer, true, getWidth(), getHeight(), m_elementsize)
+      .release();
 }
 
 ResolutionType RenderLayersProg::determineResolution(int resolution[2],
@@ -139,10 +129,7 @@ void RenderLayersAlphaProg::execPixels(ExecutionManager &man)
       PixelsUtil::setRectElem(dst, 1.0f);
     }
     else {
-      auto input_buffer = BufferUtil::createUnmanagedTmpBuffer(
-          m_inputBuffer, getWidth(), getHeight(), COM_NUM_CHANNELS_COLOR, true);
-      PixelsRect src(input_buffer.get(), dst);
-      PixelsUtil::copyEqualRectsChannel(dst, 0, src, 3);
+      PixelsUtil::copyBufferRectChannel(dst, 0, m_inputBuffer, 3, COM_NUM_CHANNELS_COLOR);
     }
   };
   cpuWriteSeek(man, cpuWrite);

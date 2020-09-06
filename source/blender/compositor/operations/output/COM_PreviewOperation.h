@@ -48,16 +48,15 @@ class PreviewOperation : public NodeOperation {
   {
     return false;
   }
+  int getOutputNUsedChannels() const override
+  {
+    return COM_NUM_CHANNELS_COLOR;
+  }
 
   bool isOutputOperation(bool /*rendering*/) const override;
   void initExecution() override;
   void deinitExecution() override;
   void hashParams() override;
-
-  int getOutputNChannels() const override
-  {
-    return COM_NUM_CHANNELS_COLOR;
-  }
 
   /*void executeRegion(rcti *rect, unsigned int tileNumber);*/
   ResolutionType determineResolution(int resolution[2],

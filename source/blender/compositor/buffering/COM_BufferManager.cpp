@@ -19,6 +19,7 @@
 #include "COM_BufferManager.h"
 #include "BLI_assert.h"
 #include "BLI_rect.h"
+#include "BLI_utildefines.h"
 #include "COM_BrightnessOperation.h"
 #include "COM_Buffer.h"
 #include "COM_BufferRecycler.h"
@@ -160,7 +161,7 @@ static std::shared_ptr<PixelsRect> tmpPixelsRect(NodeOperation *op,
   PixelsRect *r;
   if (op->isSingleElem()) {
     r = new PixelsRect(is_for_read ? op->getSingleElem() : (float *)nullptr,
-                       op->getOutputNChannels(),
+                       COM_NUM_CHANNELS_STD,
                        offset_x,
                        offset_x + width,
                        offset_y,
@@ -194,7 +195,7 @@ void BufferManager::readOptimize(NodeOperation *op,
 BufferManager::ReadResult BufferManager::readSeek(NodeOperation *op, ExecutionManager &man)
 {
   ReadResult result = ReadResult{false, {}};
-  auto key = op->getKey();
+  const auto &key = op->getKey();
   auto optimizer_found = m_optimizers.find(key);
   if (optimizer_found == m_optimizers.end()) {
     // this operation getPixels() has not beed called during optimization phase. Probably an input
@@ -213,10 +214,10 @@ BufferManager::ReadResult BufferManager::readSeek(NodeOperation *op, ExecutionMa
           reads->is_write_complete = true;
           reportWriteCompleted(op, reads, man);
         }
-        reads->tmp_buffer = m_recycler->createTmpBuffer(
-            false, nullptr, op->getWidth(), op->getHeight(), op->getOutputNChannels());
+        reads->tmp_buffer = m_recycler->createStdTmpBuffer(
+            false, nullptr, op->getWidth(), op->getHeight(), op->getOutputNUsedChannels());
         reads->tmp_buffer->host = cache->host;
-        ASSERT_VALID_TMP_BUFFER(reads->tmp_buffer, cache->width, cache->height, cache->elem_chs);
+        ASSERT_VALID_STD_TMP_BUFFER(reads->tmp_buffer, cache->width, cache->height);
       }
       else {
         BLI_assert(cache->host.state == HostMemoryState::CLEARED);
@@ -246,7 +247,7 @@ void BufferManager::writeSeek(NodeOperation *op,
                               ExecutionManager &man,
                               std::function<void(TmpRectBuilder &)> write_func)
 {
-  auto key = op->getKey();
+  const auto &key = op->getKey();
 
   BLI_assert(m_optimizers.find(key) != m_optimizers.end());
   auto reads = m_optimizers[key]->peepReads(man);
@@ -262,8 +263,8 @@ void BufferManager::writeSeek(NodeOperation *op,
         // write cache should only be called when it's cleared because if filled it should be
         // returned on readSeek
         BLI_assert(cache->host.state == HostMemoryState::CLEARED);
-        reads->tmp_buffer = m_recycler->createTmpBuffer(
-            false, nullptr, op->getWidth(), op->getHeight(), op->getOutputNChannels());
+        reads->tmp_buffer = m_recycler->createStdTmpBuffer(
+            false, nullptr, op->getWidth(), op->getHeight(), op->getOutputNUsedChannels());
         reads->tmp_buffer->host = cache->host;
       }
       else if (op->getBufferType() == BufferType::CUSTOM) {
@@ -345,7 +346,7 @@ bool BufferManager::prepareForWrite(bool is_write_computed, OpReads *reads)
   auto buf = reads->tmp_buffer;
   int width = reads->readed_op->getWidth();
   int height = reads->readed_op->getHeight();
-  int elem_chs = reads->readed_op->getOutputNChannels();
+  int elem_chs = reads->readed_op->getOutputNUsedChannels();
   bool host_ready = buf->host.state == HostMemoryState::CLEARED ||
                     buf->host.state == HostMemoryState::FILLED;
   bool host_empty = buf->host.state == HostMemoryState::NONE;
@@ -355,12 +356,12 @@ bool BufferManager::prepareForWrite(bool is_write_computed, OpReads *reads)
   if (reads->total_compute_reads > 0 && reads->total_cpu_reads > 0) {
     BLI_assert(device_empty);
     if (is_write_computed) {
-      work_enqueued |= m_recycler->takeRecycle(
+      work_enqueued |= m_recycler->takeStdRecycle(
           BufferRecycleType::DEVICE_CLEAR, buf, width, height, elem_chs);
     }
     else if (!host_ready) {
       BLI_assert(host_empty);
-      work_enqueued |= m_recycler->takeRecycle(
+      work_enqueued |= m_recycler->takeStdRecycle(
           BufferRecycleType::HOST_CLEAR, buf, width, height, elem_chs);
     }
   }
@@ -400,13 +401,13 @@ bool BufferManager::prepareForWrite(bool is_write_computed, OpReads *reads)
     }
 
     if (take_recycle) {
-      work_enqueued |= m_recycler->takeRecycle(recycle_type, buf, width, height, elem_chs);
+      work_enqueued |= m_recycler->takeStdRecycle(recycle_type, buf, width, height, elem_chs);
       BLI_assert(recycle_type != BufferRecycleType::HOST_CLEAR ||
                  (buf->host.buffer != nullptr && buf->host.bwidth > 0 && buf->host.bheight > 0 &&
-                  buf->host.belem_chs > 0));
+                  buf->host.belem_chs3 > 0));
       BLI_assert(recycle_type == BufferRecycleType::HOST_CLEAR ||
                  (buf->device.buffer != nullptr && buf->device.bwidth > 0 &&
-                  buf->device.bheight > 0 && buf->device.belem_chs > 0));
+                  buf->device.bheight > 0 && buf->device.belem_chs3 > 0));
     }
   }
   return work_enqueued;
@@ -422,17 +423,17 @@ bool BufferManager::prepareForRead(bool is_compute_written, OpReads *reads)
     if (is_compute_written) {
       BLI_assert(buf->device.state == DeviceMemoryState::FILLED);
       if (buf->host.state == HostMemoryState::NONE) {
-        work_enqueued |= m_recycler->takeRecycle(
-            BufferRecycleType::HOST_CLEAR, buf, buf->width, buf->height, buf->elem_chs);
+        work_enqueued |= m_recycler->takeStdRecycle(
+            BufferRecycleType::HOST_CLEAR, buf, buf->width, buf->height, buf->elem_chs3);
       }
-      BufferUtil::deviceToHostCopyEnqueue(buf, MemoryAccess::READ_WRITE);
+      BufferUtil::deviceToHostCopyEnqueue(buf);
     }
     else {
       BLI_assert(buf->device.state == DeviceMemoryState::NONE);
       BLI_assert(buf->host.state == HostMemoryState::FILLED);
-      work_enqueued |= m_recycler->takeRecycle(
-          BufferRecycleType::DEVICE_CLEAR, buf, buf->width, buf->height, buf->elem_chs);
-      BufferUtil::hostToDeviceCopyEnqueue(buf, MemoryAccess::READ_WRITE);
+      work_enqueued |= m_recycler->takeStdRecycle(
+          BufferRecycleType::DEVICE_CLEAR, buf, buf->width, buf->height, buf->elem_chs3);
+      BufferUtil::hostToDeviceCopyEnqueue(buf);
     }
     work_enqueued = true;
   }
@@ -446,10 +447,10 @@ bool BufferManager::prepareForRead(bool is_compute_written, OpReads *reads)
         }
         else if (buf->host.state == HostMemoryState::FILLED) {
           BLI_assert(buf->device.state == DeviceMemoryState::NONE);
-          work_enqueued |= m_recycler->takeRecycle(
-              BufferRecycleType::DEVICE_CLEAR, buf, buf->width, buf->height, buf->elem_chs);
+          work_enqueued |= m_recycler->takeStdRecycle(
+              BufferRecycleType::DEVICE_CLEAR, buf, buf->width, buf->height, buf->elem_chs3);
           BLI_assert(buf->device.state == DeviceMemoryState::CLEARED);
-          BufferUtil::hostToDeviceCopyEnqueue(buf, MemoryAccess::READ_WRITE);
+          BufferUtil::hostToDeviceCopyEnqueue(buf);
         }
         else {
           BLI_assert(!"Incorrect buffer state");
@@ -490,17 +491,17 @@ CacheBuffer *BufferManager::getCache(NodeOperation *op)
     cache->last_use_time = clock();
   }
   else {
-    int n_channels = op->getOutputNChannels();
+    int n_used_chs = op->getOutputNUsedChannels();
     cache = new CacheBuffer();
     cache->height = op->getHeight();
     cache->width = op->getWidth();
-    cache->elem_chs = n_channels;
+    cache->elem_chs = n_used_chs;
     HostBuffer &host = cache->host;
-    host.brow_bytes = BufferUtil::calcBufferRowBytes(cache->width, n_channels);
+    host.brow_bytes = BufferUtil::calcStdBufferRowBytes(cache->width);
     host.bwidth = op->getWidth();
     host.bheight = op->getHeight();
-    host.belem_chs = n_channels;
-    host.buffer = BufferUtil::hostAlloc(cache->width, cache->height, n_channels);
+    host.belem_chs3 = n_used_chs;
+    host.buffer = BufferUtil::hostAlloc(cache->width, cache->height, COM_NUM_CHANNELS_STD);
     host.state = HostMemoryState::CLEARED;
 
     m_cached_buffers.insert({key, cache});
@@ -509,7 +510,7 @@ CacheBuffer *BufferManager::getCache(NodeOperation *op)
     cache->last_use_time = clock();
   }
 
-  BLI_assert(op->getOutputNChannels() == cache->elem_chs);
+  BLI_assert(op->getOutputNUsedChannels() == cache->elem_chs);
   BLI_assert(op->getHeight() == cache->height);
   BLI_assert(op->getWidth() == cache->width);
   return cache;
@@ -524,18 +525,24 @@ bool BufferManager::hasBufferCache(NodeOperation *op)
 TmpBuffer *BufferManager::getCustomBuffer(NodeOperation *op)
 {
   BLI_assert(op->getBufferType() == BufferType::CUSTOM);
-  int elem_chs = op->getOutputNChannels();
-  TmpBuffer *custom = m_recycler->createTmpBuffer(
-      false, op->getCustomBuffer(), op->getWidth(), op->getHeight(), elem_chs);
-  HostBuffer &host = custom->host;
-  host.brow_bytes = BufferUtil::calcBufferRowBytes(custom->width, custom->elem_chs);
-  host.bwidth = op->getWidth();
-  host.bheight = op->getHeight();
-  host.belem_chs = elem_chs;
-  host.state = HostMemoryState::FILLED;
-  if (host.buffer == nullptr) {
-    BLI_assert(!"Operator is BufferType::CUSTOM but no custom buffer found. You may have forgotten to implement getCustomBuffer() or set the wrong BufferType");
+  int n_used_chs = op->getOutputNUsedChannels();
+  TmpBuffer *custom = op->getCustomBuffer();
+  BLI_assert(custom != nullptr && custom->host.buffer != nullptr);
+  BLI_assert(custom->height == op->getHeight());
+  BLI_assert(custom->width == op->getWidth());
+  BLI_assert(custom->elem_chs3 == n_used_chs);
+  BLI_assert(custom->host.bheight >= custom->height);
+  BLI_assert(custom->host.bwidth >= custom->width);
+  BLI_assert(custom->host.belem_chs3 >= n_used_chs);
+  BLI_assert(custom->host.brow_bytes ==
+             BufferUtil::calcNonStdBufferRowBytes(custom->host.bwidth, custom->host.belem_chs3));
+  BLI_assert(custom->host.state == HostMemoryState::CLEARED ||
+             custom->host.state == HostMemoryState::FILLED);
+  if (custom->host.state == HostMemoryState::CLEARED) {
+    custom->host.state = HostMemoryState::FILLED;
   }
+
+  UNUSED_VARS(n_used_chs);
   return custom;
 }
 
@@ -554,23 +561,23 @@ void BufferManager::reportWriteCompleted(NodeOperation *op,
 
   assureReadsGotten(man);
 
-  auto reader_key = op->getKey();
+  const OpKey &reader_key = op->getKey();
   auto reads_found = m_readers_reads.find(reader_key);
   if (reads_found != m_readers_reads.end()) {
     std::vector<ReaderReads *> &reads_list = reads_found->second;
     for (auto reader_reads : reads_list) {
-      auto op_reads = reader_reads->reads;
-      op_reads->current_compute_reads += reader_reads->n_compute_reads;
-      op_reads->current_cpu_reads += reader_reads->n_cpu_reads;
-      BLI_assert(op_reads->current_compute_reads <= op_reads->total_compute_reads);
-      BLI_assert(op_reads->current_cpu_reads <= op_reads->total_cpu_reads);
+      auto reads = reader_reads->reads;
+      reads->current_compute_reads += reader_reads->n_compute_reads;
+      reads->current_cpu_reads += reader_reads->n_cpu_reads;
+      BLI_assert(reads->current_compute_reads <= reads->total_compute_reads);
+      BLI_assert(reads->current_cpu_reads <= reads->total_cpu_reads);
 
       // operations with no buffer, need no recycle
-      if (op_reads->tmp_buffer != nullptr &&
-          op_reads->current_compute_reads == op_reads->total_compute_reads &&
-          op_reads->current_cpu_reads == op_reads->total_cpu_reads) {
-        m_recycler->giveRecycle(op_reads->tmp_buffer);
-        op_reads->tmp_buffer = nullptr;
+      if (reads->tmp_buffer != nullptr &&
+          reads->current_compute_reads == reads->total_compute_reads &&
+          reads->current_cpu_reads == reads->total_cpu_reads) {
+        m_recycler->giveRecycle(reads->tmp_buffer);
+        reads->tmp_buffer = nullptr;
       }
     }
   }
