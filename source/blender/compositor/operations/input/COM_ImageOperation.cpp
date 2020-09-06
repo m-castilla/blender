@@ -23,7 +23,6 @@
 #include "COM_PixelsUtil.h"
 #include "DNA_image_types.h"
 #include "IMB_colormanagement.h"
-#include "IMB_imbuf.h"
 #include "IMB_imbuf_types.h"
 #include "RE_pipeline.h"
 #include "RE_render_ext.h"
@@ -34,17 +33,12 @@
 BaseImageOperation::BaseImageOperation() : NodeOperation()
 {
   this->m_image = NULL;
-  this->m_im_buffer = NULL;
-  this->m_imageFloatBuffer = NULL;
-  this->m_imageByteBuffer = NULL;
+  this->m_imbuf = NULL;
   this->m_imageUser = NULL;
-  this->m_imagewidth = 0;
-  this->m_imageheight = 0;
   this->m_framenumber = 0;
-  this->m_depthBuffer = NULL;
-  this->m_numberOfChannels = 0;
   this->m_rd = NULL;
   this->m_viewName = NULL;
+  im_buf_requested = false;
 }
 ImageOperation::ImageOperation() : BaseImageOperation()
 {
@@ -59,12 +53,13 @@ ImageDepthOperation::ImageDepthOperation() : BaseImageOperation()
   this->addOutputSocket(SocketType::VALUE);
 }
 
-ImBuf *BaseImageOperation::assureImBuf()
+void BaseImageOperation::requestImBuf()
 {
-  if (m_im_buffer == nullptr) {
+  if (!im_buf_requested) {
+    im_buf_requested = true;
     ImageUser iuser = *this->m_imageUser;
     if (this->m_image == NULL) {
-      return NULL;
+      return;
     }
 
     /* local changes to the original ImageUser */
@@ -72,50 +67,36 @@ ImBuf *BaseImageOperation::assureImBuf()
       iuser.multi_index = BKE_scene_multiview_view_id_get(this->m_rd, this->m_viewName);
     }
 
-    m_im_buffer = BKE_image_acquire_ibuf(this->m_image, &iuser, NULL);
-    if (m_im_buffer == NULL || (m_im_buffer->rect == NULL && m_im_buffer->rect_float == NULL)) {
-      BKE_image_release_ibuf(this->m_image, m_im_buffer, NULL);
-      return NULL;
+    m_imbuf = BKE_image_acquire_ibuf(this->m_image, &iuser, NULL);
+    if (!BufferUtil::isImBufAvailable(m_imbuf)) {
+      BKE_image_release_ibuf(this->m_image, m_imbuf, NULL);
     }
   }
-
-  return m_im_buffer;
 }
 
 void BaseImageOperation::initExecution()
 {
-  ImBuf *stackbuf = assureImBuf();
-  this->m_im_buffer = stackbuf;
-  if (stackbuf) {
-    this->m_imageFloatBuffer = stackbuf->rect_float;
-    this->m_imageByteBuffer = stackbuf->rect;
-    this->m_depthBuffer = stackbuf->zbuf_float;
-    this->m_imagewidth = stackbuf->x;
-    this->m_imageheight = stackbuf->y;
-    this->m_numberOfChannels = stackbuf->channels;
-  }
+  requestImBuf();
   NodeOperation::initExecution();
 }
 
 void BaseImageOperation::deinitExecution()
 {
-  this->m_imageFloatBuffer = NULL;
-  this->m_imageByteBuffer = NULL;
-  BKE_image_release_ibuf(this->m_image, this->m_im_buffer, NULL);
+  BKE_image_release_ibuf(this->m_image, this->m_imbuf, NULL);
 }
 
 ResolutionType BaseImageOperation::determineResolution(int resolution[2],
                                                        int /*preferredResolution*/[2],
                                                        bool /*setResolution*/)
 {
-  ImBuf *stackbuf = assureImBuf();
+  requestImBuf();
 
   resolution[0] = 0;
   resolution[1] = 0;
 
-  if (stackbuf) {
-    resolution[0] = stackbuf->x;
-    resolution[1] = stackbuf->y;
+  if (BufferUtil::isImBufAvailable(m_imbuf)) {
+    resolution[0] = m_imbuf->x;
+    resolution[1] = m_imbuf->y;
   }
 
   return ResolutionType::Fixed;
@@ -128,56 +109,24 @@ void BaseImageOperation::hashParams()
   if (m_image) {
     hashParam(m_image->id.session_uuid);
   }
-  else {
-    hashParam((size_t)m_imageFloatBuffer);
-    hashParam((size_t)m_imageByteBuffer);
+  else if (BufferUtil::isImBufAvailable(m_imbuf)) {
+    hashParam((size_t)m_imbuf->rect_float);
+    hashParam((size_t)m_imbuf->rect);
   }
 }
 
 void ImageOperation::execPixels(ExecutionManager &man)
 {
-  float norm_mult = 1.0 / 255.0;
   auto cpuWrite = [&](PixelsRect &dst, const WriteRectContext & /*ctx*/) {
-    if (m_imageFloatBuffer == nullptr && m_imageByteBuffer == nullptr) {
-      PixelsUtil::setRectElem(dst, (float *)&CCL::TRANSPARENT_PIXEL);
-    }
-    else if (m_imageFloatBuffer) {
-      auto buf = BufferUtil::createUnmanagedTmpBuffer(
-          m_imageFloatBuffer, m_imagewidth, m_imageheight, m_numberOfChannels, true);
-      PixelsRect src_rect = PixelsRect(buf.get(), dst);
-      PixelsUtil::copyEqualRectsNChannels(dst, src_rect, m_numberOfChannels);
-    }
-    else {
-      int n_channels = m_numberOfChannels;
-      size_t n_channels_sz = m_numberOfChannels;
-      size_t width = m_width;
-      unsigned char *uchar_buf = (unsigned char *)m_imageByteBuffer;
-      CCL::float4 src_pixel;
-      size_t src_offset;
-
-      WRITE_DECL(dst);
-      CPU_LOOP_START(dst);
-
-      src_offset = n_channels == dst_img.elem_chs ?
-                       dst_offset :
-                       width * dst_coords.y * n_channels_sz + dst_coords.x * n_channels_sz;
-
-      src_pixel = CCL::make_float4(uchar_buf[src_offset],
-                                   uchar_buf[src_offset + 1],
-                                   uchar_buf[src_offset + 2],
-                                   uchar_buf[src_offset + 3]);
-      // normalize
-      src_pixel *= norm_mult;
-
-      WRITE_IMG(dst, src_pixel);
-
-      CPU_LOOP_END;
-
+    bool byte_buf_used = PixelsUtil::copyImBufRect(
+        dst, m_imbuf, COM_NUM_CHANNELS_COLOR, COM_NUM_CHANNELS_COLOR);
+    if (byte_buf_used) {
+      PixelsImg dst_img = dst.pixelsImg();
       IMB_colormanagement_colorspace_to_scene_linear(dst_img.start,
                                                      dst_img.row_elems,
                                                      dst_img.col_elems,
-                                                     dst_img.elem_chs,
-                                                     m_im_buffer->rect_colorspace,
+                                                     dst_img.belem_chs,
+                                                     m_imbuf->rect_colorspace,
                                                      false);
     }
   };
@@ -192,29 +141,8 @@ void ImageOperation::hashParams()
 
 void ImageAlphaOperation::execPixels(ExecutionManager &man)
 {
-  auto cpuWrite = [&](PixelsRect &dst, const WriteRectContext &ctx) {
-    if (m_imageFloatBuffer == nullptr && m_imageByteBuffer == nullptr) {
-      PixelsUtil::setRectElem(dst, 0.0f);
-    }
-    else if (m_imageFloatBuffer) {
-      auto buf = BufferUtil::createUnmanagedTmpBuffer(
-          m_imageFloatBuffer, m_imagewidth, m_imageheight, COM_NUM_CHANNELS_VALUE, true);
-      PixelsRect src_rect = PixelsRect(buf.get(), dst);
-      PixelsUtil::copyEqualRectsNChannels(dst, src_rect, COM_NUM_CHANNELS_VALUE);
-    }
-    else {
-      unsigned char *uchar_buf = (unsigned char *)m_imageByteBuffer;
-      WRITE_DECL(dst);
-      CPU_LOOP_START(dst);
-
-      int src_offset = m_width * dst_coords.y * m_numberOfChannels +
-                       dst_coords.x * m_numberOfChannels;
-
-      // normalize to float
-      dst_img.buffer[dst_offset] = uchar_buf[src_offset + 3] / 255.0f;
-
-      CPU_LOOP_END;
-    }
+  auto cpuWrite = [&](PixelsRect &dst, const WriteRectContext &) {
+    PixelsUtil::copyImBufRectChannel(dst, 0, m_imbuf, 3, COM_NUM_CHANNELS_COLOR);
   };
   return cpuWriteSeek(man, cpuWrite);
 }
@@ -226,15 +154,12 @@ void ImageAlphaOperation::hashParams()
 
 void ImageDepthOperation::execPixels(ExecutionManager &man)
 {
-  auto cpuWrite = [&](PixelsRect &dst, const WriteRectContext &ctx) {
-    if (m_depthBuffer == NULL) {
+  auto cpuWrite = [&](PixelsRect &dst, const WriteRectContext &) {
+    if (m_imbuf->zbuf_float == nullptr) {
       PixelsUtil::setRectElem(dst, 0.0f);
     }
     else {
-      auto buf = BufferUtil::createUnmanagedTmpBuffer(
-          m_depthBuffer, m_imagewidth, m_imageheight, COM_NUM_CHANNELS_VALUE, true);
-      PixelsRect src_rect = PixelsRect(buf.get(), dst);
-      PixelsUtil::copyEqualRectsNChannels(dst, src_rect, 1);
+      PixelsUtil::copyBufferRect(dst, m_imbuf->zbuf_float, 1, 1);
     }
   };
   cpuWriteSeek(man, cpuWrite);
@@ -243,5 +168,5 @@ void ImageDepthOperation::execPixels(ExecutionManager &man)
 void ImageDepthOperation::hashParams()
 {
   BaseImageOperation::hashParams();
-  hashParam((size_t)m_depthBuffer);
+  hashParam((size_t)m_imbuf->zbuf_float);
 }

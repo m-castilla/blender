@@ -26,12 +26,15 @@ CCL_NAMESPACE_BEGIN
 struct ccl_try_align(16) float3
 {
 #ifdef __KERNEL_SSE__
+#  pragma warning(push)
+#  pragma warning(disable : 4201)
   union {
     __m128 m128;
     struct {
       float x, y, z, w;
     };
   };
+#  pragma warning(pop)
 
   __forceinline float3();
   __forceinline float3(const float3 &a);

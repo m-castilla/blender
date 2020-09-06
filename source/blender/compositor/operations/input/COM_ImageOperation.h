@@ -33,18 +33,13 @@
  */
 class BaseImageOperation : public NodeOperation {
  protected:
-  ImBuf *m_im_buffer;
+  ImBuf *m_imbuf;
   Image *m_image;
   ImageUser *m_imageUser;
-  float *m_imageFloatBuffer;
-  unsigned int *m_imageByteBuffer;
-  float *m_depthBuffer;
-  int m_imageheight;
-  int m_imagewidth;
   int m_framenumber;
-  int m_numberOfChannels;
   const RenderData *m_rd;
   const char *m_viewName;
+  bool im_buf_requested;
 
   BaseImageOperation();
   /**
@@ -55,7 +50,7 @@ class BaseImageOperation : public NodeOperation {
 
                                              bool setResolution) override;
 
-  virtual ImBuf *assureImBuf();
+  virtual void requestImBuf();
 
  public:
   void initExecution();

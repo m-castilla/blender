@@ -55,7 +55,7 @@ void ViewCacheManager::deinitialize(bool isBreaked)
 
 unsigned char *ViewCacheManager::getPreviewCache(PreviewOperation *op)
 {
-  auto op_key = op->getKey();
+  const OpKey &op_key = op->getKey();
   auto preview_key = op->getPreviewKey();
   m_exec_previews.insert(preview_key);
   auto found_it = m_previews.find(preview_key);
@@ -74,7 +74,7 @@ unsigned char *ViewCacheManager::getPreviewCache(PreviewOperation *op)
 
 void ViewCacheManager::reportPreviewWrite(PreviewOperation *op, unsigned char *buffer_to_cache)
 {
-  auto op_key = op->getKey();
+  const OpKey &op_key = op->getKey();
   auto preview_key = op->getPreviewKey();
   BLI_assert(m_previews.find(preview_key) == m_previews.end());
   m_previews.insert({preview_key, new PreviewCache{op_key, buffer_to_cache}});
@@ -83,7 +83,7 @@ void ViewCacheManager::reportPreviewWrite(PreviewOperation *op, unsigned char *b
 bool ViewCacheManager::viewerNeedsUpdate(ViewerOperation *op)
 {
   auto image = op->getImage();
-  auto op_key = op->getKey();
+  const OpKey &op_key = op->getKey();
   unsigned int img_id = image->id.session_uuid;
   auto found_it = m_viewers.find(img_id);
   if (found_it != m_viewers.end()) {

@@ -192,7 +192,7 @@ class NodeOperation : public NodeSocketReader {
    *
    * \param buffer
    */
-  virtual float *getCustomBuffer()
+  virtual TmpBuffer *getCustomBuffer()
   {
     return nullptr;
   }

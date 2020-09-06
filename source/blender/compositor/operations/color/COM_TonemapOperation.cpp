@@ -102,11 +102,12 @@ void TonemapOperation::calcAverage(std::shared_ptr<PixelsRect> color,
     int total_area = color->getWidth() * color->getHeight();
     float sc = 1.0f / total_area;
     mul_v3_v3fl(m_avg->cav, m_sum->cav_sum, sc);
-    float maxl = log((double)m_sum->maxl + 1e-5);
-    float minl = log((double)m_sum->minl + 1e-5);
+    float final_maxl = log((double)m_sum->maxl + 1e-5);
+    float final_minl = log((double)m_sum->minl + 1e-5);
     m_avg->lav = m_sum->lav_sum * sc;
     float avl = m_sum->l_sum * sc;
-    m_avg->auto_key = maxl > minl ? (maxl - avl) / (maxl - minl) : 1.0f;
+    m_avg->auto_key = final_maxl > final_minl ? (final_maxl - avl) / (final_maxl - final_minl) :
+                                                1.0f;
     float al = exp((double)avl);
     m_avg->al = (al == 0.0f) ? 0.0f : (m_tone->key / al);
     m_avg->igm = (m_tone->gamma == 0.0f) ? 1 : (1.0f / m_tone->gamma);

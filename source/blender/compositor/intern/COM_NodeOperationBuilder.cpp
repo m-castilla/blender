@@ -90,8 +90,8 @@ void NodeOperationBuilder::convertToOperations()
       continue;
     }
 
-    for (OpInputs::const_iterator it = op_to_list.begin(); it != op_to_list.end(); ++it) {
-      NodeOperationInput *op_to = *it;
+    for (OpInputs::const_iterator it2 = op_to_list.begin(); it2 != op_to_list.end(); ++it2) {
+      NodeOperationInput *op_to = *it2;
       addLink(op_from, op_to);
     }
   }

@@ -110,7 +110,7 @@ TmpBuffer *BlurBaseOperation::make_gausstab(float rad, int size)
   int n_elems = get_gausstab_n_elems(size);
   BufferRecycler *recycler = GlobalMan->BufferMan->recycler();
   TmpBuffer *buf = recycler->createTmpBuffer();
-  recycler->takeRecycle(BufferRecycleType::HOST_CLEAR, buf, n_elems, 1, 1);
+  recycler->takeNonStdRecycle(buf, n_elems, 1, 1);
 
   int gauss_n_elems = make_gausstab(buf->host.buffer, 0, rad, size);
   BLI_assert(n_elems == gauss_n_elems);
@@ -129,7 +129,7 @@ TmpBuffer *BlurBaseOperation::make_dist_fac_inverse(float rad, int size, int fal
   n_elems = 2 * size + 1;
   BufferRecycler *recycler = GlobalMan->BufferMan->recycler();
   TmpBuffer *tmp_buf = recycler->createTmpBuffer();
-  recycler->takeRecycle(BufferRecycleType::HOST_CLEAR, tmp_buf, n_elems, 1, 1);
+  recycler->takeNonStdRecycle(tmp_buf, n_elems, 1, 1);
 
   float *buffer = tmp_buf->host.buffer;
 

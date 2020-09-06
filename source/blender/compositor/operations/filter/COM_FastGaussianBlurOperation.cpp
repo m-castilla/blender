@@ -78,7 +78,7 @@ void FastGaussianBlurOperation::IIR_gauss(PixelsImg &src_dst,
   unsigned int x, y, sz;
   unsigned int i;
   float *buffer = src_dst.buffer;
-  const unsigned int num_channels = src_dst.elem_chs;
+  const unsigned int belem_chs = src_dst.belem_chs;
 
   // <0.5 not valid, though can have a possibly useful sort of sharpening effect
   if (sigma < 0.5f) {
@@ -173,31 +173,31 @@ void FastGaussianBlurOperation::IIR_gauss(PixelsImg &src_dst,
     int offset;
     for (y = 0; y < src_height; y++) {
       const int yx = y * src_width;
-      offset = yx * num_channels + chan;
+      offset = yx * belem_chs + chan;
       for (x = 0; x < src_width; x++) {
         X[x] = buffer[offset];
-        offset += num_channels;
+        offset += belem_chs;
       }
       YVV(src_width);
-      offset = yx * num_channels + chan;
+      offset = yx * belem_chs + chan;
       for (x = 0; x < src_width; x++) {
         buffer[offset] = Y[x];
-        offset += num_channels;
+        offset += belem_chs;
       }
     }
   }
   if (xy & 2) {  // V
     int offset;
-    const int add = src_width * num_channels;
+    const int add = src_width * belem_chs;
 
     for (x = 0; x < src_width; x++) {
-      offset = x * num_channels + chan;
+      offset = x * belem_chs + chan;
       for (y = 0; y < src_height; y++) {
         X[y] = buffer[offset];
         offset += add;
       }
       YVV(src_height);
-      offset = x * num_channels + chan;
+      offset = x * belem_chs + chan;
       for (y = 0; y < src_height; y++) {
         buffer[offset] = Y[y];
         offset += add;
@@ -247,8 +247,8 @@ void FastGaussianBlurValueOperation::execPixels(ExecutionManager &man)
           if (*src_cur < *dst_cur) {
             *dst_cur = *src_cur;
           }
-          dst_cur += dst_img.elem_chs_incr;
-          src_cur += src_img.elem_chs_incr;
+          dst_cur += dst_img.belem_chs_incr;
+          src_cur += src_img.belem_chs_incr;
         }
         dst_cur += dst_img.row_jump;
         src_cur += src_img.row_jump;
@@ -264,8 +264,8 @@ void FastGaussianBlurValueOperation::execPixels(ExecutionManager &man)
           if (*src_cur > *dst_cur) {
             *dst_cur = *src_cur;
           }
-          dst_cur += dst_img.elem_chs_incr;
-          src_cur += src_img.elem_chs_incr;
+          dst_cur += dst_img.belem_chs_incr;
+          src_cur += src_img.belem_chs_incr;
         }
         dst_cur += dst_img.row_jump;
         src_cur += src_img.row_jump;

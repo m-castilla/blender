@@ -68,8 +68,13 @@ class PixelsRect : public rcti {
 
   PixelsRect(TmpBuffer *tmp_buffer, int xmin, int xmax, int ymin, int ymax);
   PixelsRect(TmpBuffer *tmp_buffer, const rcti &rect);
-  PixelsRect(float *single_elem, int single_elem_chs, int xmin, int xmax, int ymin, int ymax);
-  PixelsRect(float *single_elem, int single_elem_chs, const rcti &rect);
+  PixelsRect(float single_elem[COM_NUM_CHANNELS_STD],
+             int n_used_chs,
+             int xmin,
+             int xmax,
+             int ymin,
+             int ymax);
+  PixelsRect(float single_elem[COM_NUM_CHANNELS_STD], int n_used_chs, const rcti &rect);
 
   PixelsRect toRect(const rcti &rect);
 
@@ -83,7 +88,11 @@ class PixelsRect : public rcti {
   }
   inline int getElemChs()
   {
-    return is_single_elem ? single_elem_chs : tmp_buffer->elem_chs;
+    return is_single_elem ? single_elem_chs : tmp_buffer->elem_chs3;
+  }
+  inline int getBufferElemChs()
+  {
+    return is_single_elem ? COM_NUM_CHANNELS_STD : tmp_buffer->getBufferElemChs();
   }
 
   /* This methods are only called for host buffers */

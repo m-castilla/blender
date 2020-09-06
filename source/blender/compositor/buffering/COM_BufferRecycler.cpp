@@ -249,28 +249,8 @@ void BufferRecycler::deleteBuffers(bool deleteRecycledBuffers)
 
 TmpBuffer *BufferRecycler::createTmpBuffer(bool is_host_recyclable)
 {
-  auto buf = new TmpBuffer();
-  buf->elem_chs = 0;
-  buf->width = 0;
-  buf->height = 0;
+  auto buf = BufferUtil::createNonStdTmpBuffer().release();
   buf->is_host_recyclable = is_host_recyclable;
-  buf->host.buffer = nullptr;
-  buf->host.brow_bytes = 0;
-  buf->host.bwidth = 0;
-  buf->host.bheight = 0;
-  buf->host.belem_chs = 0;
-  buf->host.state = HostMemoryState::NONE;
-  buf->device.buffer = nullptr;
-  buf->device.state = DeviceMemoryState::NONE;
-  buf->device.bwidth = 0;
-  buf->device.bheight = 0;
-  buf->device.belem_chs = 0;
-  buf->orig_host.buffer = nullptr;
-  buf->orig_host.state = HostMemoryState::NONE;
-  buf->orig_host.brow_bytes = 0;
-  buf->orig_host.bwidth = 0;
-  buf->orig_host.bheight = 0;
-  buf->orig_host.belem_chs = 0;
   BLI_assert(!m_execution_id.empty());
   buf->execution_id = m_execution_id;
   buf->n_give_recycles = 0;
@@ -278,38 +258,59 @@ TmpBuffer *BufferRecycler::createTmpBuffer(bool is_host_recyclable)
   return buf;
 }
 
-TmpBuffer *BufferRecycler::createTmpBuffer(
-    bool is_host_recyclable, float *host_buffer, int width, int height, int n_channels)
+TmpBuffer *BufferRecycler::createNonStdTmpBuffer(bool is_host_recyclable,
+                                                 float *host_buffer,
+                                                 int width,
+                                                 int height,
+                                                 int n_used_chs,
+                                                 int n_buf_chs)
 {
+  if (n_buf_chs == 0) {
+    n_buf_chs = n_used_chs;
+  }
   auto buf = createTmpBuffer(is_host_recyclable);
-  buf->elem_chs = n_channels;
+  buf->elem_chs3 = n_used_chs;
   buf->width = width;
   buf->height = height;
   if (host_buffer) {
     buf->host.buffer = host_buffer;
-    buf->host.brow_bytes = BufferUtil::calcBufferRowBytes(width, n_channels);
+    buf->host.brow_bytes = n_buf_chs;
     buf->host.bwidth = width;
     buf->host.bheight = height;
-    buf->host.belem_chs = n_channels;
+    buf->host.belem_chs3 = COM_NUM_CHANNELS_STD;
     buf->host.state = host_buffer == nullptr ? HostMemoryState::NONE : HostMemoryState::FILLED;
   }
   return buf;
 }
 
-/* returns whether there has been work enqueued to device*/
-bool BufferRecycler::takeRecycle(
-    BufferRecycleType type, TmpBuffer *dst, int width, int height, int elem_chs)
+TmpBuffer *BufferRecycler::createStdTmpBuffer(
+    bool is_host_recyclable, float *host_buffer, int width, int height, int n_used_chs)
 {
+  return createNonStdTmpBuffer(
+      is_host_recyclable, host_buffer, width, height, n_used_chs, COM_NUM_CHANNELS_STD);
+}
+
+/* returns whether there has been work enqueued to device*/
+bool BufferRecycler::takeNonStdRecycle(BufferRecycleType type,
+                                       TmpBuffer *dst,
+                                       int width,
+                                       int height,
+                                       int n_used_chs,
+                                       int n_buffer_chs)
+{
+  if (n_buffer_chs == 0) {
+    n_buffer_chs = n_used_chs;
+  }
   dst->width = width;
   dst->height = height;
-  dst->elem_chs = elem_chs;
+  dst->elem_chs3 = n_used_chs;
 
   bool work_enqueued = false;
-  bool recycle_found = recycleFindAndSet(type, dst, width, height, elem_chs);
+  bool recycle_found = recycleFindAndSet(type, dst, width, height, n_buffer_chs);
   if (!recycle_found && type == BufferRecycleType::DEVICE_HOST_ALLOC) {
     // try to find a mapped buffer and unmap it
     recycle_found = recycleFindAndSet(
-        BufferRecycleType::DEVICE_HOST_MAPPED, dst, width, height, elem_chs);
+        BufferRecycleType::DEVICE_HOST_MAPPED, dst, width, height, n_buffer_chs);
     if (recycle_found) {
       BufferUtil::deviceUnmapFromHostEnqueue(dst);
       work_enqueued = true;
@@ -318,7 +319,7 @@ bool BufferRecycler::takeRecycle(
   else if (!recycle_found && type == BufferRecycleType::DEVICE_HOST_MAPPED) {
     // try to find a unmapped buffer with host alloc and map it
     recycle_found = recycleFindAndSet(
-        BufferRecycleType::DEVICE_HOST_ALLOC, dst, width, height, elem_chs);
+        BufferRecycleType::DEVICE_HOST_ALLOC, dst, width, height, n_buffer_chs);
     if (recycle_found) {
       BufferUtil::deviceMapToHostEnqueue(dst, MemoryAccess::READ_WRITE);
       work_enqueued = true;
@@ -329,16 +330,16 @@ bool BufferRecycler::takeRecycle(
   if (!recycle_found) {
     switch (type) {
       case BufferRecycleType::HOST_CLEAR:
-        BufferUtil::hostAlloc(dst, width, height, elem_chs);
+        BufferUtil::hostNonStdAlloc(dst, width, height, n_buffer_chs);
         break;
       case BufferRecycleType::DEVICE_CLEAR:
-        BufferUtil::deviceAlloc(dst, MemoryAccess::READ_WRITE, width, height, elem_chs, false);
+        BufferUtil::deviceAlloc(dst, MemoryAccess::READ_WRITE, width, height, false);
         break;
       case BufferRecycleType::DEVICE_HOST_ALLOC:
-        BufferUtil::deviceAlloc(dst, MemoryAccess::READ_WRITE, width, height, elem_chs, true);
+        BufferUtil::deviceAlloc(dst, MemoryAccess::READ_WRITE, width, height, true);
         break;
       case BufferRecycleType::DEVICE_HOST_MAPPED:
-        BufferUtil::deviceAlloc(dst, MemoryAccess::READ_WRITE, width, height, elem_chs, true);
+        BufferUtil::deviceAlloc(dst, MemoryAccess::READ_WRITE, width, height, true);
         BufferUtil::deviceMapToHostEnqueue(dst, MemoryAccess::READ_WRITE);
         work_enqueued = true;
         break;
@@ -354,11 +355,26 @@ bool BufferRecycler::takeRecycle(
   return work_enqueued;
 }
 
+/* Only for host recycles that are not inteded to be used with devices buffers */
+void BufferRecycler::takeNonStdRecycle(
+    TmpBuffer *dst, int width, int height, int n_used_chs, int n_buffer_chs)
+{
+  takeNonStdRecycle(BufferRecycleType::HOST_CLEAR, dst, width, height, n_used_chs, n_buffer_chs);
+}
+
+/* returns whether there has been work enqueued to device*/
+bool BufferRecycler::takeStdRecycle(
+    BufferRecycleType type, TmpBuffer *dst, int width, int height, int n_used_chs)
+{
+  return takeNonStdRecycle(type, dst, width, height, n_used_chs, COM_NUM_CHANNELS_STD);
+}
+
 /* returns whether it could find a reuse buffer or not */
 bool BufferRecycler::recycleFindAndSet(
-    BufferRecycleType type, TmpBuffer *dst, int width, int height, int elem_chs)
+    BufferRecycleType type, TmpBuffer *dst, int width, int height, int n_buf_chs)
 {
-  size_t min_buffer_bytes = BufferUtil::calcBufferBytes(width, height, elem_chs);
+  BLI_assert(type == BufferRecycleType::HOST_CLEAR || n_buf_chs == COM_NUM_CHANNELS_STD);
+  size_t min_buffer_bytes = BufferUtil::calcNonStdBufferBytes(width, height, n_buf_chs);
   using RecycleData = BufferRecycler::RecycleData;
   RecycleData *rdata = m_recycle[type];
 
@@ -386,7 +402,7 @@ bool BufferRecycler::recycleFindAndSet(
       // device memory handling (OpenCL) don't accept recycling a buffer and using it with a
       // different belem_chs
       if (tmp->device.bwidth >= width && tmp->device.bheight >= height &&
-          tmp->device.belem_chs == elem_chs) {
+          tmp->device.belem_chs3 == n_buf_chs) {
         float scale = RectUtil::area_scale_diff(tmp->width, tmp->height, width, height);
         if (scale < candi_area_scale && scale < MAX_BUFFER_SCALE_DIFF_FOR_REUSE) {
           found_it = it;
@@ -415,7 +431,7 @@ bool BufferRecycler::recycleFindAndSet(
         // adapt host buffer to new width and elem_chs to avoid row_jump (host buffer is always
         // contiguous memory)
         dst->host.bwidth = width;
-        dst->host.belem_chs = elem_chs;
+        dst->host.belem_chs3 = n_buf_chs;
         dst->host.brow_bytes = dst->getMinBufferRowBytes();
         // It might seem we loose a buffer bytes here when remainder is not 0, but on next
         // recycling host.buffer_bytes will be the same and bytes can be recovered.
@@ -480,12 +496,13 @@ void BufferRecycler::giveRecycle(TmpBuffer *src)
     BLI_assert(src->orig_host.state != HostMemoryState::MAP_FROM_DEVICE);
     BLI_assert(src->host.state == HostMemoryState::MAP_FROM_DEVICE);
     if (src->is_host_recyclable && src->orig_host.state != HostMemoryState::NONE) {
-      host_recycle = createTmpBuffer(true, nullptr, src->width, src->height, src->elem_chs);
+      host_recycle = createStdTmpBuffer(true, nullptr, src->width, src->height, src->elem_chs3);
       host_recycle->host = src->orig_host;
       host_recycle->host.state = HostMemoryState::CLEARED;
       BLI_assert(host_recycle->host.buffer != nullptr);
     }
-    device_map_recycle = createTmpBuffer(true, nullptr, src->width, src->height, src->elem_chs);
+    device_map_recycle = createStdTmpBuffer(
+        true, nullptr, src->width, src->height, src->elem_chs3);
     device_map_recycle->host = src->host;
     device_map_recycle->device = src->device;
   }
@@ -497,7 +514,8 @@ void BufferRecycler::giveRecycle(TmpBuffer *src)
     if (src->is_host_recyclable) {
       if (src->host.state == HostMemoryState::CLEARED ||
           src->host.state == HostMemoryState::FILLED) {
-        host_recycle = createTmpBuffer(true, nullptr, src->width, src->height, src->elem_chs);
+        host_recycle = createNonStdTmpBuffer(
+            true, nullptr, src->width, src->height, src->elem_chs3, src->host.belem_chs3);
         host_recycle->host = src->host;
         host_recycle->host.state = HostMemoryState::CLEARED;
         BLI_assert(host_recycle->host.buffer != nullptr);
@@ -507,13 +525,14 @@ void BufferRecycler::giveRecycle(TmpBuffer *src)
     if (src->device.state == DeviceMemoryState::CLEARED ||
         src->device.state == DeviceMemoryState::FILLED) {
       if (src->device.has_map_alloc) {
-        device_alloc_recycle = createTmpBuffer(
-            true, nullptr, src->width, src->height, src->elem_chs);
+        device_alloc_recycle = createStdTmpBuffer(
+            true, nullptr, src->width, src->height, src->elem_chs3);
         device_alloc_recycle->device = src->device;
         device_alloc_recycle->device.state = DeviceMemoryState::CLEARED;
       }
       else {
-        device_recycle = createTmpBuffer(true, nullptr, src->width, src->height, src->elem_chs);
+        device_recycle = createStdTmpBuffer(
+            true, nullptr, src->width, src->height, src->elem_chs3);
         device_recycle->device = src->device;
         device_recycle->device.state = DeviceMemoryState::CLEARED;
       }
@@ -549,8 +568,8 @@ void BufferRecycler::addRecycle(BufferRecycleType type, TmpBuffer *original, Tmp
 
   BLI_assert(type != BufferRecycleType::HOST_CLEAR ||
              (recycled->host.buffer != nullptr && recycled->host.bwidth > 0 &&
-              recycled->host.bheight > 0 && recycled->host.belem_chs > 0));
+              recycled->host.bheight > 0 && recycled->host.belem_chs3 > 0));
   BLI_assert(type == BufferRecycleType::HOST_CLEAR ||
              (recycled->device.buffer != nullptr && recycled->device.bwidth > 0 &&
-              recycled->device.bheight > 0 && recycled->device.belem_chs > 0));
+              recycled->device.bheight > 0 && recycled->device.belem_chs3 > 0));
 }

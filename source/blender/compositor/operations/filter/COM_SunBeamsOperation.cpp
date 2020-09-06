@@ -148,7 +148,7 @@ template<int fxu, int fxv, int fyu, int fyv> struct BufferLineAccumulator {
 
     falloff_factor = dist_max > dist_min ? dr / (float)(dist_max - dist_min) : 0.0f;
 
-    float *iter = input_img.buffer + input_img.elem_chs_incr * (x + input_img.row_elems * y);
+    float *iter = input_img.buffer + input_img.belem_chs_incr * (x + input_img.row_elems * y);
     return iter;
   }
 
@@ -179,7 +179,7 @@ template<int fxu, int fxv, int fyu, int fyv> struct BufferLineAccumulator {
 
     if ((int)(co[0] - source[0]) == 0 && (int)(co[1] - source[1]) == 0) {
       int width_incr = input_img.brow_chs_incr / COM_NUM_CHANNELS_COLOR;
-      float *input_source = input_img.buffer + input_img.elem_chs_incr *
+      float *input_source = input_img.buffer + input_img.belem_chs_incr *
                                                    ((int)source[0] + width_incr * (int)source[1]);
       output = CCL::make_float4_a(input_source);
       return;
@@ -225,7 +225,7 @@ template<int fxu, int fxv, int fyu, int fyv> struct BufferLineAccumulator {
       /* decrement u */
       x -= fxu;
       y -= fyu;
-      buffer -= (fxu + fyu * row_elems) * input_img.elem_chs_incr;
+      buffer -= (fxu + fyu * row_elems) * input_img.belem_chs_incr;
 
       /* decrement v (in steps of dv < 1) */
       v_local -= dv;
@@ -234,7 +234,7 @@ template<int fxu, int fxv, int fyu, int fyv> struct BufferLineAccumulator {
 
         x -= fxv;
         y -= fyv;
-        buffer -= (fxv + fyv * row_elems) * input_img.elem_chs_incr;
+        buffer -= (fxv + fyv * row_elems) * input_img.belem_chs_incr;
       }
     }
 

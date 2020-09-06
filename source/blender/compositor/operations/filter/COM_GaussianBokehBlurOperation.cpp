@@ -60,7 +60,7 @@ TmpBuffer *GaussianBokehBlurOperation::calc_bokeh_gausstab()
 
   auto recycler = GlobalMan->BufferMan->recycler();
   auto tmp_buf = recycler->createTmpBuffer();
-  recycler->takeRecycle(BufferRecycleType::HOST_CLEAR, tmp_buf, n, 1, 1);
+  recycler->takeNonStdRecycle(tmp_buf, n, 1, 1);
 
   /* create a full filter image */
   ddgauss = tmp_buf->host.buffer;
@@ -251,7 +251,7 @@ std::tuple<TmpBuffer *, int *, int> GaussianBlurReferenceOperation::make_ref_gau
 
   auto recycler = GlobalMan->BufferMan->recycler();
   auto tmp_buf = recycler->createTmpBuffer();
-  recycler->takeRecycle(BufferRecycleType::HOST_CLEAR, tmp_buf, total_elems, 1, 1);
+  recycler->takeNonStdRecycle(tmp_buf, total_elems, 1, 1);
 
   float *gausstab = tmp_buf->host.buffer;
   for (int i = 0; i < n_tabs; i++) {

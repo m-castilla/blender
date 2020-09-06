@@ -71,7 +71,7 @@ void ColorCorrectionOperation::execPixels(ExecutionManager &man)
 {
   auto color = this->getInputOperation(0)->getPixels(this, man);
   auto mask = this->getInputOperation(1)->getPixels(this, man);
-  auto cpu_write = [&](PixelsRect &dst, const WriteRectContext &ctx) {
+  auto cpu_write = [&](PixelsRect &dst, const WriteRectContext &) {
     READ_DECL(color);
     READ_DECL(mask);
     WRITE_DECL(dst);

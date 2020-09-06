@@ -28,10 +28,10 @@ SetColorOperation::SetColorOperation() : NodeOperation(), m_color()
 void SetColorOperation::hashParams()
 {
   NodeOperation::hashParams();
-  hashDataAsParam(m_color, getOutputNChannels());
+  hashDataAsParam(m_color, COM_NUM_CHANNELS_COLOR);
 }
 
-  void SetColorOperation::setChannels(const float value[4])
-  {
-    memcpy(m_color, value, sizeof(float) * 4);
-  }
+void SetColorOperation::setChannels(const float value[COM_NUM_CHANNELS_COLOR])
+{
+  memcpy(m_color, value, sizeof(float) * COM_NUM_CHANNELS_COLOR);
+}

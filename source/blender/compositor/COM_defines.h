@@ -131,6 +131,9 @@ enum class DetermineResolutionMode { FromInput, FitOutput };
 #define COM_NUM_CHANNELS_VECTOR 3
 #define COM_NUM_CHANNELS_COLOR 4
 
+// Standard number of buffer channels per pixel compatible for all cpu/gpu devices
+#define COM_NUM_CHANNELS_STD COM_NUM_CHANNELS_COLOR
+
 // configurable items
 #define COM_BLUR_BOKEH_PIXELS 512
 
@@ -152,7 +155,7 @@ enum class DetermineResolutionMode { FromInput, FitOutput };
  * release.
  */
 #if defined(COM_DEBUG) || defined(DEBUG)
-#  define COM_CURRENT_THREADING_MODEL COM_TM_NOTHREAD
+#  define COM_CURRENT_THREADING_MODEL COM_TM_QUEUE
 #else
 #  define COM_CURRENT_THREADING_MODEL COM_TM_QUEUE
 #endif

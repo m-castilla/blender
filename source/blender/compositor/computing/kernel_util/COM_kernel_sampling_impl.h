@@ -128,7 +128,7 @@
 
 #  define NEAREST_OFFSET__(name, img) \
     size_t name##_offset__ = (size_t)name##_y__ * img.brow_chs_incr + \
-                             (size_t)name##_x__ * img.elem_chs_incr;
+                             (size_t)name##_x__ * img.belem_chs_incr;
 
 #  define NEAREST_WRITE_F1__(name, img, dst_pix) \
     NEAREST_OFFSET__(name, img); \
@@ -162,8 +162,8 @@
     SAMPLER_ASSERT__(sampler, NEAREST, mode); \
     type src##_nearest_##ctx_num##_x__ = coords.x; \
     type src##_nearest_##ctx_num##_y__ = coords.y; \
-    JOIN(EXTEND_##mode##_,type_letter)( \
-        src##_img, src##_nearest_##ctx_num##_x__, src##_nearest_##ctx_num##_y__); \
+    JOIN(EXTEND_##mode##_, type_letter) \
+    (src##_img, src##_nearest_##ctx_num##_x__, src##_nearest_##ctx_num##_y__); \
     NEAREST_WRITE_F##n_chs##__(src##_nearest_##ctx_num, src##_img, dst_pix);
 
 /* END OF PRIVATE IMPLEMENTATION MACROS */
@@ -196,12 +196,12 @@
     float name##_a_mb__ = name##_a__ * (1.0f - name##_b__); \
     float name##_ma_mb__ = (1.0f - name##_a__) * (1.0f - name##_b__); \
     size_t name##_pix1_offset__ = name##_y1__ * img.brow_chs_incr + \
-                                  name##_x1__ * img.elem_chs_incr; \
+                                  name##_x1__ * img.belem_chs_incr; \
     size_t name##_pix2_offset__ = name##_y2__ > name##_y1__ ? \
                                       name##_pix1_offset__ + img.brow_chs_incr : \
                                       name##_pix1_offset__; \
     size_t name##_pix3_offset__ = name##_x2__ > name##_x1__ ? \
-                                      name##_pix1_offset__ + img.elem_chs_incr : \
+                                      name##_pix1_offset__ + img.belem_chs_incr : \
                                       name##_pix1_offset__; \
     size_t name##_pix4_offset__ = name##_y2__ > name##_y1__ ? \
                                       name##_pix3_offset__ + img.brow_chs_incr : \

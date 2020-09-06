@@ -25,26 +25,36 @@
 
 struct rcti;
 struct TmpBuffer;
+struct ImBuf;
 class ExecutionManager;
 
 #if defined(DEBUG) || defined(COM_DEBUG)
-#  define ASSERT_VALID_TMP_BUFFER(tmp_buffer, width, height, n_channels) \
-BLI_assert((width) > 0 && (height) > 0 && (n_channels) > 0); \
-    BLI_assert(BufferUtil::calcBufferBytes((width), (height), (n_channels)) == \
+#  define ASSERT_VALID_STD_TMP_BUFFER(tmp_buffer, width, height) \
+    BLI_assert((width) > 0 && (height) > 0); \
+    BLI_assert(BufferUtil::calcStdBufferBytes((width), (height)) == \
                (tmp_buffer)->getMinBufferBytes())
 #else
-#  define ASSERT_VALID_TMP_BUFFER(tmp_buffer, width, height, n_channels)
+#  define ASSERT_VALID_STD_TMP_BUFFER(tmp_buffer, width, height)
 #endif
 
 namespace BufferUtil {
 
-inline size_t calcBufferBytes(int width, int height, int n_channels)
+bool isImBufAvailable(ImBuf *im_buf);
+inline size_t calcNonStdBufferBytes(int width, int height, int n_buf_chs)
 {
-  return (size_t)width * height * n_channels * sizeof(float);
+  return (size_t)width * height * n_buf_chs * sizeof(float);
 }
-inline size_t calcBufferRowBytes(int width, int n_channels)
+inline size_t calcNonStdBufferRowBytes(int width, int n_buf_chs)
 {
-  return (size_t)width * n_channels * sizeof(float);
+  return (size_t)width * n_buf_chs * sizeof(float);
+}
+inline size_t calcStdBufferBytes(int width, int height)
+{
+  return calcNonStdBufferBytes(width, height, COM_NUM_CHANNELS_STD);
+}
+inline size_t calcStdBufferRowBytes(int width)
+{
+  return calcNonStdBufferRowBytes(width, COM_NUM_CHANNELS_STD);
 }
 
 inline bool hasBuffer(BufferType buf_type)
@@ -58,20 +68,23 @@ inline bool hasWrite(BufferType buf_type)
   return buf_type != BufferType::NO_BUFFER_NO_WRITE && buf_type != BufferType::CUSTOM;
 }
 
-std::unique_ptr<TmpBuffer> createUnmanagedTmpBuffer(float *host_buffer,
-                                                    int host_width,
-                                                    int host_height,
-                                                    int n_channels,
-                                                    bool is_host_buffer_filled);
-void deviceAlloc(TmpBuffer *dst,
-                 MemoryAccess device_access,
-                 int width,
-                 int height,
-                 int elem_chs,
-                 bool alloc_host);
+std::unique_ptr<TmpBuffer> createNonStdTmpBuffer(float *host_buffer = nullptr,
+                                                 bool is_host_buffer_filled = false,
+                                                 int width = 0,
+                                                 int height = 0,
+                                                 int n_used_channels = 0,
+                                                 int n_buffer_channels = 0);
+std::unique_ptr<TmpBuffer> createStdTmpBuffer(float *host_buffer = nullptr,
+                                              bool is_host_buffer_filled = false,
+                                              int host_width = 0,
+                                              int host_height = 0,
+                                              int n_used_channels = 0);
+void deviceAlloc(
+    TmpBuffer *dst, MemoryAccess device_access, int width, int height, bool alloc_host);
 void deviceFree(TmpBuffer *dst);
 float *hostAlloc(int width, int height, int elem_chs);
-void hostAlloc(TmpBuffer *dst, int width, int height, int elem_chs);
+void hostNonStdAlloc(TmpBuffer *dst, int width, int height, int belem_chs);
+void hostStdAlloc(TmpBuffer *dst, int width, int height);
 void hostFree(float *buffer);
 void hostFree(TmpBuffer *dst);
 void origHostFree(TmpBuffer *dst);
@@ -79,8 +92,8 @@ void deleteCacheBuffer(CacheBuffer *buffer);
 
 void deviceMapToHostEnqueue(TmpBuffer *buf, MemoryAccess host_access);
 void deviceUnmapFromHostEnqueue(TmpBuffer *buffer);
-void deviceToHostCopyEnqueue(TmpBuffer *buf, MemoryAccess host_access);
-void hostToDeviceCopyEnqueue(TmpBuffer *buf, MemoryAccess device_access);
+void deviceToHostCopyEnqueue(TmpBuffer *buf);
+void hostToDeviceCopyEnqueue(TmpBuffer *buf);
 
 }  // namespace BufferUtil
 

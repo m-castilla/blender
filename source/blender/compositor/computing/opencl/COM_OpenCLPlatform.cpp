@@ -4,20 +4,11 @@
 #include "COM_OpenCLManager.h"
 #include "COM_Pixels.h"
 
+// CL_RGB/CL_FLOAT and CL_R/CL_FLOAT not supported in most implementations, we have to use CL_RGBA
 const cl_image_format IMAGE_FORMAT_COLOR = {
     CL_RGBA,
     CL_FLOAT,
 };
-const cl_image_format IMAGE_FORMAT_VECTOR = {
-    CL_RGBA,  // CL_RGB and CL_float not supported in most implementations, we have to use CL_RGBA
-              // which is always supported
-    CL_FLOAT,
-};
-const cl_image_format IMAGE_FORMAT_VALUE = {
-    CL_R,
-    CL_FLOAT,
-};
-
 OpenCLPlatform::OpenCLPlatform(OpenCLManager &man, cl_context context, cl_program program)
     : m_context(context), m_program(program), m_man(man)
 {
@@ -35,19 +26,11 @@ OpenCLPlatform::~OpenCLPlatform()
       [&](void *sampler) { m_man.printIfError(clReleaseSampler((cl_sampler)sampler)); });
 }
 
-const cl_image_format *OpenCLPlatform::getImageFormat(int elem_chs) const
+const cl_image_format *OpenCLPlatform::getImageFormat() const
 {
-  switch (elem_chs) {
-    case 1:
-      return &IMAGE_FORMAT_VALUE;
-    case 3:
-      return &IMAGE_FORMAT_VECTOR;
-    case 4:
-      return &IMAGE_FORMAT_COLOR;
-    default:
-      BLI_assert(!"Non implemented image format for OpenCL");
-      return NULL;
-  }
+  // Only supported 4 channels due to the only FLOAT format that is assured to be compatible in all
+  // devices is CL_RGBA/FLOAT
+  return &IMAGE_FORMAT_COLOR;
 }
 
 int OpenCLPlatform::getMemoryAccessFlag(MemoryAccess mem_access) const

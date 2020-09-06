@@ -97,7 +97,7 @@ void COM_Bmp::generateBitmapImage(PixelsRect &rect, std::string filename)
   int width = rect.xmax - rect.xmin;
   int height = rect.ymax - rect.ymin;
 
-  int buffer_size = read.elem_chs * width * height;
+  int buffer_size = read.elem_chs3 * width * height;
   unsigned char *img = (unsigned char *)MEM_mallocN(buffer_size, __func__);
 
   /*Convert float buffer to unsigned char*/
@@ -106,7 +106,7 @@ void COM_Bmp::generateBitmapImage(PixelsRect &rect, std::string filename)
   float *read_row_end = read.start + read.row_chs;
   while (read_cur < read.end) {
     while (read_cur < read_row_end) {
-      for (int i = 0; i < read.elem_chs; i++) {
+      for (int i = 0; i < read.elem_chs3; i++) {
         int result = *read_cur * 255;
         if (result > 255) {
           result = 255;
@@ -124,7 +124,7 @@ void COM_Bmp::generateBitmapImage(PixelsRect &rect, std::string filename)
     read_cur += read.row_jump;
   }
 
-  generateBitmapImage(img, width, height, read.elem_chs, filename);
+  generateBitmapImage(img, width, height, read.elem_chs3, filename);
   MEM_freeN(img);
 }
 

@@ -98,6 +98,7 @@ void WorkScheduler::stop()
 
 void WorkScheduler::initialize(const CompositorContext &ctx)
 {
+
 #if COM_CURRENT_THREADING_MODEL == COM_TM_QUEUE
   /* deinitialize if number of threads doesn't match */
   int n_threads = ctx.getNCpuWorkThreads();
@@ -124,6 +125,8 @@ void WorkScheduler::initialize(const CompositorContext &ctx)
     BLI_thread_local_create(g_thread_device);
     g_cpuInitialized = true;
   }
+#else
+  UNUSED_VARS(ctx);
 #endif
 }
 
@@ -146,6 +149,10 @@ void WorkScheduler::deinitialize()
 
 int WorkScheduler::current_thread_id()
 {
+#if COM_CURRENT_THREADING_MODEL == COM_TM_QUEUE
   CPUDevice *device = (CPUDevice *)BLI_thread_local_get(g_thread_device);
   return device->thread_id();
+#else
+  return 0;
+#endif
 }

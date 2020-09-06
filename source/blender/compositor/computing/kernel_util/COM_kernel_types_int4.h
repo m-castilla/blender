@@ -29,12 +29,15 @@ struct float4;
 struct ccl_try_align(16) int4
 {
 #ifdef __KERNEL_SSE__
+#  pragma warning(push)
+#  pragma warning(disable : 4201)
   union {
     __m128i m128;
     struct {
       int x, y, z, w;
     };
   };
+#  pragma warning(pop)
 
   __forceinline int4();
   __forceinline int4(const int4 &a);
