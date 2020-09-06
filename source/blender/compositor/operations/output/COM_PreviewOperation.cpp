@@ -164,7 +164,7 @@ void PreviewOperation::execPixels(ExecutionManager &man)
     struct ColormanageProcessor *cm_processor = IMB_colormanagement_display_processor_new(
         this->m_viewSettings, this->m_displaySettings);
     IMB_colormanagement_processor_apply(
-        cm_processor, dst_img.start, rect_w, rect_h, dst_img.elem_chs, false);
+        cm_processor, dst_img.start, rect_w, rect_h, dst_img.belem_chs, false);
     IMB_colormanagement_processor_free(cm_processor);
 
     float *float_pixel = dst_img.start;
@@ -185,29 +185,27 @@ ResolutionType PreviewOperation::determineResolution(int resolution[2],
                                                      bool /*setResolution*/)
 {
   int preview_size = GlobalMan->getContext()->getPreviewSize();
-  bool any_user_input = false;
-  for (auto input : m_inputs) {
-    if (input->hasUserLink()) {
-      any_user_input = true;
-      break;
-    }
-  }
-  if (any_user_input) {
-    preferredResolution[0] = preview_size;
-    preferredResolution[1] = preview_size;
-  }
-  else {
-    preferredResolution[0] = 0;
-    preferredResolution[1] = 0;
-  }
   NodeOperation::determineResolution(resolution, preferredResolution, false);
   int width = resolution[0];
   int height = resolution[1];
   float divider = 0.0f;
 
   if (width == 0 || height == 0) {
-    resolution[0] = 0;
-    resolution[1] = 0;
+    bool any_user_input = false;
+    for (auto input : m_inputs) {
+      if (input->hasUserLink()) {
+        any_user_input = true;
+        break;
+      }
+    }
+    width = any_user_input ? preview_size : 0;
+    height = width;
+
+    int temp_res[2] = {0, 0};
+    int local_preferred[2] = {width, height};
+    NodeOperation::determineResolution(temp_res, local_preferred, true);
+    resolution[0] = temp_res[0];
+    resolution[1] = temp_res[1];
   }
   else {
     if (width > height) {
@@ -219,12 +217,11 @@ ResolutionType PreviewOperation::determineResolution(int resolution[2],
     width = width * divider;
     height = height * divider;
 
-    resolution[0] = width;
-    resolution[1] = height;
-
     int temp_res[2] = {0, 0};
     int local_preferred[2] = {width, height};
     NodeOperation::determineResolution(temp_res, local_preferred, true);
+    resolution[0] = width;
+    resolution[1] = height;
   }
 
   // It's been partially determined by inputs but still it's behavior is more like a fixed one

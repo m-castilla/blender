@@ -81,7 +81,7 @@ class NodeSocketReader {
     return getOutputSocket(0);
   }
   DataType getOutputDataType() const;
-  virtual int getOutputNChannels() const;
+  virtual int getOutputNUsedChannels() const;
   NodeOperationInput *getInputSocket(int index) const;
   NodeOperationInput *getMainInputSocket() const
   {
@@ -286,7 +286,7 @@ class NodeOperationOutput {
   }
   DataType getDataType() const;
   bool hasDataType() const;
-  int getNChannels() const;
+  int getNUsedChannels() const;
   SocketType getSocketType() const
   {
     return m_socket_type;

@@ -107,22 +107,19 @@ void ViewerOperation::execPixels(ExecutionManager &man)
     src_alpha = getInputOperation(1)->getPixels(this, man);
   }
   auto cpuWrite = [&](PixelsRect &dst, const WriteRectContext & /*ctx*/) {
-    auto img_buf = BufferUtil::createUnmanagedTmpBuffer(
-        m_outputBuffer, getWidth(), getHeight(), COM_NUM_CHANNELS_COLOR, false);
-    PixelsRect img_dst(img_buf.get(), dst);
     PixelsRect color_rect = src_color->toRect(dst);
-    PixelsUtil::copyEqualRects(img_dst, color_rect);
+    PixelsUtil::copyBufferRect(
+        m_outputBuffer, dst, COM_NUM_CHANNELS_COLOR, COM_NUM_CHANNELS_COLOR, color_rect);
     if (m_doDepthBuffer) {
-      auto dep_buf = BufferUtil::createUnmanagedTmpBuffer(
-          m_depthBuffer, getWidth(), getHeight(), COM_NUM_CHANNELS_VALUE, false);
       PixelsRect depth_rect = src_depth->toRect(dst);
-      PixelsRect dep_dst(dep_buf.get(), dst);
-      PixelsUtil::copyEqualRects(dep_dst, depth_rect);
+      PixelsUtil::copyBufferRect(
+          m_depthBuffer, dst, COM_NUM_CHANNELS_VALUE, COM_NUM_CHANNELS_VALUE, depth_rect);
     }
 
     if (m_useAlphaInput) {
       PixelsRect alpha_rect = src_alpha->toRect(dst);
-      PixelsUtil::copyEqualRectsChannel(img_dst, 3, alpha_rect, 0);
+      PixelsUtil::copyBufferRectChannel(
+          m_outputBuffer, 3, dst, COM_NUM_CHANNELS_COLOR, alpha_rect, 0);
     }
   };
   cpuWriteSeek(man, cpuWrite);

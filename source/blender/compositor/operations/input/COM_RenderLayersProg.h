@@ -95,7 +95,7 @@ class RenderLayersProg : public NodeOperation {
   {
     return BufferType::CUSTOM;
   }
-  virtual float *getCustomBuffer() override;
+  virtual TmpBuffer *getCustomBuffer() override;
   /**
    * setter for the scene field. Will be called from
    * \see RenderLayerNode to set the actual scene where
@@ -134,14 +134,6 @@ class RenderLayersProg : public NodeOperation {
 
  protected:
   virtual void hashParams();
-};
-
-class RenderLayersAOOperation : public RenderLayersProg {
- public:
-  RenderLayersAOOperation(const char *passName, DataType type, int elementsize)
-      : RenderLayersProg(passName, type, elementsize)
-  {
-  }
 };
 
 class RenderLayersAlphaProg : public RenderLayersProg {

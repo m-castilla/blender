@@ -270,7 +270,7 @@ ccl_device_inline int color_diff_threshold(const float4 a, const float4 b, const
 ccl_device_inline float colorband_hue_interp(
     const int ipotype_hue, const float mfac, const float fac, float h1, float h2)
 {
-  float h_interp;
+  float h_interp = 0.0f;
   int mode = 0;
 
 #define HUE_INTERP(h_a, h_b) ((mfac * (h_a)) + (fac * (h_b)))
@@ -343,6 +343,8 @@ ccl_device_inline float colorband_hue_interp(
       h_interp = HUE_INTERP(h1, h2 + 1.0f);
       h_interp = HUE_MOD(h_interp);
       break;
+    default:
+      kernel_assert(!"Non implemented hue interp");
   }
 
   kernel_assert(h_interp >= 0.0f && h_interp < 1.0f);

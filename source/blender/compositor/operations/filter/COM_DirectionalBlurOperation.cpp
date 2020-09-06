@@ -148,8 +148,7 @@ void DirectionalBlurOperation::execPixels(ExecutionManager &man)
     one_by_iterations_plus_one_f4 = CCL::make_float4_1(one_by_iterations_plus_one);
 
     it_table_buf = recycler->createTmpBuffer();
-    recycler->takeRecycle(
-        BufferRecycleType::HOST_CLEAR, it_table_buf, m_iterations, it_table_row_length, 1);
+    recycler->takeNonStdRecycle(it_table_buf, m_iterations, it_table_row_length, 1);
     it_table = it_table_buf->host.buffer;
 
     int it_table_end = m_iterations * it_table_row_length;

@@ -41,16 +41,20 @@ PixelsRect::PixelsRect(TmpBuffer *buf, const rcti &rect)
     : PixelsRect(buf, rect.xmin, rect.xmax, rect.ymin, rect.ymax)
 {
 }
-PixelsRect::PixelsRect(
-    float *single_elem, int single_elem_chs, int xmin, int xmax, int ymin, int ymax)
+PixelsRect::PixelsRect(float single_elem[COM_NUM_CHANNELS_STD],
+                       int n_used_chs,
+                       int xmin,
+                       int xmax,
+                       int ymin,
+                       int ymax)
     : PixelsRect(nullptr, xmin, xmax, ymin, ymax)
 {
   is_single_elem = true;
   this->single_elem = single_elem;
-  this->single_elem_chs = single_elem_chs;
+  this->single_elem_chs = n_used_chs;
 }
-PixelsRect::PixelsRect(float *single_elem, int single_elem_chs, const rcti &rect)
-    : PixelsRect(single_elem, single_elem_chs, rect.xmin, rect.xmax, rect.ymin, rect.ymax)
+PixelsRect::PixelsRect(float single_elem[COM_NUM_CHANNELS_STD], int n_used_chs, const rcti &rect)
+    : PixelsRect(single_elem, n_used_chs, rect.xmin, rect.xmax, rect.ymin, rect.ymax)
 {
 }
 
@@ -68,15 +72,21 @@ PixelsImg PixelsRect::pixelsImg()
 {
 
   if (is_single_elem) {
-    return PixelsImg::create(
-        single_elem, single_elem_chs * sizeof(float), single_elem_chs, *this, true);
+    return PixelsImg::create(single_elem,
+                             COM_NUM_CHANNELS_STD * sizeof(float),
+                             single_elem_chs,
+                             COM_NUM_CHANNELS_STD,
+                             *this,
+                             true);
   }
   else {
     BLI_assert(tmp_buffer->host.state != HostMemoryState::NONE);
     BLI_assert(tmp_buffer->host.buffer != nullptr);
+
     PixelsImg img = PixelsImg::create(tmp_buffer->host.buffer,
-                                      tmp_buffer->getUsedBufferRowBytes(),
-                                      tmp_buffer->elem_chs,
+                                      tmp_buffer->getBufferRowBytes(),
+                                      tmp_buffer->elem_chs3,
+                                      tmp_buffer->getBufferElemChs(),
                                       *this,
                                       false);
     /* When not mapped row_jump should always be 0 because we always create host buffers with 0
@@ -91,10 +101,9 @@ PixelsRect PixelsRect::duplicate()
 {
   int width = getWidth();
   int height = getHeight();
-  int elem_chs = getElemChs();
   BufferRecycler *recycler = GlobalMan->BufferMan->recycler();
   TmpBuffer *dup_buffer = recycler->createTmpBuffer();
-  recycler->takeRecycle(BufferRecycleType::HOST_CLEAR, dup_buffer, width, height, elem_chs);
+  recycler->takeNonStdRecycle(dup_buffer, width, height, getElemChs(), getBufferElemChs());
   PixelsRect dup_rect(dup_buffer, *this);
   PixelsUtil::copyEqualRects(dup_rect, *this);
 
