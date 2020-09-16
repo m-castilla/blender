@@ -93,7 +93,7 @@ void NormalizeOperation::calcMinMultiply(std::shared_ptr<PixelsRect> src, Pixels
     minv = src_pix.x;
   }
 
-  CPU_LOOP_END(dst);
+  CPU_LOOP_END;
 
   mutex.lock();
   if (maxv > m_maxv) {

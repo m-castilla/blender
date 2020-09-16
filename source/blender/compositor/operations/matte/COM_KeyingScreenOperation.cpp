@@ -16,6 +16,8 @@
  * Copyright 2012, Blender Foundation.
  */
 
+#include <stddef.h>
+
 #include "BKE_movieclip.h"
 #include "BKE_tracking.h"
 #include "BLI_listbase.h"

@@ -110,9 +110,7 @@ void PlaneTrackCommon::readCorners(PlaneDistortBaseOperation &distortBaseOp,
   }
 }
 
-ResolutionType PlaneTrackCommon::determineResolution(int resolution[2],
-                                                     int preferredResolution[2],
-                                                     bool setResolution)
+ResolutionType PlaneTrackCommon::determineResolution(int resolution[2])
 {
   resolution[0] = 0;
   resolution[1] = 0;
@@ -130,17 +128,17 @@ ResolutionType PlaneTrackCommon::determineResolution(int resolution[2],
 
 /* ******** PlaneTrackMaskOperation ******** */
 ResolutionType PlaneTrackMaskOperation::determineResolution(int resolution[2],
-                                                            int preferredResolution[2],
+                                                            int /*preferredResolution*/[2],
                                                             bool setResolution)
 {
-  auto res_type = PlaneTrackCommon::determineResolution(
-      resolution, preferredResolution, setResolution);
+  auto res_type = PlaneTrackCommon::determineResolution(resolution);
   int temp[2];
   PlaneDistortMaskOperation::determineResolution(temp, resolution, setResolution);
   return res_type;
 }
 
-void PlaneTrackMaskOperation::readCorners(NodeOperation *reader_op, ExecutionManager &man)
+void PlaneTrackMaskOperation::readCorners(NodeOperation * /*reader_op*/,
+                                          ExecutionManager & /*man*/)
 {
   PlaneTrackCommon::readCorners(*this, true);
 }
@@ -151,17 +149,17 @@ void PlaneTrackMaskOperation::hashParams()
 }
 /* ******** PlaneTrackWarpImageOperation ******** */
 ResolutionType PlaneTrackWarpImageOperation::determineResolution(int resolution[2],
-                                                                 int preferredResolution[2],
+                                                                 int /*preferredResolution*/[2],
                                                                  bool setResolution)
 {
-  auto res_type = PlaneTrackCommon::determineResolution(
-      resolution, preferredResolution, setResolution);
+  auto res_type = PlaneTrackCommon::determineResolution(resolution);
   int temp[2];
   PlaneDistortWarpImageOperation::determineResolution(temp, resolution, setResolution);
   return res_type;
 }
 
-void PlaneTrackWarpImageOperation::readCorners(NodeOperation *reader_op, ExecutionManager &man)
+void PlaneTrackWarpImageOperation::readCorners(NodeOperation * /*reader_op*/,
+                                               ExecutionManager & /*man*/)
 {
   PlaneTrackCommon::readCorners(*this, true);
 }

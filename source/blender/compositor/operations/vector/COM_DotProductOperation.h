@@ -20,10 +20,10 @@
 
 #include "COM_NodeOperation.h"
 
-class DotproductOperation : public NodeOperation {
+class DotProductOperation : public NodeOperation {
 
  public:
-  DotproductOperation();
+  DotProductOperation();
 
  protected:
   void execPixels(ExecutionManager &man) override;

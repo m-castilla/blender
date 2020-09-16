@@ -363,7 +363,7 @@ void DilateStepOperation::execPixels(ExecutionManager &man)
 {
   auto mask_pixels = getInputOperation(0)->getPixels(this, man);
 
-  auto cpuWrite = [&](PixelsRect &dst, const WriteRectContext &ctx) {
+  auto cpuWrite = [&](PixelsRect &dst, const WriteRectContext & /*ctx*/) {
     PixelsImg dst_img = dst.pixelsImg();
     PixelsImg mask_img = mask_pixels->pixelsImg();
 
@@ -484,7 +484,7 @@ void ErodeStepOperation::execPixels(ExecutionManager &man)
 {
   auto input = getInputOperation(0)->getPixels(this, man);
 
-  auto cpuWrite = [&](PixelsRect &dst, const WriteRectContext &ctx) {
+  auto cpuWrite = [&](PixelsRect &dst, const WriteRectContext & /*ctx*/) {
     PixelsImg dst_img = dst.pixelsImg();
 
     READ_DECL(input);

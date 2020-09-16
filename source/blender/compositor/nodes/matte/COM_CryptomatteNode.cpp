@@ -16,15 +16,17 @@
  * Copyright 2018, Blender Foundation.
  */
 
-#include "COM_CryptomatteNode.h"
 #include "BLI_assert.h"
 #include "BLI_hash_mm3.h"
 #include "BLI_string.h"
-#include "COM_ConvertOperation.h"
-#include "COM_CryptomatteOperation.h"
-#include "COM_SetAlphaOperation.h"
+#include <cstring>
 #include <iterator>
 #include <sstream>
+
+#include "COM_ConvertOperation.h"
+#include "COM_CryptomatteNode.h"
+#include "COM_CryptomatteOperation.h"
+#include "COM_SetAlphaOperation.h"
 
 CryptomatteNode::CryptomatteNode(bNode *editorNode) : Node(editorNode)
 {
