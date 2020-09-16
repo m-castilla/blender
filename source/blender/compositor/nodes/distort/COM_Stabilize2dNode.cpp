@@ -16,16 +16,17 @@
  * Copyright 2011, Blender Foundation.
  */
 
-#include "BKE_tracking.h"
+#include <stddef.h>
 
-#include "COM_GlobalManager.h"
-#include "COM_UiConvert.h"
+#include "BKE_tracking.h"
 #include "DNA_movieclip_types.h"
 
 #include "COM_ExecutionSystem.h"
+#include "COM_GlobalManager.h"
 #include "COM_MovieClipAttributeOperation.h"
 #include "COM_Stabilize2dNode.h"
 #include "COM_TransformOperation.h"
+#include "COM_UiConvert.h"
 
 Stabilize2dNode::Stabilize2dNode(bNode *editorNode) : Node(editorNode)
 {
@@ -44,6 +45,7 @@ void Stabilize2dNode::convertToOperations(NodeConverter &converter,
   bool invert = (editorNode->custom2 & CMP_NODEFLAG_STABILIZE_INVERSE) != 0;
 
   TransformOperation *transformOp = new TransformOperation();
+  transformOp->setSampler(sampler);
 
   MovieClipAttributeOperation *scaleAttribute = new MovieClipAttributeOperation();
   MovieClipAttributeOperation *angleAttribute = new MovieClipAttributeOperation();

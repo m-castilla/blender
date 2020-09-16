@@ -127,8 +127,6 @@ void TranslateOperation::execPixels(ExecutionManager &man)
   }
   int last_x = color_width - 1;
   int last_y = color_height - 1;
-
-  auto sampler = PixelsSampler{PixelInterpolation::NEAREST, PixelExtend::CLIP};
   std::function<void(PixelsRect &, const WriteRectContext &)> cpu_write = std::bind(
       CCL::translateOp, _1, img_input, translate_x, translate_y, last_x, last_y, wrap_x, wrap_y);
   computeWriteSeek(man, cpu_write, "translateOp", [&](ComputeKernel *kernel) {

@@ -58,7 +58,7 @@ class PlaneDistortBaseOperation : public NodeOperation {
     this->m_motion_blur_shutter = shutter;
   }
 
-  virtual void readCorners(NodeOperation *reader_op, ExecutionManager &man){};
+  virtual void readCorners(NodeOperation * /*reader_op*/, ExecutionManager & /*man*/){};
 
  protected:
   virtual bool canCompute() const override

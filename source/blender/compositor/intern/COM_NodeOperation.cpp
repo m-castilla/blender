@@ -245,10 +245,13 @@ float *NodeOperation::getSinglePixel(
         switch (tmp_buf->elem_chs) {
           case 4:
             m_single_pixel[3] = raw_buf[3];
+            [[fallthrough]];
           case 3:
             m_single_pixel[2] = raw_buf[2];
+            [[fallthrough]];
           case 2:
             m_single_pixel[1] = raw_buf[1];
+            [[fallthrough]];
           case 1:
             m_single_pixel[0] = raw_buf[0];
             break;

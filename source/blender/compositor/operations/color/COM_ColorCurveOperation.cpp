@@ -44,7 +44,7 @@ void ColorCurveOperation::execPixels(ExecutionManager &man)
   auto black = getInputOperation(2)->getPixels(this, man);
   auto white = getInputOperation(3)->getPixels(this, man);
 
-  auto cpu_write = [&](PixelsRect &dst, const WriteRectContext &ctx) {
+  auto cpu_write = [&](PixelsRect &dst, const WriteRectContext & /*ctx*/) {
     READ_DECL(color);
     READ_DECL(factor);
     READ_DECL(black);
@@ -132,7 +132,7 @@ void ConstantLevelColorCurveOperation::execPixels(ExecutionManager &man)
   auto factor = getInputOperation(0)->getPixels(this, man);
   auto color = getInputOperation(1)->getPixels(this, man);
 
-  auto cpu_write = [&](PixelsRect &dst, const WriteRectContext &ctx) {
+  auto cpu_write = [&](PixelsRect &dst, const WriteRectContext & /*ctx*/) {
     READ_DECL(color);
     READ_DECL(factor);
     WRITE_DECL(dst);

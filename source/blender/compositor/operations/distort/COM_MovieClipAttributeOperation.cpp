@@ -89,7 +89,7 @@ void MovieClipAttributeOperation::initExecution()
   }
 }
 
-float *MovieClipAttributeOperation::getSingleElem(ExecutionManager &man)
+float *MovieClipAttributeOperation::getSingleElem(ExecutionManager & /*man*/)
 {
   initExecution();  // assure initialized
   return &m_value;

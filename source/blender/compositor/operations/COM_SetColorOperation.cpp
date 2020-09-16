@@ -38,7 +38,7 @@ void SetColorOperation::setChannels(const float value[COM_NUM_CHANNELS_COLOR])
 
 ResolutionType SetColorOperation::determineResolution(int resolution[2],
                                                       int preferredResolution[2],
-                                                      bool setResolution)
+                                                      bool /*setResolution*/)
 {
   resolution[0] = preferredResolution[0];
   resolution[1] = preferredResolution[1];
