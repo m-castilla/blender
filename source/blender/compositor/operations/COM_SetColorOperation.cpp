@@ -28,10 +28,19 @@ SetColorOperation::SetColorOperation() : NodeOperation(), m_color()
 void SetColorOperation::hashParams()
 {
   NodeOperation::hashParams();
-  hashDataAsParam(m_color, COM_NUM_CHANNELS_COLOR);
+  hashFloatData(m_color, COM_NUM_CHANNELS_COLOR);
 }
 
 void SetColorOperation::setChannels(const float value[COM_NUM_CHANNELS_COLOR])
 {
   memcpy(m_color, value, sizeof(float) * COM_NUM_CHANNELS_COLOR);
+}
+
+ResolutionType SetColorOperation::determineResolution(int resolution[2],
+                                                      int preferredResolution[2],
+                                                      bool setResolution)
+{
+  resolution[0] = preferredResolution[0];
+  resolution[1] = preferredResolution[1];
+  return ResolutionType::Determined;
 }

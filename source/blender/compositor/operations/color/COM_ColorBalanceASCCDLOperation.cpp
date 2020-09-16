@@ -34,13 +34,33 @@ ColorBalanceASCCDLOperation::ColorBalanceASCCDLOperation()
 void ColorBalanceASCCDLOperation::hashParams()
 {
   NodeOperation::hashParams();
-  hashDataAsParam(m_offset, 3);
-  hashDataAsParam(m_slope, 3);
-  hashDataAsParam(m_power, 3);
+  hashFloatData(m_offset, 3);
+  hashFloatData(m_slope, 3);
+  hashFloatData(m_power, 3);
 }
 
 #define OPENCL_CODE
 CCL_NAMESPACE_BEGIN
+
+ccl_device_inline float4 colorbalance_cdl(const float4 in,
+                                          const float4 offset,
+                                          const float4 power,
+                                          const float4 slope)
+{
+  float4 res = in * slope + offset;
+
+  /* prevent NaN */
+  float4 zero4 = make_float4_1(0.0f);
+  res = select(res, zero4, res < zero4);
+
+  res.x = powf(res.x, power.x);
+  res.y = powf(res.y, power.y);
+  res.z = powf(res.z, power.z);
+  res.w = in.w;
+
+  return res;
+}
+
 ccl_kernel colorBalanceASCCDLOp(
     CCL_WRITE(dst), CCL_READ(value), CCL_READ(color), float4 offset, float4 power, float4 slope)
 {

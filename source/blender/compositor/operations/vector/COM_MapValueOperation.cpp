@@ -54,12 +54,12 @@ ccl_kernel mapValueOp(
   READ_IMG1(input, input_pix);
 
   input_pix.x = (input_pix.x + loc) * size;
-  if (flag & TEXMAP_CLIP_MIN) {
+  if (flag & CCL_TEXMAP_CLIP_MIN) {
     if (input_pix.x < min) {
       input_pix.x = min;
     }
   }
-  if (flag & TEXMAP_CLIP_MAX) {
+  if (flag & CCL_TEXMAP_CLIP_MAX) {
     if (input_pix.x > max) {
       input_pix.x = max;
     }

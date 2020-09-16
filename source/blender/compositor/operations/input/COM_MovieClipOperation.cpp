@@ -53,13 +53,14 @@ void MovieClipBaseOperation::initExecution()
           this->m_movieClip, this->m_movieClipUser, this->m_movieClip->flag, MOVIECLIP_CACHE_SKIP);
     }
 
-    if (ibuf) {
-      this->m_clip_imbuf = ibuf;
-      if (ibuf->rect_float == NULL || ibuf->userflags & IB_RECT_INVALID) {
-        IMB_float_from_rect(ibuf);
-        ibuf->userflags &= ~IB_RECT_INVALID;
-      }
-    }
+    this->m_clip_imbuf = ibuf;
+    // if (ibuf) {
+    //  this->m_clip_imbuf = ibuf;
+    //  if (ibuf->rect_float == NULL || ibuf->userflags & IB_RECT_INVALID) {
+    //    IMB_float_from_rect(ibuf);
+    //    ibuf->userflags &= ~IB_RECT_INVALID;
+    //  }
+    //}
   }
   NodeOperation::initExecution();
 }

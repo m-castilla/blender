@@ -16,29 +16,30 @@
  * Copyright 2011, Blender Foundation.
  */
 
-#include "COM_PreviewOperation.h"
 #include "BKE_global.h"
 #include "BKE_image.h"
 #include "BLI_listbase.h"
 #include "BLI_math.h"
 #include "BLI_math_color.h"
 #include "BLI_utildefines.h"
-#include "COM_CompositorContext.h"
-#include "COM_defines.h"
 #include "MEM_guardedalloc.h"
 #include "PIL_time.h"
 #include "WM_api.h"
 #include "WM_types.h"
 
 #include "BKE_node.h"
-#include "COM_BufferUtil.h"
-#include "COM_GlobalManager.h"
-#include "COM_PixelsUtil.h"
 #include "IMB_colormanagement.h"
 #include "IMB_imbuf.h"
 #include "IMB_imbuf_types.h"
 
+#include "COM_BufferUtil.h"
+#include "COM_CompositorContext.h"
 #include "COM_ExecutionManager.h"
+#include "COM_GlobalManager.h"
+#include "COM_PixelsUtil.h"
+#include "COM_PreviewOperation.h"
+#include "COM_defines.h"
+
 #include "COM_kernel_cpu.h"
 
 PreviewOperation::PreviewOperation(const ColorManagedViewSettings *viewSettings,

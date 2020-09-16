@@ -53,20 +53,6 @@ __forceinline float3 &float3::operator=(const float3 &a)
 }
 #endif /* __KERNEL_SSE__ */
 
-__forceinline float float3::operator[](int i) const
-{
-  kernel_assert(i >= 0);
-  kernel_assert(i < 3);
-  return *(&x + i);
-}
-
-__forceinline float &float3::operator[](int i)
-{
-  kernel_assert(i >= 0);
-  kernel_assert(i < 3);
-  return *(&x + i);
-}
-
 ccl_device_inline float3 make_float3_1(float f)
 {
 #ifdef __KERNEL_SSE__

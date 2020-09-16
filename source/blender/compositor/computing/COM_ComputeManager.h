@@ -38,14 +38,17 @@ class ComputeManager {
 
   virtual ComputeType getComputeType() = 0;
 
-virtual ~ComputeManager()=0;
+  virtual ~ComputeManager() = 0;
+
  protected:
   ComputeManager();
-  
 
   /* Returns {source code, source path}*/
   std::pair<std::string, std::string> loadKernelsSource();
   virtual std::vector<ComputeDevice *> getDevices() = 0;
+
+ private:
+  void assertKernelsSync();
 
 #ifdef WITH_CXX_GUARDEDALLOC
   MEM_CXX_CLASS_ALLOC_FUNCS("COM:ComputeManager")

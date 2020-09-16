@@ -25,9 +25,6 @@ CCL_NAMESPACE_BEGIN
 
 struct int2 {
   int x, y;
-
-  __forceinline int operator[](int i) const;
-  __forceinline int &operator[](int i);
 };
 
 ccl_device_inline int2 make_int2(int x, int y);

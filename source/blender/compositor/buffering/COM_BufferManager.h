@@ -27,12 +27,12 @@
 #include "COM_ReadsOptimizer.h"
 #include "COM_Rect.h"
 #include "DNA_vec_types.h"
+#include <functional>
 #include <memory>
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
 #include <vector>
-#include <functional>
 
 class NodeOperation;
 class ExecutionSystem;
@@ -84,7 +84,8 @@ class BufferManager {
   BufferManager::ReadResult readSeek(NodeOperation *op, ExecutionManager &man);
   void writeSeek(NodeOperation *op,
                  ExecutionManager &man,
-                 std::function<void(TmpRectBuilder &)> write_func);
+                 std::function<void(TmpRectBuilder &, const rcti *)> write_func,
+                 const rcti *custom_write_rect);
   bool hasBufferCache(NodeOperation *op);
 
   const std::unordered_map<OpKey, std::vector<ReaderReads *>> *getReadersReads(
@@ -102,7 +103,7 @@ class BufferManager {
   void checkCache();
   CacheBuffer *getCache(NodeOperation *op);
   TmpBuffer *getCustomBuffer(NodeOperation *op);
-  bool prepareForWrite(bool is_write_computed, OpReads *reads);
+  bool prepareForWrite(bool is_write_computed, OpReads *reads, const rcti *custom_write_rect);
   bool prepareForRead(bool is_compute_written, OpReads *reads);
   void reportWriteCompleted(NodeOperation *op, OpReads *op_reads, ExecutionManager &man);
 

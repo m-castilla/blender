@@ -33,7 +33,7 @@ ConvolutionFilterOperation::ConvolutionFilterOperation() : NodeOperation()
 void ConvolutionFilterOperation::hashParams()
 {
   NodeOperation::hashParams();
-  hashDataAsParam(m_filter, COM_CONVOLUTION_FILTER_SIZE);
+  hashFloatData(m_filter, COM_CONVOLUTION_FILTER_SIZE);
 }
 
 void ConvolutionFilterOperation::set3x3Filter(

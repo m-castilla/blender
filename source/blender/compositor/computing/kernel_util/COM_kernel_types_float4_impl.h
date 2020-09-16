@@ -49,20 +49,6 @@ __forceinline float4 &float4::operator=(const float4 &a)
 }
 #endif /* __KERNEL_SSE__ */
 
-__forceinline float float4::operator[](int i) const
-{
-  kernel_assert(i >= 0);
-  kernel_assert(i < 4);
-  return *(&x + i);
-}
-
-__forceinline float &float4::operator[](int i)
-{
-  kernel_assert(i >= 0);
-  kernel_assert(i < 4);
-  return *(&x + i);
-}
-
 ccl_device_inline float4 make_float4_1(float f)
 {
 #ifdef __KERNEL_SSE__

@@ -65,7 +65,8 @@ void ExecutionManager::execWriteJob(
     std::function<void(PixelsRect &, const WriteRectContext &)> &cpu_write_func,
     std::function<void(PixelsRect &)> after_write_func,
     std::string compute_kernel,
-    std::function<void(ComputeKernel *)> add_kernel_args_func)
+    std::function<void(ComputeKernel *)> add_kernel_args_func,
+    const rcti *custom_write_rect)
 {
   if (!isBreaked()) {
     // in case of output with viewer border set operation rect to viewer border
@@ -73,12 +74,20 @@ void ExecutionManager::execWriteJob(
     int ymin = 0;
     int xmax = op->getWidth();
     int ymax = op->getHeight();
-    const rcti *viewer_border = getOpViewerBorder(op);
-    if (viewer_border != nullptr) {
-      xmin = std::max(viewer_border->xmin, xmin);
-      ymin = std::max(viewer_border->ymin, ymin);
-      xmax = std::min(viewer_border->xmax, xmax);
-      ymax = std::min(viewer_border->ymax, ymax);
+    if (custom_write_rect != nullptr) {
+      xmin = custom_write_rect->xmin;
+      ymin = custom_write_rect->ymin;
+      xmax = custom_write_rect->xmax;
+      ymax = custom_write_rect->ymax;
+    }
+    else {
+      const rcti *viewer_border = getOpViewerBorder(op);
+      if (viewer_border != nullptr) {
+        xmin = std::max(viewer_border->xmin, xmin);
+        ymin = std::max(viewer_border->ymin, ymin);
+        xmax = std::min(viewer_border->xmax, xmax);
+        ymax = std::min(viewer_border->ymax, ymax);
+      }
     }
 
     rcti full_op_rect = {xmin, xmax, ymin, ymax};

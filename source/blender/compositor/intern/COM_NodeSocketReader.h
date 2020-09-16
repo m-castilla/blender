@@ -87,6 +87,7 @@ class NodeSocketReader {
   {
     return getInputSocket(m_mainInputSocketIndex);
   }
+  bool hasAnyInputConnected() const;
 
   /**
    * \brief determine the resolution of this node

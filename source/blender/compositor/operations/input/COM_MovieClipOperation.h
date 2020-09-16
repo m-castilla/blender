@@ -34,9 +34,6 @@ class MovieClipBaseOperation : public NodeOperation {
   int m_framenumber;
   bool m_cacheFrame;
 
-  /**
-   * Determine the output resolution. The resolution is retrieved from the Renderer
-   */
   virtual ResolutionType determineResolution(int resolution[2],
                                              int preferredResolution[2],
                                              bool setResolution) override;

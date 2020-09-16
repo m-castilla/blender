@@ -57,7 +57,7 @@ class CalculateMeanOperation : public NodeOperation {
   {
     return true;
   }
-  virtual float *getSingleElem() override
+  virtual float *getSingleElem(ExecutionManager &man) override
   {
     if (!m_calculated) {
       m_result = m_n_pixels > 0 ? m_sum / m_n_pixels : 0;
