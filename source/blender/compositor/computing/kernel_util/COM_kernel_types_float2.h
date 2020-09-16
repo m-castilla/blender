@@ -25,9 +25,6 @@ CCL_NAMESPACE_BEGIN
 
 struct float2 {
   float x, y;
-
-  __forceinline float operator[](int i) const;
-  __forceinline float &operator[](int i);
 };
 
 ccl_device_inline float2 make_float2(float x, float y);

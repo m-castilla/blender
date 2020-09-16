@@ -53,6 +53,7 @@ ccl_device_inline float distance(const float3 &a, const float3 &b);
 ccl_device_inline float dot(const float3 &a, const float3 &b);
 ccl_device_inline float dot_xy(const float3 &a, const float3 &b);
 ccl_device_inline float3 cross(const float3 &a, const float3 &b);
+ccl_device_inline float length(const float3 &a);
 ccl_device_inline float3 normalize(const float3 &a);
 ccl_device_inline float3 min(const float3 &a, const float3 &b);
 ccl_device_inline float3 max(const float3 &a, const float3 &b);
@@ -67,14 +68,13 @@ ccl_device_inline float3 ceil(const float3 &a);
 
 ccl_device_inline float min3(float3 a);
 ccl_device_inline float max3(float3 a);
-ccl_device_inline float len(const float3 a);
 ccl_device_inline float len_squared(const float3 a);
 
 ccl_device_inline float3 reflect(const float3 incident, const float3 normal);
 ccl_device_inline float3 project(const float3 v, const float3 v_proj);
 
 ccl_device_inline float3 saturate3(float3 a);
-ccl_device_inline float3 safe_normalize(const float3 a);
+ccl_device_inline float3 safe_normalize_f3(const float3 a);
 ccl_device_inline float3 normalize_len(const float3 a, float *t);
 ccl_device_inline float3 safe_normalize_len(const float3 a, float *t);
 ccl_device_inline float3 safe_divide_float3_float3(const float3 a, const float3 b);
@@ -275,7 +275,7 @@ ccl_device_inline float3 select(const float3 &b_false, const float3 &a_true, con
 
 ccl_device_inline float distance(const float3 &a, const float3 &b)
 {
-  return len(a - b);
+  return length(a - b);
 }
 
 ccl_device_inline float dot(const float3 &a, const float3 &b)
@@ -308,7 +308,7 @@ ccl_device_inline float3 normalize(const float3 &a)
   __m128 norm = _mm_sqrt_ps(_mm_dp_ps(a.m128, a.m128, 0x7F));
   return float3(_mm_div_ps(a.m128, norm));
 #  else
-  return a / len(a);
+  return a / length(a);
 #  endif
 }
 
@@ -342,6 +342,15 @@ ccl_device_inline float3 fabs(const float3 &a)
   return float3(_mm_and_ps(a.m128, mask));
 #  else
   return make_float3(fabsf(a.x), fabsf(a.y), fabsf(a.z));
+#  endif
+}
+
+ccl_device_inline float length(const float3 &a)
+{
+#  if defined(__KERNEL_SSE41__) && defined(__KERNEL_SSE__)
+  return _mm_cvtss_f32(_mm_sqrt_ss(_mm_dp_ps(a.m128, a.m128, 0x7F)));
+#  else
+  return sqrtf(dot(a, a));
 #  endif
 }
 
@@ -398,15 +407,6 @@ ccl_device_inline float max3(const float3 a)
   return max(max(a.x, a.y), a.z);
 }
 
-ccl_device_inline float len(const float3 a)
-{
-#if defined(__KERNEL_SSE41__) && defined(__KERNEL_SSE__)
-  return _mm_cvtss_f32(_mm_sqrt_ss(_mm_dp_ps(a.m128, a.m128, 0x7F)));
-#else
-  return sqrtf(dot(a, a));
-#endif
-}
-
 ccl_device_inline float len_squared(const float3 a)
 {
   return dot(a, a);
@@ -432,20 +432,20 @@ ccl_device_inline float3 saturate3(const float3 a)
 
 ccl_device_inline float3 normalize_len(const float3 a, float *t)
 {
-  *t = len(a);
+  *t = length(a);
   float x = 1.0f / *t;
   return a * x;
 }
 
-ccl_device_inline float3 safe_normalize(const float3 a)
+ccl_device_inline float3 safe_normalize_f3(const float3 a)
 {
-  float t = len(a);
+  float t = length(a);
   return (t != 0.0f) ? a * (1.0f / t) : a;
 }
 
 ccl_device_inline float3 safe_normalize_len(const float3 a, float *t)
 {
-  *t = len(a);
+  *t = length(a);
   return (*t != 0.0f) ? a / (*t) : a;
 }
 
@@ -522,6 +522,11 @@ ccl_device_inline float3 ensure_finite3(float3 v)
   if (!isfinite_safe(v.z))
     v.z = 0.0f;
   return v;
+}
+
+ccl_device_inline bool equals_f3(const float3 a, const float3 b)
+{
+  return a.x == b.x && a.y == b.y && a.z == b.z;
 }
 
 CCL_NAMESPACE_END

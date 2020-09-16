@@ -47,9 +47,6 @@ struct ccl_try_align(16) float3
 #else  /* __KERNEL_SSE__ */
   float x, y, z, w;
 #endif /* __KERNEL_SSE__ */
-
-  __forceinline float operator[](int i) const;
-  __forceinline float &operator[](int i);
 };
 
 ccl_device_inline float3 make_float3_1(float f);

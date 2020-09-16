@@ -23,17 +23,11 @@
 
 class ScaleOperation : public NodeOperation {
  private:
-  NodeOperation *m_inputOperation;
-  NodeOperation *m_inputXOperation;
-  NodeOperation *m_inputYOperation;
   bool m_relative;
   PixelsSampler m_sampler;
 
  public:
   ScaleOperation();
-  void hashParams() override;
-  void initExecution() override;
-  void deinitExecution() override;
   void setRelative(bool relative)
   {
     m_relative = relative;
@@ -44,6 +38,7 @@ class ScaleOperation : public NodeOperation {
   }
 
  protected:
+  virtual void hashParams() override;
   virtual void execPixels(ExecutionManager &man) override;
 };
 

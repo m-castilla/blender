@@ -23,20 +23,6 @@
 
 CCL_NAMESPACE_BEGIN
 
-__forceinline float float2::operator[](int i) const
-{
-  kernel_assert(i >= 0);
-  kernel_assert(i < 2);
-  return *(&x + i);
-}
-
-__forceinline float &float2::operator[](int i)
-{
-  kernel_assert(i >= 0);
-  kernel_assert(i < 2);
-  return *(&x + i);
-}
-
 ccl_device_inline float2 make_float2(float x, float y)
 {
   float2 a = {x, y};

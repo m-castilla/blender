@@ -53,20 +53,6 @@ __forceinline int3 &int3::operator=(const int3 &a)
 }
 #endif /* __KERNEL_SSE__ */
 
-__forceinline int int3::operator[](int i) const
-{
-  kernel_assert(i >= 0);
-  kernel_assert(i < 3);
-  return *(&x + i);
-}
-
-__forceinline int &int3::operator[](int i)
-{
-  kernel_assert(i >= 0);
-  kernel_assert(i < 3);
-  return *(&x + i);
-}
-
 ccl_device_inline int3 make_int3_1(int i)
 {
 #ifdef __KERNEL_SSE__

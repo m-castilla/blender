@@ -19,11 +19,12 @@
 #ifndef __COM_PIXELS_H__
 #define __COM_PIXELS_H__
 
-#include "COM_MathUtil.h"
 #include <functional>
 #ifdef WITH_CXX_GUARDEDALLOC
 #  include "MEM_guardedalloc.h"
 #endif
+
+#include "COM_MathUtil.h"
 
 class ComputeDevice;
 class ComputeKernel;

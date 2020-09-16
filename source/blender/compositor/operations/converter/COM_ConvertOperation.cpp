@@ -309,18 +309,8 @@ ConvertRGBToYCCOperation::ConvertRGBToYCCOperation() : ConvertBaseOperation()
 
 void ConvertRGBToYCCOperation::setMode(int mode)
 {
-  switch (mode) {
-    case 0:
-      this->m_mode = BLI_YCC_ITU_BT601;
-      break;
-    case 2:
-      this->m_mode = BLI_YCC_JFIF_0_255;
-      break;
-    case 1:
-    default:
-      this->m_mode = BLI_YCC_ITU_BT709;
-      break;
-  }
+  BLI_assert(mode == BLI_YCC_ITU_BT601 || mode == BLI_YCC_JFIF_0_255 || mode == BLI_YCC_ITU_BT709);
+  this->m_mode = mode;
 }
 
 #define OPENCL_CODE
@@ -371,18 +361,8 @@ ConvertYCCToRGBOperation::ConvertYCCToRGBOperation() : ConvertBaseOperation()
 
 void ConvertYCCToRGBOperation::setMode(int mode)
 {
-  switch (mode) {
-    case 0:
-      this->m_mode = BLI_YCC_ITU_BT601;
-      break;
-    case 2:
-      this->m_mode = BLI_YCC_JFIF_0_255;
-      break;
-    case 1:
-    default:
-      this->m_mode = BLI_YCC_ITU_BT709;
-      break;
-  }
+  BLI_assert(mode == BLI_YCC_ITU_BT601 || mode == BLI_YCC_JFIF_0_255 || mode == BLI_YCC_ITU_BT709);
+  this->m_mode = mode;
 }
 
 #define OPENCL_CODE

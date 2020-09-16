@@ -55,15 +55,11 @@ ccl_device_inline int4 operator!=(const float4 &a, const float4 &b);
 
 ccl_device_inline float distance(const float4 &a, const float4 &b);
 ccl_device_inline float dot(const float4 &a, const float4 &b);
-ccl_device_inline float len_squared(const float4 &a);
-ccl_device_inline float4 rcp(const float4 &a);
 ccl_device_inline float4 sqrt(const float4 &a);
-ccl_device_inline float4 sqr(const float4 &a);
 ccl_device_inline float4 cross(const float4 &a, const float4 &b);
 ccl_device_inline float average(const float4 &a);
-ccl_device_inline float len(const float4 &a);
+ccl_device_inline float length(const float4 &a);
 ccl_device_inline float4 normalize(const float4 &a);
-ccl_device_inline float4 safe_normalize(const float4 &a);
 ccl_device_inline float4 min(const float4 &a, const float4 &b);
 ccl_device_inline float4 min(const float4 &a, const float b);
 ccl_device_inline float4 max(const float4 &a, const float4 &b);
@@ -75,6 +71,7 @@ ccl_device_inline float4 floor(const float4 &a);
 ccl_device_inline float4 mix(const float4 &a, const float4 &b, const float t);
 #endif /* !__KERNEL_OPENCL__*/
 
+ccl_device_inline float4 safe_normalize_f4(const float4 a);
 ccl_device_inline float4 safe_divide_float4_float(const float4 a, const float b);
 ccl_device_inline float4 clamp_to_normal_f4(const float4 a);
 
@@ -277,7 +274,7 @@ ccl_device_inline int4 operator!=(const float4 &a, const float4 &b)
 
 ccl_device_inline float distance(const float4 &a, const float4 &b)
 {
-  return len(a - b);
+  return length(a - b);
 }
 
 ccl_device_inline float dot(const float4 &a, const float4 &b)
@@ -287,11 +284,6 @@ ccl_device_inline float dot(const float4 &a, const float4 &b)
 #  else
   return (a.x * b.x + a.y * b.y) + (a.z * b.z + a.w * b.w);
 #  endif
-}
-
-ccl_device_inline float len_squared(const float4 &a)
-{
-  return dot(a, a);
 }
 
 ccl_device_inline float4 rcp(const float4 &a)
@@ -311,11 +303,6 @@ ccl_device_inline float4 sqrt(const float4 &a)
 #  else
   return make_float4(sqrtf(a.x), sqrtf(a.y), sqrtf(a.z), sqrtf(a.w));
 #  endif
-}
-
-ccl_device_inline float4 sqr(const float4 &a)
-{
-  return a * a;
 }
 
 ccl_device_inline float4 cross(const float4 &a, const float4 &b)
@@ -349,20 +336,14 @@ ccl_device_inline float average(const float4 &a)
   return reduce_add(a).x * 0.25f;
 }
 
-ccl_device_inline float len(const float4 &a)
+ccl_device_inline float length(const float4 &a)
 {
   return sqrtf(dot(a, a));
 }
 
 ccl_device_inline float4 normalize(const float4 &a)
 {
-  return a / len(a);
-}
-
-ccl_device_inline float4 safe_normalize(const float4 &a)
-{
-  float t = len(a);
-  return (t != 0.0f) ? a / t : a;
+  return a / length(a);
 }
 
 ccl_device_inline float4 min(const float4 &a, const float4 &b)
@@ -513,6 +494,11 @@ ccl_device_inline float4 reduce_max(const float4 &a)
 
 #endif /* !__KERNEL_COMPUTE__ */
 
+ccl_device_inline float length_squared_f4(const float4 a)
+{
+  return dot(a, a);
+}
+
 ccl_device_inline float4 safe_divide_float4_float(const float4 a, const float b)
 {
   return (b != 0.0f) ? a / b : make_float4(0.0f, 0.0f, 0.0f, 0.0f);
@@ -521,6 +507,21 @@ ccl_device_inline float4 safe_divide_float4_float(const float4 a, const float b)
 ccl_device_inline float4 clamp_to_normal_f4(const float4 a)
 {
   return min(max(a, 0.0f), 1.0f);
+}
+
+ccl_device_inline bool equals_f4(const float4 a, const float4 b)
+{
+#ifdef __KERNEL_SSE__
+  return (_mm_movemask_ps(_mm_cmpeq_ps(a.m128, b.m128)) & 15) == 15;
+#else
+  return (a.x == b.x && a.y == b.y && a.z == b.z && a.w == b.w);
+#endif
+}
+
+ccl_device_inline float4 safe_normalize_f4(const float4 a)
+{
+  float t = length(a);
+  return (t != 0.0f) ? a / t : a;
 }
 
 CCL_NAMESPACE_END

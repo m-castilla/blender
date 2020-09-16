@@ -97,13 +97,20 @@ PixelsImg PixelsRect::pixelsImg()
   }
 }
 
-PixelsRect PixelsRect::duplicate()
+PixelsRect PixelsRect::duplicate(bool use_std_recycle)
 {
   int width = getWidth();
   int height = getHeight();
   BufferRecycler *recycler = GlobalMan->BufferMan->recycler();
   TmpBuffer *dup_buffer = recycler->createTmpBuffer();
-  recycler->takeNonStdRecycle(dup_buffer, width, height, getElemChs(), getBufferElemChs());
+  if (use_std_recycle) {
+    recycler->takeStdRecycle(
+        BufferRecycleType::HOST_CLEAR, dup_buffer, width, height, getElemChs());
+  }
+  else {
+    recycler->takeNonStdRecycle(dup_buffer, width, height, getElemChs());
+  }
+
   PixelsRect dup_rect(dup_buffer, *this);
   PixelsUtil::copyEqualRects(dup_rect, *this);
 

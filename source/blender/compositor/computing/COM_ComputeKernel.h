@@ -1,8 +1,9 @@
 #ifndef __COM_COMPUTEKERNEL_H__
 #define __COM_COMPUTEKERNEL_H__
 
-#include "COM_kernel_cpu.h"
 #include <string>
+
+#include "COM_kernel_cpu.h"
 
 class PixelsRect;
 struct PixelsSampler;
@@ -27,6 +28,9 @@ class ComputeKernel {
   virtual void addFloat2Arg(const CCL::float2 &value) = 0;
   virtual void addFloat3Arg(const CCL::float3 &value) = 0;
   virtual void addFloat4Arg(const CCL::float4 &value) = 0;
+  virtual void addUInt64Arg(const uint64_t value) = 0;
+  // Parameter in kernel signature must be uint64_t
+  virtual void addRandomSeedArg();
 
   /* Constant read only array args */
   virtual void addFloat3CArrayArg(const CCL::float3 *float3_array, int n_elems) = 0;
@@ -37,14 +41,12 @@ class ComputeKernel {
 
   virtual bool hasWorkEnqueued() = 0;
 
-  virtual ~ComputeKernel()
-  {
-  }
+  static uint64_t getRandomSeedArg(void *caller_object);
+
+  virtual ~ComputeKernel();
 
  protected:
-  ComputeKernel(std::string kernel_name) : m_kernel_name(kernel_name)
-  {
-  }
+  ComputeKernel(std::string kernel_name);
 };
 
 #endif

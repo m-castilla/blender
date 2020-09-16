@@ -16,10 +16,10 @@
  * Copyright 2011, Blender Foundation.
  */
 
-#ifndef __COM_PIXELSSAMPLING_IMPL_H__
-#define __COM_PIXELSSAMPLING_IMPL_H__
+#ifndef __COM_KERNEL_SAMPLING_IMPL_H__
+#define __COM_KERNEL_SAMPLING_IMPL_H__
 
-#ifndef __COM_PIXELSSAMPLING_H__
+#ifndef __COM_KERNEL_SAMPLING_H__
 #  error "Do not include this file directly, include COM_kernel_sampling.h instead."
 #endif
 
@@ -126,51 +126,44 @@
     kernel_assert(sampler.filter == PixelInterpolation::interp_mode && \
                   sampler.extend == PixelExtend::extend_mode);
 
-#  define NEAREST_OFFSET__(name, img) \
-    size_t name##_offset__ = (size_t)name##_y__ * img.brow_chs_incr + \
-                             (size_t)name##_x__ * img.belem_chs_incr;
+#  define NEAREST_OFFSET__(name, coords, img) \
+    size_t name##_offset__ = ((size_t)coords.y) * img.brow_chs_incr + \
+                             ((size_t)coords.x) * img.belem_chs_incr;
 
-#  define NEAREST_WRITE_F1__(name, img, dst_pix) \
-    NEAREST_OFFSET__(name, img); \
+#  define NEAREST_WRITE_F1__(name, img, coords, dst_pix) \
+    NEAREST_OFFSET__(name, coords, img); \
     dst_pix.x = img.buffer[name##_offset__];
 
-#  define NEAREST_WRITE_F3__(name, img, dst_pix) \
-    NEAREST_OFFSET__(name, img); \
+#  define NEAREST_WRITE_F3__(name, img, coords, dst_pix) \
+    NEAREST_OFFSET__(name, coords, img); \
     dst_pix = CCL::make_float4(img.buffer[name##_offset__], \
                                img.buffer[name##_offset__ + 1], \
                                img.buffer[name##_offset__ + 2], \
                                0.0f);
 
-#  define NEAREST_WRITE_F4__(name, img, dst_pix) \
-    NEAREST_OFFSET__(name, img); \
+#  define NEAREST_WRITE_F4__(name, img, coords, dst_pix) \
+    NEAREST_OFFSET__(name, coords, img); \
     dst_pix = CCL::make_float4(img.buffer[name##_offset__], \
                                img.buffer[name##_offset__ + 1], \
                                img.buffer[name##_offset__ + 2], \
                                img.buffer[name##_offset__ + 3]);
 
-#  define SAMPLE_NEAREST_CLIP__(ctx_num, src, sampler, dst_pix, coords, type, type_letter, n_chs) \
+#  define SAMPLE_NEAREST_CLIP__(ctx_num, src, sampler, dst_pix, coords, type_letter, n_chs) \
     SAMPLER_ASSERT__(sampler, NEAREST, CLIP); \
-    type src##_nearest_##ctx_num##_x__ = coords.x; \
-    type src##_nearest_##ctx_num##_y__ = coords.y; \
-    EXTEND_CLIP##n_chs##_##type_letter##_START( \
-        src##_img, dst_pix, src##_nearest_##ctx_num##_x__, src##_nearest_##ctx_num##_y__); \
-    NEAREST_WRITE_F##n_chs##__(src##_nearest_##ctx_num, src##_img, dst_pix); \
+    EXTEND_CLIP##n_chs##_##type_letter##_START(src##_img, dst_pix, coords.x, coords.y); \
+    NEAREST_WRITE_F##n_chs##__(src##_nearest_##ctx_num, src##_img, coords, dst_pix); \
     EXTEND_CLIP_END;
 
-#  define SAMPLE_NEAREST_MODE__( \
-      ctx_num, src, sampler, dst_pix, coords, type, type_letter, n_chs, mode) \
+#  define SAMPLE_NEAREST_MODE__(ctx_num, src, sampler, dst_pix, coords, type_letter, n_chs, mode) \
     SAMPLER_ASSERT__(sampler, NEAREST, mode); \
-    type src##_nearest_##ctx_num##_x__ = coords.x; \
-    type src##_nearest_##ctx_num##_y__ = coords.y; \
-    JOIN(EXTEND_##mode##_, type_letter) \
-    (src##_img, src##_nearest_##ctx_num##_x__, src##_nearest_##ctx_num##_y__); \
-    NEAREST_WRITE_F##n_chs##__(src##_nearest_##ctx_num, src##_img, dst_pix);
+    JOIN(EXTEND_##mode##_, type_letter)(src##_img, coords.x, coords.y); \
+    NEAREST_WRITE_F##n_chs##__(src##_nearest_##ctx_num, src##_img, coords, dst_pix);
 
 /* END OF PRIVATE IMPLEMENTATION MACROS */
 
 // u and v will never be negative because we are checking extend before, so we can use
 // casting instead of floor and ceil
-#  define BILINEAR_CLIP__(name, img, dst_pix, u__, v__, n_chs) \
+#  define BILINEAR_CLIP__(name, img, sampler, dst_pix, u__, v__, n_chs) \
     SAMPLER_ASSERT__(sampler, BILINEAR, CLIP); \
     EXTEND_CLIP##n_chs##_F_START(img, dst_pix, u__, v__); \
     int name##_x1__ = (int)u__; \
@@ -179,7 +172,7 @@
     int name##_y2__ = v__ > (float)name##_y1__ ? name##_y1__ + 1 : name##_y1__; \
     EXTEND_CLIP##n_chs##_F_START(img, dst_pix, name##_x2__, name##_y2__);
 
-#  define BILINEAR_MODE__(name, img, u__, v__, extend_mode) \
+#  define BILINEAR_MODE__(name, img, sampler, u__, v__, extend_mode) \
     SAMPLER_ASSERT__(sampler, BILINEAR, extend_mode); \
     EXTEND_##extend_mode##_F(src##_img, u__, v__); \
     int name##_x1__ = (int)u__; \

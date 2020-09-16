@@ -72,6 +72,11 @@ ccl_device_inline int2 operator/(const int2 &a, const int2 &b)
 }
 #endif /* !__KERNEL_OPENCL__ */
 
+ccl_device_inline bool equals_i2(const int2 a, const int2 b)
+{
+  return a.x == b.x && a.y == b.y;
+}
+
 CCL_NAMESPACE_END
 
 #endif

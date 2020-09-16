@@ -20,6 +20,7 @@
 #define __COM_GLOBALMANAGER_H__
 
 #include "COM_BufferManager.h"
+#include "COM_CompositorContext.h"
 #include "COM_ComputeManager.h"
 #include "COM_ViewCacheManager.h"
 #include <memory>

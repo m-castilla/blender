@@ -112,7 +112,7 @@ typedef struct TmpBuffer {
 
   inline size_t getBufferElemChs() const
   {
-    return device.state != DeviceMemoryState::NONE ? COM_NUM_CHANNELS_STD : host.belem_chs;
+    return device.state != DeviceMemoryState::NONE ? device.belem_chs : host.belem_chs;
   }
   inline size_t getBufferElemBytes() const
   {

@@ -25,12 +25,12 @@
 
 /* **************** Flip  ******************** */
 static bNodeSocketTemplate cmp_node_flip_in[] = {
-    {SOCK_RGBA, N_("Image"), 1.0f, 1.0f, 1.0f, 1.0f},
+    {SOCK_ANY_DATA, N_("Image"), 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, PROP_NONE, SOCK_HIDE_VALUE},
     {-1, ""},
 };
 
 static bNodeSocketTemplate cmp_node_flip_out[] = {
-    {SOCK_RGBA, N_("Image")},
+    {SOCK_ANY_DATA, N_("Image"), 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, PROP_NONE, SOCK_HIDE_VALUE},
     {-1, ""},
 };
 

@@ -48,9 +48,6 @@ struct ccl_try_align(16) int3
 #else  /* __KERNEL_SSE__ */
   int x, y, z, w;
 #endif /* __KERNEL_SSE__ */
-
-  __forceinline int operator[](int i) const;
-  __forceinline int &operator[](int i);
 };
 
 ccl_device_inline int3 make_int3_1(int i);

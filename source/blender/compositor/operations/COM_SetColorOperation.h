@@ -80,10 +80,13 @@ class SetColorOperation : public NodeOperation {
   {
     return true;
   }
-  float *getSingleElem() override
+  float *getSingleElem(ExecutionManager &manager) override
   {
     return m_color;
   }
+  ResolutionType determineResolution(int resolution[2],
+                                     int preferredResolution[2],
+                                     bool setResolution) override;
 
  protected:
   void hashParams() override;

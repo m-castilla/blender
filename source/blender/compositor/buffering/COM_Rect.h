@@ -20,11 +20,12 @@
 #define __COM_RECT_H__
 
 #include "BLI_rect.h"
+#include <functional>
+#include <memory>
+
 #include "COM_Buffer.h"
 #include "COM_Pixels.h"
 #include "COM_defines.h"
-#include <functional>
-#include <memory>
 
 typedef std::function<std::shared_ptr<PixelsRect>(const rcti)> TmpRectBuilder;
 struct TmpBuffer;
@@ -103,7 +104,8 @@ class PixelsRect : public rcti {
   // single elem will be copied to fill the entire rect and be converted to a full buffer. So this
   // method ensures that the returned buffer is never a single elem buffer.
   // It ensures that it has no added pitch (row_jump) too, because host recycles should not have it
-  PixelsRect duplicate();
+  // If use_std_recycle == false, unused chs will be deleted
+  PixelsRect duplicate(bool use_std_recycle = false);
   /* */
 
 #ifdef WITH_CXX_GUARDEDALLOC

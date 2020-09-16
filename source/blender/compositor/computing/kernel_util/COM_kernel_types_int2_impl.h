@@ -23,20 +23,6 @@
 
 CCL_NAMESPACE_BEGIN
 
-int int2::operator[](int i) const
-{
-  kernel_assert(i >= 0);
-  kernel_assert(i < 2);
-  return *(&x + i);
-}
-
-int &int2::operator[](int i)
-{
-  kernel_assert(i >= 0);
-  kernel_assert(i < 2);
-  return *(&x + i);
-}
-
 ccl_device_inline int2 make_int2(int x, int y)
 {
   int2 a = {x, y};

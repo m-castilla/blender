@@ -44,9 +44,9 @@ struct WriteRectContext {
  * \ingroup Model
  */
 class NodeOperation : public NodeSocketReader {
-
  private:
   std::hash<float> m_float_hasher;
+  std::hash<char> m_char_hasher;
 
   bool m_key_calculated;
   OpKey m_key;
@@ -54,6 +54,11 @@ class NodeOperation : public NodeSocketReader {
   size_t m_op_hash;
   bool m_exec_pixels_optimized;
   bool base_hash_params_called;
+
+  bool m_single_pixel_mode;
+  int m_single_pixel_x;
+  int m_single_pixel_y;
+  float m_single_pixel[4];
 
  public:
   virtual ~NodeOperation();
@@ -95,7 +100,7 @@ class NodeOperation : public NodeSocketReader {
     return false;
   }
 
-  virtual float *getSingleElem()
+  virtual float *getSingleElem(ExecutionManager &man)
   {
     BLI_assert(!"This operation is not a single element");
     return nullptr;
@@ -156,6 +161,14 @@ class NodeOperation : public NodeSocketReader {
   // been returned, if false is an implementation error.
   std::shared_ptr<PixelsRect> getPixels(NodeOperation *reader_op, ExecutionManager &man);
 
+  // Only should be used when you need only one pixel. If you need more pixels, always call
+  // getPixels()
+  float *getSinglePixel(NodeOperation *reader_op,
+                        ExecutionManager &man,
+                        int x,
+                        int y,
+                        bool check_single_elem = true);
+
  protected:
   NodeOperation();
 
@@ -175,12 +188,12 @@ class NodeOperation : public NodeSocketReader {
 
   void computeWriteSeek(ExecutionManager &man,
                         std::function<void(PixelsRect &, const WriteRectContext &)> cpu_func,
-                        std::function<void(PixelsRect &)> after_write_func,
                         std::string compute_kernel,
                         std::function<void(ComputeKernel *)> add_kernel_args_func,
                         bool check_call = true);
   void computeWriteSeek(ExecutionManager &man,
                         std::function<void(PixelsRect &, const WriteRectContext &)> cpu_func,
+                        std::function<void(PixelsRect &)> after_write_func,
                         std::string compute_kernel,
                         std::function<void(ComputeKernel *)> add_kernel_args_func,
                         bool check_call = true);
@@ -188,7 +201,7 @@ class NodeOperation : public NodeSocketReader {
   /**
    * Might be overriden by subclasses with buffer type CUSTOM to return a written
    * buffer that will be added to BufferManager so that any other operation gets the already
-   * written pixels.
+   * written pixels. Buffer must be standard having COM_NUM_CHANNEL_STD channels
    *
    * \param buffer
    */
@@ -209,7 +222,19 @@ class NodeOperation : public NodeSocketReader {
     MathUtil::hashCombine(m_op_hash, std::hash<T>()(param));
   }
 
-  void hashDataAsParam(const float *data, size_t length, int increment = 1);
+  void hashFloatData(const float *data, size_t length, int increment = 1);
+
+  template<class T> void hashAsByteData(const T *data)
+  {
+    char *byte_data = reinterpret_cast<char *>(data);
+    size_t length = sizeof(T);
+    const char *end = byte_data + length;
+    const char *current = byte_data;
+    while (current < end) {
+      MathUtil::hashCombine(m_op_hash, m_char_hasher(*current));
+      current++;
+    }
+  }
 
   size_t getOpHash();
 

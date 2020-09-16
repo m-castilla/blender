@@ -22,6 +22,7 @@
 #include "COM_BufferManager.h"
 #include "COM_CompositorContext.h"
 #include "COM_ComputeManager.h"
+#include "COM_ConvertOperation.h"
 #include "COM_ExecutionManager.h"
 #include "COM_GlobalManager.h"
 #include "COM_MixOperation.h"
@@ -29,7 +30,6 @@
 #include "COM_NodeOperation.h"
 #include "COM_NodeSocketReader.h" /* own include */
 #include "COM_PixelsUtil.h"
-#include "COM_SetColorOperation.h"
 #include "COM_TranslateOperation.h"
 
 using namespace std::placeholders;
@@ -67,6 +67,16 @@ NodeOperationInput *NodeSocketReader::getInputSocket(int index) const
 {
   BLI_assert(index < m_inputs.size());
   return m_inputs[index];
+}
+
+bool NodeSocketReader::hasAnyInputConnected() const
+{
+  for (auto input : m_inputs) {
+    if (input->isConnected()) {
+      return true;
+    }
+  }
+  return false;
 }
 
 NodeOperationOutput *NodeSocketReader::getOutputSocket(int index) const
@@ -167,9 +177,9 @@ ResolutionType NodeSocketReader::determineResolution(int resolution[2],
   }
 
   if (resolution[0] <= 0 || resolution[1] <= 0) {
-    // if is an input operation, set the preferred as by default (if this method is not override),
-    // input is considered as generated with no predetermined resolutions
-    if (getNumberOfInputSockets() == 0) {
+    // if has no inputs connected, set preferred resolution as default (if this method is not
+    // overrided)
+    if (!hasAnyInputConnected()) {
       resolution[0] = local_preferred[0];
       resolution[1] = local_preferred[1];
     }

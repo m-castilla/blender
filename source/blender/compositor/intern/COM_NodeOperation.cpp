@@ -38,7 +38,11 @@ NodeOperation::NodeOperation()
       m_op_hash_calculated(false),
       m_op_hash(0),
       m_exec_pixels_optimized(false),
-      base_hash_params_called(false)
+      base_hash_params_called(false),
+      m_single_pixel_mode(false),
+      m_single_pixel_x(0),
+      m_single_pixel_y(0),
+      m_single_pixel()
 {
 }
 
@@ -61,7 +65,7 @@ void NodeOperation::hashParams()
   }
 }
 
-void NodeOperation::hashDataAsParam(const float *data, size_t length, int increment)
+void NodeOperation::hashFloatData(const float *data, size_t length, int increment)
 {
   const float *end = data + length;
   const float *current = data;
@@ -106,7 +110,9 @@ bool NodeOperation::isComputed(ExecutionManager & /*man*/) const
 const OpKey &NodeOperation::getKey()
 {
   if (!m_key_calculated) {
-    // getKey should been called until operation is initialized
+    // getKey shouldn't been called until operation is initialized.
+    // Be sure that you have called base class initExecution() when overriding the method in a
+    // subclass
     BLI_assert(m_initialized);
     hashParams();
     m_key.op_width = m_width;
@@ -154,10 +160,19 @@ void NodeOperation::computeWriteSeek(
     std::function<void(ComputeKernel *)> add_kernel_args_func,
     bool check_call)
 {
+
   if (check_call) {
     BLI_assert(this->canCompute());
   }
   if (man.canExecPixels()) {
+    rcti single_pixel_rect;
+    if (m_single_pixel_mode) {
+      BLI_rcti_init(&single_pixel_rect,
+                    m_single_pixel_x,
+                    m_single_pixel_x + 1,
+                    m_single_pixel_y,
+                    m_single_pixel_y + 1);
+    }
     GlobalMan->BufferMan->writeSeek(this,
                                     man,
                                     std::bind(&ExecutionManager::execWriteJob,
@@ -167,7 +182,9 @@ void NodeOperation::computeWriteSeek(
                                               cpu_func,
                                               after_write_func,
                                               compute_kernel,
-                                              add_kernel_args_func));
+                                              add_kernel_args_func,
+                                              _2),
+                                    m_single_pixel_mode ? &single_pixel_rect : nullptr);
   }
 }
 
@@ -202,6 +219,50 @@ std::shared_ptr<PixelsRect> NodeOperation::getPixels(NodeOperation *reader_op,
   }
 
   return std::shared_ptr<PixelsRect>();
+}
+
+float *NodeOperation::getSinglePixel(
+    NodeOperation *reader_op, ExecutionManager &man, int x, int y, bool check_single_elem)
+{
+  if (check_single_elem && isSingleElem()) {
+    return getSingleElem(man);
+  }
+  else {
+    m_single_pixel_mode = true;
+    m_single_pixel_x = x;
+    m_single_pixel_y = y;
+    auto pixels = getPixels(reader_op, man);
+    m_single_pixel_mode = false;
+    if (man.canExecPixels() && pixels) {
+      auto tmp_buf = pixels->tmp_buffer;
+      if (tmp_buf->device.state == DeviceMemoryState::FILLED) {
+        auto tmp = BufferUtil::createStdTmpBuffer(m_single_pixel, false, 1, 1, 4);
+        tmp->device = tmp_buf->device;
+        BufferUtil::deviceToHostCopyEnqueue(tmp.get());
+      }
+      else {
+        auto raw_buf = tmp_buf->host.buffer;
+        switch (tmp_buf->elem_chs) {
+          case 4:
+            m_single_pixel[3] = raw_buf[3];
+          case 3:
+            m_single_pixel[2] = raw_buf[2];
+          case 2:
+            m_single_pixel[1] = raw_buf[1];
+          case 1:
+            m_single_pixel[0] = raw_buf[0];
+            break;
+          default:
+            BLI_assert("Unsupported number of channels");
+            break;
+        }
+      }
+      return m_single_pixel;
+    }
+    else {
+      return nullptr;
+    }
+  }
 }
 
 void NodeOperation::execPixels(ExecutionManager &man)

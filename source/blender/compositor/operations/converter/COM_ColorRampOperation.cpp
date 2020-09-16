@@ -18,6 +18,7 @@
 
 #include "COM_ColorRampOperation.h"
 #include "COM_ComputeKernel.h"
+
 #include "COM_kernel_cpu.h"
 
 using namespace std::placeholders;
@@ -40,7 +41,7 @@ void ColorRampOperation::hashParams()
   hashParam(m_colorBand->tot);
   for (int i = 0; i < m_colorBand->tot; i++) {
     CBData data = m_colorBand->data[i];
-    hashDataAsParam(&data.r, 5);
+    hashFloatData(&data.r, 5);
   }
 }
 

@@ -9,15 +9,9 @@
 CCL_NAMESPACE_BEGIN
 
 /* YCbCr */
-#ifndef BLI_YCC_ITU_BT601
-#  define BLI_YCC_ITU_BT601 0
-#endif
-#ifndef BLI_YCC_ITU_BT709
-#  define BLI_YCC_ITU_BT709 1
-#endif
-#ifndef BLI_YCC_JFIF_0_255
-#  define BLI_YCC_JFIF_0_255 2
-#endif
+#define CCL_YCC_ITU_BT601 0
+#define CCL_YCC_ITU_BT709 1
+#define CCL_YCC_JFIF_0_255 2
 /* END of YCbCr */
 
 /* **************** ColorBand ********************* */
@@ -41,12 +35,9 @@ CCL_NAMESPACE_BEGIN
 /* **************** END of ColorBand ********************* */
 
 /* Textures */
-#define TEXMAP_CLIP_MIN 1
-#define TEXMAP_CLIP_MAX 2
+#define CCL_TEXMAP_CLIP_MIN 1
+#define CCL_TEXMAP_CLIP_MAX 2
 /* END of Textures */
-
-ccl_constant float4 BLACK_PIXEL = make_float4(0, 0, 0, 1);
-ccl_constant float4 TRANSPARENT_PIXEL = make_float4(0, 0, 0, 0);
 
 ccl_device_inline float4 premul_to_straight(const float4 premul)
 {
@@ -130,17 +121,17 @@ ccl_device_inline float4 rgb_to_ycc(float4 rgb, int colorspace)
   float alpha = rgb.w;
   rgb = 255.0f * rgb;
   switch (colorspace) {
-    case BLI_YCC_ITU_BT601:
+    case CCL_YCC_ITU_BT601:
       ycc.x = (0.257f * rgb.x) + (0.504f * rgb.y) + (0.098f * rgb.z) + 16.0f;
       ycc.y = (-0.148f * rgb.x) - (0.291f * rgb.y) + (0.439f * rgb.z) + 128.0f;
       ycc.z = (0.439f * rgb.x) - (0.368f * rgb.y) - (0.071f * rgb.z) + 128.0f;
       break;
-    case BLI_YCC_ITU_BT709:
+    case CCL_YCC_ITU_BT709:
       ycc.x = (0.183f * rgb.x) + (0.614f * rgb.y) + (0.062f * rgb.z) + 16.0f;
       ycc.y = (-0.101f * rgb.x) - (0.338f * rgb.y) + (0.439f * rgb.z) + 128.0f;
       ycc.z = (0.439f * rgb.x) - (0.399f * rgb.y) - (0.040f * rgb.z) + 128.0f;
       break;
-    case BLI_YCC_JFIF_0_255:
+    case CCL_YCC_JFIF_0_255:
       ycc.x = (0.299f * rgb.x) + (0.587f * rgb.y) + (0.114f * rgb.z);
       ycc.y = (-0.16874f * rgb.x) - (0.33126f * rgb.y) + (0.5f * rgb.z) + 128.0f;
       ycc.z = (0.5f * rgb.x) - (0.41869f * rgb.y) - (0.08131f * rgb.z) + 128.0f;
@@ -161,17 +152,17 @@ ccl_device_inline float4 ycc_to_rgb(float4 ycc, const int colorspace)
   float alpha = ycc.w;
   ycc *= 255.0f;
   switch (colorspace) {
-    case BLI_YCC_ITU_BT601:
+    case CCL_YCC_ITU_BT601:
       rgb.x = 1.164f * (ycc.x - 16.0f) + 1.596f * (ycc.z - 128.0f);
       rgb.y = 1.164f * (ycc.x - 16.0f) - 0.813f * (ycc.z - 128.0f) - 0.392f * (ycc.y - 128.0f);
       rgb.z = 1.164f * (ycc.x - 16.0f) + 2.017f * (ycc.y - 128.0f);
       break;
-    case BLI_YCC_ITU_BT709:
+    case CCL_YCC_ITU_BT709:
       rgb.x = 1.164f * (ycc.x - 16.0f) + 1.793f * (ycc.z - 128.0f);
       rgb.y = 1.164f * (ycc.x - 16.0f) - 0.534f * (ycc.z - 128.0f) - 0.213f * (ycc.y - 128.0f);
       rgb.z = 1.164f * (ycc.x - 16.0f) + 2.115f * (ycc.y - 128.0f);
       break;
-    case BLI_YCC_JFIF_0_255:
+    case CCL_YCC_JFIF_0_255:
       rgb.x = ycc.x + 1.402f * ycc.z - 179.456f;
       rgb.y = ycc.x - 0.34414f * ycc.y - 0.71414f * ycc.z + 135.45984f;
       rgb.z = ycc.x + 1.772f * ycc.y - 226.816f;
@@ -459,10 +450,10 @@ ccl_device_inline float4 colorband_evaluate(const float input_factor,
         fac = clamp(fac, 0.0f, 1.0f);
 
         if (ipotype == CCL_COLBAND_INTERP_CARDINAL) {
-          key_curve_position_weights(fac, t, KEY_CARDINAL);
+          key_curve_position_weights(fac, t, CCL_KEY_CARDINAL);
         }
         else {
-          key_curve_position_weights(fac, t, KEY_BSPLINE);
+          key_curve_position_weights(fac, t, CCL_KEY_BSPLINE);
         }
 
         float4 result = t[3] * bands_colors[cbd3] + t[2] * bands_colors[cbd2] +

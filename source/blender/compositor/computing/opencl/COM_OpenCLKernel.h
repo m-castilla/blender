@@ -56,6 +56,7 @@ class OpenCLKernel : public ComputeKernel {
   void addIntArg(int value) override;
   void addInt3Arg(const CCL::int3 &value) override;
   void addFloatArg(float value) override;
+  void addUInt64Arg(const uint64_t value) override;
   void addFloat2Arg(const CCL::float2 &value) override;
   void addFloat3Arg(const CCL::float3 &value) override;
   void addFloat4Arg(const CCL::float4 &value) override;

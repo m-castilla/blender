@@ -22,39 +22,39 @@
 
 #include "BKE_node.h"
 
-//#include "COM_BoxMaskNode.h"
-//#include "COM_ChannelMatteNode.h"
-//#include "COM_ChromaMatteNode.h"
-//#include "COM_ColorMatteNode.h"
+#include "COM_BoxMaskNode.h"
+#include "COM_ChannelMatteNode.h"
+#include "COM_ChromaMatteNode.h"
+#include "COM_ColorMatteNode.h"
 
-//#include "COM_ColorSpillNode.h"
-//#include "COM_CornerPinNode.h"
-//#include "COM_CropNode.h"
-//#include "COM_CryptomatteNode.h"
+#include "COM_ColorSpillNode.h"
+#include "COM_CornerPinNode.h"
+#include "COM_CropNode.h"
+#include "COM_CryptomatteNode.h"
 
-//#include "COM_DifferenceMatteNode.h"
-//#include "COM_DisplaceNode.h"
-//#include "COM_DistanceMatteNode.h"
-//#include "COM_DoubleEdgeMaskNode.h"
-//#include "COM_EllipseMaskNode.h"
-//#include "COM_ExecutionSystem.h"
-//#include "COM_FlipNode.h"
-//#include "COM_GammaNode.h"
+#include "COM_DifferenceMatteNode.h"
+#include "COM_DisplaceNode.h"
+#include "COM_DistanceMatteNode.h"
+#include "COM_DoubleEdgeMaskNode.h"
+#include "COM_EllipseMaskNode.h"
+#include "COM_ExecutionSystem.h"
+#include "COM_FlipNode.h"
+#include "COM_GammaNode.h"
 
-//#include "COM_KeyingNode.h"
-//#include "COM_KeyingScreenNode.h"
-//#include "COM_LensDistortionNode.h"
-//#include "COM_LuminanceMatteNode.h"
-//#include "COM_MapUVNode.h"
+#include "COM_KeyingNode.h"
+#include "COM_KeyingScreenNode.h"
+#include "COM_LensDistortionNode.h"
+#include "COM_LuminanceMatteNode.h"
+#include "COM_MapUVNode.h"
 
-//#include "COM_MovieDistortionNode.h"
-//#include "COM_PlaneTrackDeformNode.h"
-//#include "COM_RotateNode.h"
-//#include "COM_SetValueOperation.h"
-//#include "COM_SplitViewerNode.h"
-//#include "COM_Stabilize2dNode.h"
+#include "COM_MovieDistortionNode.h"
+#include "COM_PlaneTrackDeformNode.h"
+#include "COM_RotateNode.h"
+#include "COM_SetValueOperation.h"
+#include "COM_SplitViewerNode.h"
+#include "COM_Stabilize2dNode.h"
 
-//#include "COM_TransformNode.h"
+#include "COM_TransformNode.h"
 
 #include "COM_AlphaOverNode.h"
 #include "COM_BilateralBlurNode.h"
@@ -298,21 +298,6 @@ Node *Converter::convert(bNode *b_node)
       break;
       /* */
 
-      /*Distort nodes*/
-    case CMP_NODE_TRANSLATE:
-      node = new TranslateNode(b_node);
-      break;
-    case CMP_NODE_SCALE:
-      node = new ScaleNode(b_node);
-      break;
-      /* */
-
-      /* layout nodes */
-    case CMP_NODE_SWITCH:
-      node = new SwitchNode(b_node);
-      break;
-      /* */
-
       /*Filter Nodes*/
     case CMP_NODE_FILTER:
       node = new FilterNode(b_node);
@@ -358,91 +343,101 @@ Node *Converter::convert(bNode *b_node)
       break;
       /* */
 
+      /* Matte nodes*/
+    case CMP_NODE_MASK_BOX:
+      node = new BoxMaskNode(b_node);
+      break;
+    case CMP_NODE_MASK_ELLIPSE:
+      node = new EllipseMaskNode(b_node);
+      break;
+    case CMP_NODE_DIFF_MATTE:
+      node = new DifferenceMatteNode(b_node);
+      break;
+    case CMP_NODE_LUMA_MATTE:
+      node = new LuminanceMatteNode(b_node);
+      break;
+    case CMP_NODE_DIST_MATTE:
+      node = new DistanceMatteNode(b_node);
+      break;
+    case CMP_NODE_CHROMA_MATTE:
+      node = new ChromaMatteNode(b_node);
+      break;
+    case CMP_NODE_COLOR_MATTE:
+      node = new ColorMatteNode(b_node);
+      break;
+    case CMP_NODE_CHANNEL_MATTE:
+      node = new ChannelMatteNode(b_node);
+      break;
+    case CMP_NODE_KEYINGSCREEN:
+      node = new KeyingScreenNode(b_node);
+      break;
+    case CMP_NODE_KEYING:
+      node = new KeyingNode(b_node);
+      break;
+    case CMP_NODE_CRYPTOMATTE:
+      node = new CryptomatteNode(b_node);
+      break;
+    case CMP_NODE_DOUBLEEDGEMASK:
+      node = new DoubleEdgeMaskNode(b_node);
+      break;
+    case CMP_NODE_COLOR_SPILL:
+      node = new ColorSpillNode(b_node);
+      break;
+
+      /*Distort nodes*/
+    case CMP_NODE_TRANSLATE:
+      node = new TranslateNode(b_node);
+      break;
+    case CMP_NODE_SCALE:
+      node = new ScaleNode(b_node);
+      break;
+    case CMP_NODE_ROTATE:
+      node = new RotateNode(b_node);
+      break;
+    case CMP_NODE_FLIP:
+      node = new FlipNode(b_node);
+      break;
+    case CMP_NODE_MAP_UV:
+      node = new MapUVNode(b_node);
+      break;
+    case CMP_NODE_DISPLACE:
+      node = new DisplaceNode(b_node);
+      break;
+    case CMP_NODE_LENSDIST:
+      node = new LensDistortionNode(b_node);
+      break;
+    case CMP_NODE_TRANSFORM:
+      node = new TransformNode(b_node);
+      break;
+    case CMP_NODE_STABILIZE2D:
+      node = new Stabilize2dNode(b_node);
+      break;
+    case CMP_NODE_MOVIEDISTORTION:
+      node = new MovieDistortionNode(b_node);
+      break;
+    case CMP_NODE_CROP:
+      node = new CropNode(b_node);
+      break;
+    case CMP_NODE_PLANETRACKDEFORM:
+      node = new PlaneTrackDeformNode(b_node);
+      break;
+    case CMP_NODE_CORNERPIN:
+      node = new CornerPinNode(b_node);
+      break;
+      /* */
+
+    /* layout nodes */
+    case CMP_NODE_SWITCH:
+      node = new SwitchNode(b_node);
+      break;
+      /* */
+
       /* handled by the NodeGraph */
     case NODE_GROUP:
     case NODE_GROUP_INPUT:
     case NODE_GROUP_OUTPUT:
       break;
       /* */
-
-      // case CMP_NODE_ROTATE:
-      //  node = new RotateNode(b_node);
-      //  break;
-      // case CMP_NODE_FLIP:
-      //  node = new FlipNode(b_node);
-      //  break;
-
-      // case CMP_NODE_MASK_BOX:
-      //  node = new BoxMaskNode(b_node);
-      //  break;
-      // case CMP_NODE_MASK_ELLIPSE:
-      //  node = new EllipseMaskNode(b_node);
-      //  break;
-
-      // case CMP_NODE_MAP_UV:
-      //  node = new MapUVNode(b_node);
-      //  break;
-      // case CMP_NODE_DISPLACE:
-      //  node = new DisplaceNode(b_node);
-      //  break;
-
-      // case CMP_NODE_DIFF_MATTE:
-      //  node = new DifferenceMatteNode(b_node);
-      //  break;
-      // case CMP_NODE_LUMA_MATTE:
-      //  node = new LuminanceMatteNode(b_node);
-      //  break;
-      // case CMP_NODE_DIST_MATTE:
-      //  node = new DistanceMatteNode(b_node);
-      //  break;
-      // case CMP_NODE_CHROMA_MATTE:
-      //  node = new ChromaMatteNode(b_node);
-      //  break;
-      // case CMP_NODE_COLOR_MATTE:
-      //  node = new ColorMatteNode(b_node);
-      //  break;
-      // case CMP_NODE_CHANNEL_MATTE:
-      //  node = new ChannelMatteNode(b_node);
-      //  break;
-      // case CMP_NODE_LENSDIST:
-      //  node = new LensDistortionNode(b_node);
-      //  break;
-      // case CMP_NODE_COLOR_SPILL:
-      //  node = new ColorSpillNode(b_node);
-      //  break;
-      // case CMP_NODE_TRANSFORM:
-      //  node = new TransformNode(b_node);
-      //  break;
-      // case CMP_NODE_STABILIZE2D:
-      //  node = new Stabilize2dNode(b_node);
-      //  break;
-
-      // case CMP_NODE_MOVIEDISTORTION:
-      //  node = new MovieDistortionNode(b_node);
-      //  break;
-      // case CMP_NODE_DOUBLEEDGEMASK:
-      //  node = new DoubleEdgeMaskNode(b_node);
-      //  break;
-      // case CMP_NODE_CROP:
-      //  node = new CropNode(b_node);
-      //  break;
-      // case CMP_NODE_KEYINGSCREEN:
-      //  node = new KeyingScreenNode(b_node);
-      //  break;
-      // case CMP_NODE_KEYING:
-      //  node = new KeyingNode(b_node);
-      //  break;
-
-      // case CMP_NODE_PLANETRACKDEFORM:
-      //  node = new PlaneTrackDeformNode(b_node);
-      //  break;
-      // case CMP_NODE_CORNERPIN:
-      //  node = new CornerPinNode(b_node);
-      //  break;
-
-      // case CMP_NODE_CRYPTOMATTE:
-      //  node = new CryptomatteNode(b_node);
-      //  break;
   }
   return node;
 }
