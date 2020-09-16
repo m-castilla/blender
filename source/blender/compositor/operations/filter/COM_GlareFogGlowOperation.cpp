@@ -260,7 +260,7 @@ static void fht_convolve(fREAL *d1, const fREAL *d2, unsigned int M, unsigned in
 }
 //------------------------------------------------------------------------------
 
-static void convolve(PixelsRect &dst, PixelsRect &src, PixelsRect &ckrn, ExecutionManager &man)
+static void convolve(PixelsRect &dst, PixelsRect &src, PixelsRect &ckrn)
 {
   fREAL *data1, *data2, *fp;
   unsigned int w2, h2, hw, hh, log2_w, log2_h;
@@ -444,7 +444,7 @@ static void convolve(PixelsRect &dst, PixelsRect &src, PixelsRect &ckrn, Executi
 void GlareFogGlowOperation::generateGlare(PixelsRect &dst,
                                           PixelsRect &src,
                                           NodeGlare *settings,
-                                          ExecutionManager &man)
+                                          ExecutionManager & /*man*/)
 {
   float scale, u, v, r, w, d;
   CCL::float4 fcol;
@@ -483,7 +483,7 @@ void GlareFogGlowOperation::generateGlare(PixelsRect &dst,
     UPDATE_COORDS_X(ckrn, 0);
   }
 
-  convolve(dst, src, ckrn_rect, man);
+  convolve(dst, src, ckrn_rect);
 
   recycler->giveRecycle(ckrn_buf);
 }

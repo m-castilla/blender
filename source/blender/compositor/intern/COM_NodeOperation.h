@@ -100,7 +100,7 @@ class NodeOperation : public NodeSocketReader {
     return false;
   }
 
-  virtual float *getSingleElem(ExecutionManager &man)
+  virtual float *getSingleElem(ExecutionManager & /*man*/)
   {
     BLI_assert(!"This operation is not a single element");
     return nullptr;

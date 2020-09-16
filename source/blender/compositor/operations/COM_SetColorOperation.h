@@ -80,7 +80,7 @@ class SetColorOperation : public NodeOperation {
   {
     return true;
   }
-  float *getSingleElem(ExecutionManager &manager) override
+  float *getSingleElem(ExecutionManager & /*man*/) override
   {
     return m_color;
   }

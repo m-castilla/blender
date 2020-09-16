@@ -124,7 +124,8 @@
 
 #  define SAMPLER_ASSERT__(sampler, interp_mode, extend_mode) \
     kernel_assert(sampler.filter == PixelInterpolation::interp_mode && \
-                  sampler.extend == PixelExtend::extend_mode);
+                  sampler.extend == PixelExtend::extend_mode); \
+    (void)sampler;
 
 #  define NEAREST_OFFSET__(name, coords, img) \
     size_t name##_offset__ = ((size_t)coords.y) * img.brow_chs_incr + \

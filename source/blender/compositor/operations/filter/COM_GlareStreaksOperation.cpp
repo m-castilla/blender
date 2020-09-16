@@ -18,8 +18,8 @@
 
 #include <cstring>
 
-#include "COM_GlareStreaksOperation.h"
 #include "COM_ExecutionManager.h"
+#include "COM_GlareStreaksOperation.h"
 #include "COM_GlobalManager.h"
 #include "COM_PixelsUtil.h"
 
@@ -28,7 +28,7 @@
 void GlareStreaksOperation::generateGlare(PixelsRect &dst,
                                           PixelsRect &src,
                                           NodeGlare *settings,
-                                          ExecutionManager &man)
+                                          ExecutionManager & /*man*/)
 {
   int n;
   unsigned int nump = 0;

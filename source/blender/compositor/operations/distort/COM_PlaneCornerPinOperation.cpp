@@ -118,7 +118,7 @@ void PlaneCornerPinMaskOperation::readCorners(NodeOperation *reader_op, Executio
 
 ResolutionType PlaneCornerPinMaskOperation::determineResolution(int resolution[2],
                                                                 int preferredResolution[2],
-                                                                bool setResolution)
+                                                                bool /*setResolution*/)
 {
   resolution[0] = preferredResolution[0];
   resolution[1] = preferredResolution[1];

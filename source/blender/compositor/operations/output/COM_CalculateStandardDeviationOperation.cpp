@@ -34,7 +34,7 @@ CalculateStandardDeviationOperation::CalculateStandardDeviationOperation()
   addOutputSocket(SocketType::VALUE);
 }
 
-float *CalculateStandardDeviationOperation::getSingleElem(ExecutionManager &man)
+float *CalculateStandardDeviationOperation::getSingleElem(ExecutionManager & /*man*/)
 {
   if (!m_calculated) {
     m_result = sqrt(m_sum / m_n_pixels);

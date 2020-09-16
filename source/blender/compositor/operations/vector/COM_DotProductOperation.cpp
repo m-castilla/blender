@@ -16,12 +16,12 @@
  * Copyright 2011, Blender Foundation.
  */
 
-#include "COM_DotproductOperation.h"
+#include "COM_DotProductOperation.h"
 #include "COM_ComputeKernel.h"
 #include "COM_kernel_cpu.h"
 
 using namespace std::placeholders;
-DotproductOperation::DotproductOperation() : NodeOperation()
+DotProductOperation::DotProductOperation() : NodeOperation()
 {
   this->addInputSocket(SocketType::VECTOR);
   this->addInputSocket(SocketType::VECTOR);
@@ -53,7 +53,7 @@ ccl_kernel dotProductOp(CCL_WRITE(dst), CCL_READ(vector1), CCL_READ(vector2))
 CCL_NAMESPACE_END
 #undef OPENCL_CODE
 
-void DotproductOperation::execPixels(ExecutionManager &man)
+void DotProductOperation::execPixels(ExecutionManager &man)
 {
   auto vector1 = getInputOperation(0)->getPixels(this, man);
   auto vector2 = getInputOperation(1)->getPixels(this, man);

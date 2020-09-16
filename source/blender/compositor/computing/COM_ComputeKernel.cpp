@@ -18,6 +18,7 @@
 
 #include "COM_ComputeKernel.h"
 #include "PIL_time.h"
+#include <stdint.h>
 
 ComputeKernel::ComputeKernel(std::string kernel_name) : m_kernel_name(kernel_name)
 {
@@ -35,7 +36,7 @@ void ComputeKernel::addRandomSeedArg()
 // Seed initialization taken from BLI_rand.hh
 uint64_t ComputeKernel::getRandomSeedArg(void *caller_object)
 {
-  uint64_t rng_seed = (uint64_t)(PIL_check_seconds_timer_i() & _UI64_MAX);
+  uint64_t rng_seed = (uint64_t)(PIL_check_seconds_timer_i() & UINT64_MAX);
   rng_seed ^= (uint64_t)(uintptr_t)(caller_object);
   constexpr uint64_t lowseed = 0x330E;
   return (static_cast<uint64_t>(rng_seed) << 16) | lowseed;

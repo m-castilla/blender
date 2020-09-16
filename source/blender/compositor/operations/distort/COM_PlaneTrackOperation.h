@@ -44,9 +44,7 @@ class PlaneTrackCommon {
   void readCorners(PlaneDistortBaseOperation &distortBaseOp,
                    bool save_corners,
                    std::vector<float> *r_all_corners_coords = nullptr);
-  ResolutionType determineResolution(int resolution[2],
-                                     int preferredResolution[2],
-                                     bool setResolution);
+  ResolutionType determineResolution(int resolution[2]);
   void hashParams(PlaneDistortBaseOperation &distortBaseOp);
 
  public:

@@ -56,7 +56,7 @@ class SetValueOperation : public NodeOperation {
   {
     return true;
   }
-  float *getSingleElem(ExecutionManager &man) override
+  float *getSingleElem(ExecutionManager & /*man*/) override
   {
     return m_value;
   }

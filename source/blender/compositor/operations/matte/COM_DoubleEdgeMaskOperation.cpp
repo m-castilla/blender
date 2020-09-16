@@ -19,11 +19,13 @@
 #include <stdlib.h>
 
 #include "BLI_math.h"
-#include "COM_DoubleEdgeMaskOperation.h"
-#include "COM_GlobalManager.h"
-#include "COM_kernel_CPU.h"
 #include "DNA_node_types.h"
 #include "MEM_guardedalloc.h"
+
+#include "COM_DoubleEdgeMaskOperation.h"
+#include "COM_GlobalManager.h"
+
+#include "COM_kernel_cpu.h"
 
 // this part has been copied from the double edge mask
 static void do_adjacentKeepBorders(unsigned int t,
