@@ -44,9 +44,9 @@ ccl_kernel keyingBlurXOp(CCL_WRITE(dst), CCL_READ(input), int input_width, int s
   READ_DECL(input);
   WRITE_DECL(dst);
 
-  float average = 0.0f;
   CPU_LOOP_START(dst);
 
+  float average = 0.0f;
   const int start_x = max(0, dst_coords.x - size + 1);
   const int end_x = min(input_width, dst_coords.x + size);
   int count = end_x - start_x;
@@ -59,7 +59,7 @@ ccl_kernel keyingBlurXOp(CCL_WRITE(dst), CCL_READ(input), int input_width, int s
 
   input_pix.x = average / (float)count;
 
-  WRITE_IMG4(dst, input_pix);
+  WRITE_IMG1(dst, input_pix);
 
   CPU_LOOP_END
 }
@@ -69,9 +69,9 @@ ccl_kernel keyingBlurYOp(CCL_WRITE(dst), CCL_READ(input), int input_height, int 
   READ_DECL(input);
   WRITE_DECL(dst);
 
-  float average = 0.0f;
   CPU_LOOP_START(dst);
 
+  float average = 0.0f;
   const int start_y = max(0, dst_coords.y - size + 1);
   const int end_y = min(input_height, dst_coords.y + size);
   int count = end_y - start_y;
@@ -79,12 +79,12 @@ ccl_kernel keyingBlurYOp(CCL_WRITE(dst), CCL_READ(input), int input_height, int 
   while (input_coords.y < end_y) {
     READ_IMG1(input, input_pix);
     average += input_pix.x;
-    INCR1_COORDS_X(input);
+    INCR1_COORDS_Y(input);
   }
 
   input_pix.x = average / (float)count;
 
-  WRITE_IMG4(dst, input_pix);
+  WRITE_IMG1(dst, input_pix);
 
   CPU_LOOP_END
 }

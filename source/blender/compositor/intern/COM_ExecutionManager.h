@@ -62,7 +62,8 @@ class ExecutionManager {
                     std::function<void(PixelsRect &, const WriteRectContext &)> &cpu_write_func,
                     std::function<void(PixelsRect &)> after_write_func,
                     std::string compute_kernel,
-                    std::function<void(ComputeKernel *)> add_kernel_args_func);
+                    std::function<void(ComputeKernel *)> add_kernel_args_func,
+                    const rcti *custom_write_rect = nullptr);
 
   void reportOperationOptimized(NodeOperation *op);
   // must be called by BufferManager when the full operation write is completed

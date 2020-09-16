@@ -68,12 +68,14 @@ inline bool hasWrite(BufferType buf_type)
   return buf_type != BufferType::NO_BUFFER_NO_WRITE && buf_type != BufferType::CUSTOM;
 }
 
+// Returned buffer is non recyclable by default, if you want to recycle, use BufferManager recycler
 std::unique_ptr<TmpBuffer> createNonStdTmpBuffer(float *host_buffer = nullptr,
                                                  bool is_host_buffer_filled = false,
                                                  int width = 0,
                                                  int height = 0,
                                                  int n_used_channels = 0,
                                                  int n_buffer_channels = 0);
+// Returned buffer is non recyclable by default, if you want to recycle, use BufferManager recycler
 std::unique_ptr<TmpBuffer> createStdTmpBuffer(float *host_buffer = nullptr,
                                               bool is_host_buffer_filled = false,
                                               int host_width = 0,

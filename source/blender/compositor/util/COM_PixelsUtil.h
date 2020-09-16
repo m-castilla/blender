@@ -30,7 +30,10 @@ DataType getNUsedChannelsDataType(int n_used_chs);
 SocketType dataToSocketType(DataType d);
 
 void copyBufferRect(PixelsRect &dst, float *read_buf, int n_used_chs, int n_buf_chs);
-void copyBufferRectNChannels(PixelsRect &dst, float *read_buf, int n_channels, int n_buf_chs);
+void copyBufferRectNChannels(PixelsRect &dst,
+                             float *read_buf,
+                             int n_copied_channels,
+                             int n_buf_chs);
 void copyBufferRectChannel(
     PixelsRect &dst, int to_ch_idx, float *read_buf, int from_ch_idx, int n_buf_chs);
 

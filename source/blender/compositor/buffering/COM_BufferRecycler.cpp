@@ -274,7 +274,7 @@ TmpBuffer *BufferRecycler::createNonStdTmpBuffer(bool is_host_recyclable,
   buf->height = height;
   if (host_buffer) {
     buf->host.buffer = host_buffer;
-    buf->host.brow_bytes = n_buf_chs;
+    buf->host.brow_bytes = BufferUtil::calcNonStdBufferRowBytes(width, n_buf_chs);
     buf->host.bwidth = width;
     buf->host.bheight = height;
     buf->host.belem_chs = COM_NUM_CHANNELS_STD;

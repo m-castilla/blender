@@ -52,9 +52,8 @@ ccl_device_inline float average(const float2 &a);
 ccl_device_inline float distance(const float2 &a, const float2 &b);
 ccl_device_inline float dot(const float2 &a, const float2 &b);
 ccl_device_inline float cross(const float2 &a, const float2 &b);
-ccl_device_inline float len(const float2 &a);
+ccl_device_inline float length(const float2 &a);
 ccl_device_inline float2 normalize(const float2 &a);
-ccl_device_inline float2 normalize_len(const float2 &a, float *t);
 ccl_device_inline float2 safe_normalize(const float2 &a);
 ccl_device_inline float2 min(const float2 &a, const float2 &b);
 ccl_device_inline float2 max(const float2 &a, const float2 &b);
@@ -171,7 +170,7 @@ ccl_device_inline float average(const float2 &a)
 
 ccl_device_inline float distance(const float2 &a, const float2 &b)
 {
-  return len(a - b);
+  return length(a - b);
 }
 
 ccl_device_inline float dot(const float2 &a, const float2 &b)
@@ -184,25 +183,19 @@ ccl_device_inline float cross(const float2 &a, const float2 &b)
   return (a.x * b.y - a.y * b.x);
 }
 
-ccl_device_inline float len(const float2 &a)
+ccl_device_inline float length(const float2 &a)
 {
   return sqrtf(dot(a, a));
 }
 
 ccl_device_inline float2 normalize(const float2 &a)
 {
-  return a / len(a);
-}
-
-ccl_device_inline float2 normalize_len(const float2 &a, float *t)
-{
-  *t = len(a);
-  return a / (*t);
+  return a / length(a);
 }
 
 ccl_device_inline float2 safe_normalize(const float2 &a)
 {
-  float t = len(a);
+  float t = length(a);
   return (t != 0.0f) ? a / t : a;
 }
 
@@ -215,7 +208,6 @@ ccl_device_inline float2 max(const float2 &a, const float2 &b)
 {
   return make_float2(fmaxf(a.x, b.x), fmaxf(a.y, b.y));
 }
-
 ccl_device_inline float2 clamp(const float2 &a, const float2 &mn, const float2 &mx)
 {
   return min(max(a, mn), mx);
@@ -251,6 +243,22 @@ ccl_device_inline float2 floor(const float2 &a)
 ccl_device_inline float2 safe_divide_float2_float(const float2 a, const float b)
 {
   return (b != 0.0f) ? a / b : make_float2(0.0f, 0.0f);
+}
+
+ccl_device_inline float2 normalize_length_f2(const float2 a, float *t)
+{
+  *t = length(a);
+  return a / (*t);
+}
+
+ccl_device_inline bool equals_f2(const float2 a, const float2 b)
+{
+  return a.x == b.x && a.y == b.y;
+}
+
+ccl_device_inline float length_squared_f2(const float2 a)
+{
+  return dot(a, a);
 }
 
 CCL_NAMESPACE_END

@@ -21,6 +21,7 @@
 #include "BLI_listbase.h"
 #include "COM_Buffer.h"
 #include "COM_BufferUtil.h"
+#include "COM_GlobalManager.h"
 #include "COM_PixelsUtil.h"
 #include "DNA_scene_types.h"
 #include "RE_pipeline.h"
@@ -83,9 +84,19 @@ void RenderLayersProg::deinitExecution()
 
 TmpBuffer *RenderLayersProg::getCustomBuffer()
 {
-  return BufferUtil::createNonStdTmpBuffer(
-             m_inputBuffer, true, getWidth(), getHeight(), m_elementsize)
-      .release();
+  int w = getWidth();
+  int h = getHeight();
+  auto recycler = GlobalMan->BufferMan->recycler();
+  if (m_elementsize == COM_NUM_CHANNELS_STD) {
+    return recycler->createStdTmpBuffer(false, m_inputBuffer, w, h, m_elementsize);
+  }
+  else {
+    auto tmp = recycler->createTmpBuffer(true);
+    recycler->takeStdRecycle(BufferRecycleType::HOST_CLEAR, tmp, w, h, m_elementsize);
+    PixelsRect tmp_rect = PixelsRect(tmp, 0, w, 0, h);
+    PixelsUtil::copyBufferRectNChannels(tmp_rect, m_inputBuffer, m_elementsize, m_elementsize);
+    return tmp;
+  }
 }
 
 ResolutionType RenderLayersProg::determineResolution(int resolution[2],

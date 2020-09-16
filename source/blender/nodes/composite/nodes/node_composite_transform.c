@@ -26,7 +26,7 @@
 /* **************** Transform  ******************** */
 
 static bNodeSocketTemplate cmp_node_transform_in[] = {
-    {SOCK_RGBA, N_("Image"), 0.8f, 0.8f, 0.8f, 1.0f, 0.0f, 1.0f},
+    {SOCK_ANY_DATA, N_("Image"), 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, PROP_NONE, SOCK_HIDE_VALUE},
     {SOCK_FLOAT, N_("X"), 0.0f, 0.0f, 0.0f, 0.0f, -10000.0f, 10000.0f},
     {SOCK_FLOAT, N_("Y"), 0.0f, 0.0f, 0.0f, 0.0f, -10000.0f, 10000.0f},
     {SOCK_FLOAT, N_("Angle"), 0.0f, 0.0f, 0.0f, 0.0f, -10000.0f, 10000.0f, PROP_ANGLE},
@@ -35,7 +35,7 @@ static bNodeSocketTemplate cmp_node_transform_in[] = {
 };
 
 static bNodeSocketTemplate cmp_node_transform_out[] = {
-    {SOCK_RGBA, N_("Image")},
+    {SOCK_ANY_DATA, N_("Image"), 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, PROP_NONE, SOCK_HIDE_VALUE},
     {-1, ""},
 };
 

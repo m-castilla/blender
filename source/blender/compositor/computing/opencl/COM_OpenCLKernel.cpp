@@ -223,6 +223,13 @@ void OpenCLKernel::addFloatArg(float value)
   m_args_count++;
 }
 
+void OpenCLKernel::addUInt64Arg(const uint64_t value)
+{
+  cl_ulong c64 = (cl_ulong)value;
+  m_man.printIfError(clSetKernelArg(m_cl_kernel, m_args_count, sizeof(cl_ulong), &c64));
+  m_args_count++;
+}
+
 void OpenCLKernel::addFloat2Arg(const CCL::float2 &value)
 {
   cl_float2 cl_f2;

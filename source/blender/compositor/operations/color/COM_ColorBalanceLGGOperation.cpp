@@ -34,13 +34,46 @@ ColorBalanceLGGOperation::ColorBalanceLGGOperation()
 void ColorBalanceLGGOperation::hashParams()
 {
   NodeOperation::hashParams();
-  hashDataAsParam(m_gain, 3);
-  hashDataAsParam(m_lift, 3);
-  hashDataAsParam(m_gamma_inv, 3);
+  hashFloatData(m_gain, 3);
+  hashFloatData(m_lift, 3);
+  hashFloatData(m_gamma_inv, 3);
 }
 
 #define OPENCL_CODE
 CCL_NAMESPACE_BEGIN
+
+ccl_device_inline float4 colorbalance_lgg(float4 in,
+                                          float4 lift_lgg,
+                                          float4 gamma_inv,
+                                          float4 gain)
+{
+  /* 1:1 match with the sequencer with linear/srgb conversions, the conversion isnt pretty
+   * but best keep it this way, since testing for durian shows a similar calculation
+   * without lin/srgb conversions gives bad results (over-saturated shadows) with colors
+   * slightly below 1.0. some correction can be done but it ends up looking bad for shadows or
+   * lighter tones - campbell */
+  float4 res;
+  res.x = linearrgb_to_srgb(in.x);
+  res.y = linearrgb_to_srgb(in.y);
+  res.z = linearrgb_to_srgb(in.z);
+  res = (((res - 1.0f) * lift_lgg) + 1.0f) * gain;
+  if (res.x < 0.0f) {
+    res.x = 0.0f;
+  }
+  if (res.y < 0.0f) {
+    res.y = 0.0f;
+  }
+  if (res.z < 0.0f) {
+    res.z = 0.0f;
+  }
+  res.x = powf(srgb_to_linearrgb(res.x), gamma_inv.x);
+  res.y = powf(srgb_to_linearrgb(res.y), gamma_inv.y);
+  res.z = powf(srgb_to_linearrgb(res.z), gamma_inv.z);
+  res.w = in.w;
+
+  return res;
+}
+
 ccl_kernel colorBalanceLGGOp(
     CCL_WRITE(dst), CCL_READ(value), CCL_READ(color), float4 lift, float4 gamma_inv, float4 gain)
 {

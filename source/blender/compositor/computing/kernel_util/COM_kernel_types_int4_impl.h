@@ -53,20 +53,6 @@ __forceinline int4 &int4::operator=(const int4 &a)
 }
 #endif /* __KERNEL_SSE__ */
 
-__forceinline int int4::operator[](int i) const
-{
-  kernel_assert(i >= 0);
-  kernel_assert(i < 4);
-  return *(&x + i);
-}
-
-__forceinline int &int4::operator[](int i)
-{
-  kernel_assert(i >= 0);
-  kernel_assert(i < 4);
-  return *(&x + i);
-}
-
 ccl_device_inline int4 make_int4_1(int i)
 {
 #ifdef __KERNEL_SSE__

@@ -84,10 +84,10 @@ void PixelsUtil::copyBufferRect(PixelsRect &dst, float *read_buf, int n_used_chs
 
 void PixelsUtil::copyBufferRectNChannels(PixelsRect &dst,
                                          float *read_buf,
-                                         int n_channels,
+                                         int n_copied_channels,
                                          int n_buf_chs)
 {
-  copyBufferRect(dst, read_buf, n_channels, n_buf_chs);
+  copyBufferRect(dst, read_buf, n_copied_channels, n_buf_chs);
 }
 
 void PixelsUtil::copyBufferRectChannel(

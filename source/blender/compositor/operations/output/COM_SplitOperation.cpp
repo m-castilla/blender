@@ -16,21 +16,21 @@
  * Copyright 2011, Blender Foundation.
  */
 
-#include "COM_SplitOperation.h"
 #include "BKE_image.h"
 #include "BLI_listbase.h"
 #include "BLI_math_color.h"
 #include "BLI_math_vector.h"
 #include "BLI_utildefines.h"
+#include "IMB_imbuf.h"
+#include "IMB_imbuf_types.h"
 #include "MEM_guardedalloc.h"
+#include <algorithm>
 
 #include "COM_BufferUtil.h"
 #include "COM_PixelsUtil.h"
-#include "IMB_imbuf.h"
-#include "IMB_imbuf_types.h"
-#include <algorithm>
+#include "COM_SplitOperation.h"
 
-SplitOperation::SplitOperation() : NodeOperation()
+SplitOperation::SplitOperation() : NodeOperation(), m_splitPercentage(0.0f), m_xSplit(false)
 {
   this->addInputSocket(SocketType::COLOR);
   this->addInputSocket(SocketType::COLOR);

@@ -150,6 +150,7 @@ void BufferManager::checkCache()
 }
 
 static std::shared_ptr<PixelsRect> tmpPixelsRect(NodeOperation *op,
+                                                 ExecutionManager &man,
                                                  const rcti &op_rect,
                                                  OpReads *reads,
                                                  bool is_for_read)
@@ -160,7 +161,7 @@ static std::shared_ptr<PixelsRect> tmpPixelsRect(NodeOperation *op,
   int offset_y = op_rect.ymin;
   PixelsRect *r;
   if (op->isSingleElem()) {
-    r = new PixelsRect(is_for_read ? op->getSingleElem() : (float *)nullptr,
+    r = new PixelsRect(is_for_read ? op->getSingleElem(man) : (float *)nullptr,
                        COM_NUM_CHANNELS_STD,
                        offset_x,
                        offset_x + width,
@@ -235,7 +236,7 @@ BufferManager::ReadResult BufferManager::readSeek(NodeOperation *op, ExecutionMa
       result.is_written = true;
       rcti full_rect;
       BLI_rcti_init(&full_rect, 0, reads->readed_op->getWidth(), 0, reads->readed_op->getHeight());
-      auto pixels = tmpPixelsRect(op, full_rect, reads, true);
+      auto pixels = tmpPixelsRect(op, man, full_rect, reads, true);
       result.pixels.swap(pixels);
     }
   }
@@ -245,7 +246,8 @@ BufferManager::ReadResult BufferManager::readSeek(NodeOperation *op, ExecutionMa
 
 void BufferManager::writeSeek(NodeOperation *op,
                               ExecutionManager &man,
-                              std::function<void(TmpRectBuilder &)> write_func)
+                              std::function<void(TmpRectBuilder &, const rcti *)> write_func,
+                              const rcti *custom_write_rect)
 {
   const auto &key = op->getKey();
 
@@ -255,6 +257,13 @@ void BufferManager::writeSeek(NodeOperation *op,
     if (!reads->is_write_complete) {
       BLI_assert(reads->tmp_buffer == NULL);
 
+      if (custom_write_rect) {
+        if ((reads->total_compute_reads + reads->total_cpu_reads) > 1) {
+          // for more than 1 read don't allow a custom write rect. Full operation size must be
+          // done.
+          custom_write_rect = nullptr;
+        }
+      }
       bool do_write = true;
       bool is_write_computed = op->isComputed(man);
       if (op->getBufferType() == BufferType::CACHED) {
@@ -292,7 +301,7 @@ void BufferManager::writeSeek(NodeOperation *op,
       // either write or reading. For the others even when write is not needed, it must be called
       // for buffers preparation before calling prepareForRead
       if (BufferUtil::hasBuffer(op->getBufferType()) && !man.isBreaked()) {
-        compute_work_enqueued |= prepareForWrite(is_write_computed, reads);
+        compute_work_enqueued |= prepareForWrite(is_write_computed, reads, custom_write_rect);
       }
       if (compute_work_enqueued) {
         man.deviceWaitQueueToFinish();
@@ -300,8 +309,9 @@ void BufferManager::writeSeek(NodeOperation *op,
       }
 
       if (do_write && !man.isBreaked()) {
-        TmpRectBuilder tmp_rect_builder = std::bind(&tmpPixelsRect, op, _1, reads, false);
-        write_func(tmp_rect_builder);
+        TmpRectBuilder tmp_rect_builder = std::bind(
+            &tmpPixelsRect, op, std::ref(man), _1, reads, false);
+        write_func(tmp_rect_builder, custom_write_rect);
         if (is_write_computed) {
           compute_work_enqueued = true;
         }
@@ -340,13 +350,32 @@ void BufferManager::writeSeek(NodeOperation *op,
 }
 
 /* returns whether there has been enqueued work on device */
-bool BufferManager::prepareForWrite(bool is_write_computed, OpReads *reads)
+bool BufferManager::prepareForWrite(bool is_write_computed,
+                                    OpReads *reads,
+                                    const rcti *custom_write_rect)
 {
+  if (reads->readed_op->isSingleElem()) {
+    // single elem don't need buffer
+    return false;
+  }
   bool work_enqueued = false;
   auto buf = reads->tmp_buffer;
+
   int width = reads->readed_op->getWidth();
   int height = reads->readed_op->getHeight();
+  if (reads->readed_op->isSingleElem()) {
+    width = 1;
+    height = 1;
+  }
+  else if (custom_write_rect != nullptr &&
+           (reads->total_compute_reads + reads->total_cpu_reads) <= 1) {
+    width = BLI_rcti_size_x(custom_write_rect);
+    height = BLI_rcti_size_y(custom_write_rect);
+  }
   int elem_chs = reads->readed_op->getOutputNUsedChannels();
+  buf->width = width;
+  buf->height = height;
+  buf->elem_chs = elem_chs;
   bool host_ready = buf->host.state == HostMemoryState::CLEARED ||
                     buf->host.state == HostMemoryState::FILLED;
   bool host_empty = buf->host.state == HostMemoryState::NONE;
@@ -404,10 +433,10 @@ bool BufferManager::prepareForWrite(bool is_write_computed, OpReads *reads)
       work_enqueued |= m_recycler->takeStdRecycle(recycle_type, buf, width, height, elem_chs);
       BLI_assert(recycle_type != BufferRecycleType::HOST_CLEAR ||
                  (buf->host.buffer != nullptr && buf->host.bwidth > 0 && buf->host.bheight > 0 &&
-                  buf->host.belem_chs > 0));
+                  buf->host.belem_chs == COM_NUM_CHANNELS_STD));
       BLI_assert(recycle_type == BufferRecycleType::HOST_CLEAR ||
                  (buf->device.buffer != nullptr && buf->device.bwidth > 0 &&
-                  buf->device.bheight > 0 && buf->device.belem_chs > 0));
+                  buf->device.bheight > 0 && buf->device.belem_chs == COM_NUM_CHANNELS_STD));
     }
   }
   return work_enqueued;
@@ -534,8 +563,8 @@ TmpBuffer *BufferManager::getCustomBuffer(NodeOperation *op)
   BLI_assert(custom->host.bheight >= custom->height);
   BLI_assert(custom->host.bwidth >= custom->width);
   BLI_assert(custom->host.belem_chs >= n_used_chs);
-  BLI_assert(custom->host.brow_bytes ==
-             BufferUtil::calcNonStdBufferRowBytes(custom->host.bwidth, custom->host.belem_chs));
+  BLI_assert(custom->host.belem_chs == COM_NUM_CHANNELS_STD);
+  BLI_assert(custom->host.brow_bytes == BufferUtil::calcStdBufferRowBytes(custom->host.bwidth));
   BLI_assert(custom->host.state == HostMemoryState::CLEARED ||
              custom->host.state == HostMemoryState::FILLED);
   if (custom->host.state == HostMemoryState::CLEARED) {

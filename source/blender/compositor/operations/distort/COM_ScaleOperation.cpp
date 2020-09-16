@@ -17,7 +17,6 @@
  */
 
 #include "COM_ScaleOperation.h"
-#include "COM_CompositorContext.h"
 #include "COM_ComputeKernel.h"
 #include "COM_GlobalManager.h"
 #include "COM_kernel_cpu.h"
@@ -25,38 +24,24 @@
 #define OPENCL_CODE
 CCL_NAMESPACE_BEGIN
 
-ccl_kernel scaleVariableOp(CCL_WRITE(dst),
-                           CCL_READ(color),
-                           CCL_READ(x_input),
-                           CCL_READ(y_input),
-                           CCL_SAMPLER(sampler),
-                           float color_width,
-                           float color_height,
-                           float center_x,
-                           float center_y,
-                           BOOL relative)
+ccl_kernel scaleFactorOp(CCL_WRITE(dst),
+                         CCL_READ(color),
+                         CCL_SAMPLER(sampler),
+                         float center_x,
+                         float center_y,
+                         float scale_x,
+                         float scale_y)
 {
   READ_DECL(color);
-  READ_DECL(x_input);
-  READ_DECL(y_input);
   WRITE_DECL(dst);
 
+  float2 read_coordsf;
   CPU_LOOP_START(dst);
 
-  COPY_COORDS(x_input, dst_coords);
-  COPY_COORDS(y_input, dst_coords);
+  read_coordsf.x = center_x + (dst_coords.x - center_x) / scale_x;
+  read_coordsf.y = center_y + (dst_coords.y - center_y) / scale_y;
 
-  READ_IMG1(x_input, x_input_pix);
-  READ_IMG1(y_input, y_input_pix);
-
-  if (relative) {
-    color_coordsf.x = center_x + (dst_coords.x - center_x) / x_input_pix.x;
-    color_coordsf.y = center_y + (dst_coords.y - center_y) / y_input_pix.x;
-  }
-  else {
-    color_coordsf.x = center_x + (dst_coords.x - center_x) / (x_input_pix.x / color_width);
-    color_coordsf.y = center_y + (dst_coords.y - center_y) / (y_input_pix.x / color_height);
-  }
+  COPY_SAMPLE_COORDS(color, read_coordsf);
   SAMPLE_IMG(color, sampler, color_pix);
   WRITE_IMG(dst, color_pix);
 
@@ -75,17 +60,19 @@ ccl_kernel scaleFixedOp(CCL_WRITE(dst),
   READ_DECL(input);
   WRITE_DECL(dst);
 
+  float2 read_coordsf;
   CPU_LOOP_START(dst);
 
   if (has_scale_offset) {
-    input_coordsf.x = ((dst_coords.x - scale_offset_x) * scale_rel_x);
-    input_coordsf.y = ((dst_coords.y - scale_offset_y) * scale_rel_y);
+    read_coordsf.x = ((dst_coords.x - scale_offset_x) * scale_rel_x);
+    read_coordsf.y = ((dst_coords.y - scale_offset_y) * scale_rel_y);
   }
   else {
-    input_coordsf.x = dst_coords.x * scale_rel_x;
-    input_coordsf.y = dst_coords.y * scale_rel_y;
+    read_coordsf.x = dst_coords.x * scale_rel_x;
+    read_coordsf.y = dst_coords.y * scale_rel_y;
   }
 
+  COPY_SAMPLE_COORDS(input, read_coordsf);
   SAMPLE_IMG(input, sampler, input_pix);
   WRITE_IMG(dst, input_pix);
 
@@ -104,9 +91,6 @@ ScaleOperation::ScaleOperation() : NodeOperation()
   this->addInputSocket(SocketType::VALUE);
   this->addOutputSocket(SocketType::DYNAMIC);
   this->setMainInputSocketIndex(0);
-  this->m_inputOperation = NULL;
-  this->m_inputXOperation = NULL;
-  this->m_inputYOperation = NULL;
   m_relative = false;
   m_sampler = GlobalMan->getContext()->getDefaultSampler();
 }
@@ -118,54 +102,34 @@ void ScaleOperation::hashParams()
   hashParam(m_sampler);
 }
 
-void ScaleOperation::initExecution()
-{
-  this->m_inputOperation = this->getInputSocket(0)->getLinkedOp();
-  this->m_inputXOperation = this->getInputSocket(1)->getLinkedOp();
-  this->m_inputYOperation = this->getInputSocket(2)->getLinkedOp();
-  NodeOperation::initExecution();
-}
-
-void ScaleOperation::deinitExecution()
-{
-  this->m_inputOperation = NULL;
-  this->m_inputXOperation = NULL;
-  this->m_inputYOperation = NULL;
-  NodeOperation::deinitExecution();
-}
-
 void ScaleOperation::execPixels(ExecutionManager &man)
 {
-  int color_width = m_inputOperation->getWidth();
-  int color_height = m_inputOperation->getHeight();
+  auto color_op = getInputOperation(0);
+  auto color_input = color_op->getPixels(this, man);
+  auto x_pix = getInputOperation(1)->getSinglePixel(this, man, 0, 0);
+  auto y_pix = getInputOperation(2)->getSinglePixel(this, man, 0, 0);
+
+  int color_width = color_op->getWidth();
+  int color_height = color_op->getHeight();
   float center_x = color_width / 2.0f;
   float center_y = color_height / 2.0f;
-  auto color_input = m_inputOperation->getPixels(this, man);
-  auto x_input = m_inputXOperation->getPixels(this, man);
-  auto y_input = m_inputYOperation->getPixels(this, man);
+  float scale_x = 1.0f, scale_y = 1.0f;
+  if (x_pix) {
+    scale_x = m_relative ? x_pix[0] : x_pix[0] / color_width;
+  }
+  if (y_pix) {
+    scale_y = m_relative ? y_pix[0] : y_pix[0] / color_height;
+  }
 
   std::function<void(PixelsRect &, const WriteRectContext &)> cpu_write = std::bind(
-      CCL::scaleVariableOp,
-      _1,
-      color_input,
-      x_input,
-      y_input,
-      m_sampler,
-      (float)color_width,
-      (float)color_height,
-      center_x,
-      center_y,
-      m_relative);
-  computeWriteSeek(man, cpu_write, "scaleVariableOp", [&](ComputeKernel *kernel) {
+      CCL::scaleFactorOp, _1, color_input, m_sampler, center_x, center_y, scale_x, scale_y);
+  computeWriteSeek(man, cpu_write, "scaleFactorOp", [&](ComputeKernel *kernel) {
     kernel->addReadImgArgs(*color_input);
-    kernel->addReadImgArgs(*x_input);
-    kernel->addReadImgArgs(*y_input);
     kernel->addSamplerArg(m_sampler);
-    kernel->addFloatArg(color_width);
-    kernel->addFloatArg(color_height);
     kernel->addFloatArg(center_x);
     kernel->addFloatArg(center_y);
-    kernel->addBoolArg(m_relative);
+    kernel->addFloatArg(scale_x);
+    kernel->addFloatArg(scale_y);
   });
 }
 

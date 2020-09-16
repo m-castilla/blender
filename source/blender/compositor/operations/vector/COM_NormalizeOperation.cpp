@@ -18,6 +18,7 @@
 
 #include "COM_NormalizeOperation.h"
 #include "COM_Rect.h"
+
 #include "COM_kernel_cpu.h"
 
 NormalizeOperation::NormalizeOperation() : NodeOperation()

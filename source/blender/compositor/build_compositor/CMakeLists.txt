@@ -37,7 +37,7 @@ set(INC
   ${CMP_NODES}/converter
   ${CMP_NODES}/filter
   ${CMP_NODES}/vector
-  # ${CMP_NODES}/matte
+  ${CMP_NODES}/matte
   ${CMP_NODES}/distort
   ${CMP_NODES}/layout
   ${CMP_OPS}
@@ -47,7 +47,7 @@ set(INC
   ${CMP_OPS}/converter
   ${CMP_OPS}/filter
   ${CMP_OPS}/vector
-  # ${CMP_OPS}/matte
+  ${CMP_OPS}/matte
   ${CMP_OPS}/distort
   ${CMP_BASE}/util
   ${CMP_BASE}/computing
@@ -139,10 +139,13 @@ set(SRC
   ${CMP_BASE}/util/COM_MathUtil.h
   ${CMP_BASE}/util/COM_BufferUtil.cpp
   ${CMP_BASE}/util/COM_BufferUtil.h
+  ${CMP_BASE}/util/COM_UiConvert.cpp
+  ${CMP_BASE}/util/COM_UiConvert.h
 
   # computing
   ${CMP_BASE}/computing/COM_ComputeDevice.cpp
   ${CMP_BASE}/computing/COM_ComputeDevice.h
+  ${CMP_BASE}/computing/COM_ComputeKernel.cpp
   ${CMP_BASE}/computing/COM_ComputeKernel.h
   ${CMP_BASE}/computing/COM_ComputePlatform.cpp
   ${CMP_BASE}/computing/COM_ComputePlatform.h
@@ -155,6 +158,7 @@ set(SRC
   ${CMP_BASE}/computing/kernel_util/COM_kernel_defines.h
   ${CMP_BASE}/computing/kernel_util/COM_kernel_color.h
   ${CMP_BASE}/computing/kernel_util/COM_kernel_geom.h
+  ${CMP_BASE}/computing/kernel_util/COM_kernel_filter.h
   ${CMP_BASE}/computing/kernel_util/COM_kernel_math.h
   ${CMP_BASE}/computing/kernel_util/COM_kernel_math_float2.h
   ${CMP_BASE}/computing/kernel_util/COM_kernel_math_float3.h
@@ -163,6 +167,7 @@ set(SRC
   ${CMP_BASE}/computing/kernel_util/COM_kernel_math_int3.h
   ${CMP_BASE}/computing/kernel_util/COM_kernel_math_int4.h
   ${CMP_BASE}/computing/kernel_util/COM_kernel_optimization.h
+  ${CMP_BASE}/computing/kernel_util/COM_kernel_random.h
   ${CMP_BASE}/computing/kernel_util/COM_kernel_sampling.h
   ${CMP_BASE}/computing/kernel_util/COM_kernel_sampling_impl.h
   ${CMP_BASE}/computing/kernel_util/COM_kernel_simd.h
@@ -232,12 +237,6 @@ set(SRC
   ${CMP_NODES}/output/COM_ViewerNode.h
   ${CMP_NODES}/output/COM_ViewLevelsNode.cpp
   ${CMP_NODES}/output/COM_ViewLevelsNode.h
-
-  # distort nodes
-  ${CMP_NODES}/distort/COM_ScaleNode.cpp
-  ${CMP_NODES}/distort/COM_ScaleNode.h
-  ${CMP_NODES}/distort/COM_TranslateNode.cpp
-  ${CMP_NODES}/distort/COM_TranslateNode.h
 
   # color nodes
   ${CMP_NODES}/color/COM_AlphaOverNode.cpp
@@ -327,6 +326,62 @@ set(SRC
   ${CMP_NODES}/vector/COM_VectorCurveNode.cpp
   ${CMP_NODES}/vector/COM_VectorCurveNode.h
 
+  # matte nodes
+  ${CMP_NODES}/matte/COM_BoxMaskNode.cpp
+  ${CMP_NODES}/matte/COM_BoxMaskNode.h
+  ${CMP_NODES}/matte/COM_ChannelMatteNode.cpp
+  ${CMP_NODES}/matte/COM_ChannelMatteNode.h
+  ${CMP_NODES}/matte/COM_ChromaMatteNode.cpp
+  ${CMP_NODES}/matte/COM_ChromaMatteNode.h
+  ${CMP_NODES}/matte/COM_ColorMatteNode.cpp
+  ${CMP_NODES}/matte/COM_ColorMatteNode.h
+  ${CMP_NODES}/matte/COM_ColorSpillNode.cpp
+  ${CMP_NODES}/matte/COM_ColorSpillNode.h
+  ${CMP_NODES}/matte/COM_CryptomatteNode.cpp
+  ${CMP_NODES}/matte/COM_CryptomatteNode.h
+  ${CMP_NODES}/matte/COM_DifferenceMatteNode.cpp
+  ${CMP_NODES}/matte/COM_DifferenceMatteNode.h
+  ${CMP_NODES}/matte/COM_DistanceMatteNode.cpp
+  ${CMP_NODES}/matte/COM_DistanceMatteNode.h
+  ${CMP_NODES}/matte/COM_DoubleEdgeMaskNode.cpp
+  ${CMP_NODES}/matte/COM_DoubleEdgeMaskNode.h
+  ${CMP_NODES}/matte/COM_EllipseMaskNode.cpp
+  ${CMP_NODES}/matte/COM_EllipseMaskNode.h
+  ${CMP_NODES}/matte/COM_KeyingNode.cpp
+  ${CMP_NODES}/matte/COM_KeyingNode.h
+  ${CMP_NODES}/matte/COM_KeyingScreenNode.cpp
+  ${CMP_NODES}/matte/COM_KeyingScreenNode.h
+  ${CMP_NODES}/matte/COM_LuminanceMatteNode.cpp
+  ${CMP_NODES}/matte/COM_LuminanceMatteNode.h
+
+  # distort nodes
+  ${CMP_NODES}/distort/COM_CornerPinNode.cpp
+  ${CMP_NODES}/distort/COM_CornerPinNode.h
+  ${CMP_NODES}/distort/COM_CropNode.cpp
+  ${CMP_NODES}/distort/COM_CropNode.h
+  ${CMP_NODES}/distort/COM_DisplaceNode.cpp
+  ${CMP_NODES}/distort/COM_DisplaceNode.h
+  ${CMP_NODES}/distort/COM_FlipNode.cpp
+  ${CMP_NODES}/distort/COM_FlipNode.h
+  ${CMP_NODES}/distort/COM_LensDistortionNode.cpp
+  ${CMP_NODES}/distort/COM_LensDistortionNode.h
+  ${CMP_NODES}/distort/COM_MapUVNode.cpp
+  ${CMP_NODES}/distort/COM_MapUVNode.h
+  ${CMP_NODES}/distort/COM_MovieDistortionNode.cpp
+  ${CMP_NODES}/distort/COM_MovieDistortionNode.h
+  ${CMP_NODES}/distort/COM_PlaneTrackDeformNode.cpp
+  ${CMP_NODES}/distort/COM_PlaneTrackDeformNode.h
+  ${CMP_NODES}/distort/COM_RotateNode.cpp
+  ${CMP_NODES}/distort/COM_RotateNode.h
+  ${CMP_NODES}/distort/COM_ScaleNode.cpp
+  ${CMP_NODES}/distort/COM_ScaleNode.h
+  ${CMP_NODES}/distort/COM_Stabilize2dNode.cpp
+  ${CMP_NODES}/distort/COM_Stabilize2dNode.h
+  ${CMP_NODES}/distort/COM_TransformNode.cpp
+  ${CMP_NODES}/distort/COM_TransformNode.h
+  ${CMP_NODES}/distort/COM_TranslateNode.cpp
+  ${CMP_NODES}/distort/COM_TranslateNode.h
+
   # layout nodes
   ${CMP_NODES}/layout/COM_SwitchNode.cpp
   ${CMP_NODES}/layout/COM_SwitchNode.h
@@ -346,6 +401,9 @@ set(SRC
   ${CMP_OPS}/COM_SetVectorOperation.h
   ${CMP_OPS}/COM_QualityStepHelper.cpp
   ${CMP_OPS}/COM_QualityStepHelper.h
+  ${CMP_OPS}/COM_SingleElemReadyOperation.cpp
+  ${CMP_OPS}/COM_SingleElemReadyOperation.h
+
 
   # input operations
   ${CMP_OPS}/input/COM_BokehImageOperation.cpp
@@ -493,7 +551,7 @@ set(SRC
   ${CMP_OPS}/filter/COM_VectorBlurOperation.cpp
   ${CMP_OPS}/filter/COM_VectorBlurOperation.h
 
-  # vector nodes
+  # vector operations
   ${CMP_OPS}/vector/COM_DotProductOperation.cpp
   ${CMP_OPS}/vector/COM_DotProductOperation.h
   ${CMP_OPS}/vector/COM_MapRangeOperation.cpp
@@ -504,12 +562,74 @@ set(SRC
   ${CMP_OPS}/vector/COM_NormalizeOperation.h
   ${CMP_OPS}/vector/COM_VectorCurveOperation.cpp
   ${CMP_OPS}/vector/COM_VectorCurveOperation.h
+
+  # matte operations
+  ${CMP_OPS}/matte/COM_BoxMaskOperation.cpp
+  ${CMP_OPS}/matte/COM_BoxMaskOperation.h
+  ${CMP_OPS}/matte/COM_ChannelMatteOperation.cpp
+  ${CMP_OPS}/matte/COM_ChannelMatteOperation.h
+  ${CMP_OPS}/matte/COM_ChromaMatteOperation.cpp
+  ${CMP_OPS}/matte/COM_ChromaMatteOperation.h
+  ${CMP_OPS}/matte/COM_ColorMatteOperation.cpp
+  ${CMP_OPS}/matte/COM_ColorMatteOperation.h
+  ${CMP_OPS}/matte/COM_ColorSpillOperation.cpp
+  ${CMP_OPS}/matte/COM_ColorSpillOperation.h
+  ${CMP_OPS}/matte/COM_CryptomatteOperation.cpp
+  ${CMP_OPS}/matte/COM_CryptomatteOperation.h
+  ${CMP_OPS}/matte/COM_DifferenceMatteOperation.cpp
+  ${CMP_OPS}/matte/COM_DifferenceMatteOperation.h
+  ${CMP_OPS}/matte/COM_DistanceRGBMatteOperation.cpp
+  ${CMP_OPS}/matte/COM_DistanceRGBMatteOperation.h
+  ${CMP_OPS}/matte/COM_DistanceYCCMatteOperation.cpp
+  ${CMP_OPS}/matte/COM_DistanceYCCMatteOperation.h
+  ${CMP_OPS}/matte/COM_DoubleEdgeMaskOperation.cpp
+  ${CMP_OPS}/matte/COM_DoubleEdgeMaskOperation.h
+  ${CMP_OPS}/matte/COM_EllipseMaskOperation.cpp
+  ${CMP_OPS}/matte/COM_EllipseMaskOperation.h
+  ${CMP_OPS}/matte/COM_KeyingClipOperation.cpp
+  ${CMP_OPS}/matte/COM_KeyingClipOperation.h
+  ${CMP_OPS}/matte/COM_KeyingDespillOperation.cpp
+  ${CMP_OPS}/matte/COM_KeyingDespillOperation.h
+  ${CMP_OPS}/matte/COM_KeyingOperation.cpp
+  ${CMP_OPS}/matte/COM_KeyingOperation.h
+  ${CMP_OPS}/matte/COM_KeyingScreenOperation.cpp
+  ${CMP_OPS}/matte/COM_KeyingScreenOperation.h
+  ${CMP_OPS}/matte/COM_LuminanceMatteOperation.cpp
+  ${CMP_OPS}/matte/COM_LuminanceMatteOperation.h
   
   # distort operations
+  ${CMP_OPS}/distort/COM_CropOperation.cpp
+  ${CMP_OPS}/distort/COM_CropOperation.h
+  ${CMP_OPS}/distort/COM_DisplaceOperation.cpp
+  ${CMP_OPS}/distort/COM_DisplaceOperation.h
+  ${CMP_OPS}/distort/COM_DisplaceSimpleOperation.cpp
+  ${CMP_OPS}/distort/COM_DisplaceSimpleOperation.h
+  ${CMP_OPS}/distort/COM_FlipOperation.cpp
+  ${CMP_OPS}/distort/COM_FlipOperation.h
+  ${CMP_OPS}/distort/COM_MapUVOperation.cpp
+  ${CMP_OPS}/distort/COM_MapUVOperation.h
+  ${CMP_OPS}/distort/COM_MovieClipAttributeOperation.cpp
+  ${CMP_OPS}/distort/COM_MovieClipAttributeOperation.h
+  ${CMP_OPS}/distort/COM_MovieDistortionOperation.cpp
+  ${CMP_OPS}/distort/COM_MovieDistortionOperation.h
+  ${CMP_OPS}/distort/COM_PlaneCornerPinOperation.cpp
+  ${CMP_OPS}/distort/COM_PlaneCornerPinOperation.h
+  ${CMP_OPS}/distort/COM_PlaneDistortCommonOperation.cpp
+  ${CMP_OPS}/distort/COM_PlaneDistortCommonOperation.h
+  ${CMP_OPS}/distort/COM_PlaneTrackOperation.cpp
+  ${CMP_OPS}/distort/COM_PlaneTrackOperation.h
+  ${CMP_OPS}/distort/COM_ProjectorLensDistortionOperation.cpp
+  ${CMP_OPS}/distort/COM_ProjectorLensDistortionOperation.h
+  ${CMP_OPS}/distort/COM_RotateOperation.cpp
+  ${CMP_OPS}/distort/COM_RotateOperation.h
   ${CMP_OPS}/distort/COM_ScaleOperation.cpp
   ${CMP_OPS}/distort/COM_ScaleOperation.h
+  ${CMP_OPS}/distort/COM_ScreenLensDistortionOperation.cpp
+  ${CMP_OPS}/distort/COM_ScreenLensDistortionOperation.h
   ${CMP_OPS}/distort/COM_TranslateOperation.cpp
   ${CMP_OPS}/distort/COM_TranslateOperation.h
+  ${CMP_OPS}/distort/COM_TransformOperation.cpp
+  ${CMP_OPS}/distort/COM_TransformOperation.h
 
 )
 

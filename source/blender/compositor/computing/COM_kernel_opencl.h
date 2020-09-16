@@ -151,24 +151,36 @@
 #  pragma OPENCL EXTENSION cl_khr_fp16 : enable
 #endif
 
-#include "kernel_util/COM_kernel_algo.h"
 #include "kernel_util/COM_kernel_color.h"
 #include "kernel_util/COM_kernel_defines.h"
 #include "kernel_util/COM_kernel_geom.h"
 #include "kernel_util/COM_kernel_math.h"
+#include "kernel_util/COM_kernel_random.h"
 #include "kernel_util/COM_kernel_types.h"
 
+/* Only used for functions, not kernels */
+#define CCL_IMAGE(image) __read_only image2d_t image, const int image##_is_not_single
+#define CCL_IMAGE_ARG(image) image, image##_is_not_single
+
 /* Kernel function signature macros*/
-#define CCL_READ(image) __read_only image2d_t image, const int image##_is_not_single
+#define CCL_READ(image) CCL_IMAGE(image)
 #define CCL_WRITE(image) \
   __write_only image2d_t image, const int image##_start_x, const int image##_start_y
 #define CCL_SAMPLER(sampler) const sampler_t sampler
+
 /* END of OpenCL kernel function signature macros*/
+
+// only used in functions (not kernels)
+#define IMAGE_DECL(image)
+
+#define COORDS_DECL(src) int2 src##_coords;
+
+#define SAMPLE_COORDS_DECL(src) float2 src##_coordsf;
 
 #define READ_DECL(src) \
   float4 src##_pix; \
-  int2 src##_coords; \
-  float2 src##_coordsf;
+  COORDS_DECL(src); \
+  SAMPLE_COORDS_DECL(src);
 
 #define WRITE_DECL(dst) \
   int2 dst##_coords = make_int2(dst##_start_x + get_global_id(0), \
@@ -180,12 +192,6 @@
 #define READ_IMG1(src, result) READ_IMG(src, result);
 #define READ_IMG3(src, result) READ_IMG(src, result);
 #define READ_IMG4(src, result) READ_IMG(src, result);
-
-/*src_img must be a image2d_t, sampler must be sampler_t, coords must be float2*/
-#define SAMPLE_IMG(src, sampler, result) \
-  result = read_imagef(src, sampler, src##_coordsf * src##_is_not_single);
-
-#include "kernel_util/COM_kernel_sampling.h"
 
 /*dst_img must be a image2d_t , coords must be int2, pixel must be float4*/
 #define WRITE_IMG(dst, pixel) write_imagef(dst, dst##_coords, pixel);
@@ -245,5 +251,48 @@
 #define INCR_COORDS_Y(src, incr) src##_coords.y += incr;
 
 #define INCR_SAMPLE_COORDS_Y(src, incr) src##_coordsf.y += incr;
+
+#include "kernel_util/COM_kernel_sampling.h"
+
+/*src_img must be a image2d_t, sampler must be sampler_t, coords must be float2*/
+#define SAMPLE_IMG(src, sampler, result) \
+  result = read_imagef(src, sampler, src##_coordsf * src##_is_not_single);
+#define SAMPLE_INT_IMG(src, sampler, result) \
+  result = read_imagef(src, sampler, src##_coords * src##_is_not_single);
+
+#include "kernel_util/COM_kernel_filter.h"
+
+#define EWA_FILTER_IMG(src, \
+                       sampler, \
+                       uv, \
+                       derivative1, \
+                       derivative2, \
+                       width, \
+                       height, \
+                       inv_width, \
+                       inv_height, \
+                       sqrt_width, \
+                       height_by_sqrt_width, \
+                       result) \
+  if (src##_is_not_single) { \
+    result = ewa_filter_read(CCL_IMAGE_ARG(src), \
+                             sampler, \
+                             false, \
+                             true, \
+                             uv, \
+                             derivative1, \
+                             derivative2, \
+                             width, \
+                             height, \
+                             inv_width, \
+                             inv_height, \
+                             sqrt_width, \
+                             height_by_sqrt_width); \
+  } \
+  else { \
+    read_imagef(src, make_int2(0, 0)); \
+  }
+
+#include "kernel_util/COM_kernel_algo.h"
 
 #endif

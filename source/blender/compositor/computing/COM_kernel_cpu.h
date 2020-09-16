@@ -63,13 +63,16 @@ CCL_NAMESPACE_BEGIN
 
 CCL_NAMESPACE_END
 
-#include "kernel_util/COM_kernel_algo.h"
 #include "kernel_util/COM_kernel_color.h"
 #include "kernel_util/COM_kernel_defines.h"
 #include "kernel_util/COM_kernel_geom.h"
 #include "kernel_util/COM_kernel_math.h"
-#include "kernel_util/COM_kernel_sampling.h"
+#include "kernel_util/COM_kernel_random.h"
 #include "kernel_util/COM_kernel_types.h"
+
+/* Only used for functions, not kernels */
+#define CCL_IMAGE(image) PixelsImg image##_img
+#define CCL_IMAGE_ARG(image) image##_img
 
 /* Kernel function signature macros*/
 #define CCL_READ(src) std::shared_ptr<PixelsRect> src
@@ -77,16 +80,22 @@ CCL_NAMESPACE_END
 #define CCL_SAMPLER(sampler) const PixelsSampler sampler
 /* END of OpenCL kernel function signature macros*/
 
+#define COORDS_DECL(src) \
+  size_t src##_offset; \
+  CCL::int2 src##_coords; \
+  (void)src##_offset; \
+  (void)src##_coords;
+
+#define SAMPLE_COORDS_DECL(src) \
+  CCL::float2 src##_coordsf; \
+  (void)src##_coordsf;
+
 #define READ_DECL(src) \
   PixelsImg src##_img = src->pixelsImg(); \
   CCL::float4 src##_pix; \
-  size_t src##_offset; \
-  CCL::int2 src##_coords; \
-  CCL::float2 src##_coordsf; \
-  (void)src##_pix; \
-  (void)src##_offset; \
-  (void)src##_coords; \
-  (void)src##_coordsf;
+  COORDS_DECL(src); \
+  SAMPLE_COORDS_DECL(src); \
+  (void)src##_pix;
 
 #define WRITE_DECL(dst) \
   PixelsImg dst##_img = dst.pixelsImg(); \
@@ -291,5 +300,45 @@ CCL_NAMESPACE_END
 #include "kernel_util/COM_kernel_sampling.h"
 
 #define SAMPLE_IMG(src, sampler, result) CCL::sample(src##_img, result, sampler, src##_coordsf);
+
+#include "kernel_util/COM_kernel_filter.h"
+
+// must be 4 channels image. When single elem, declared coords variable are intentionally
+// overshadowing parent scope variables
+#define EWA_FILTER_IMG(src, \
+                       sampler, \
+                       uv, \
+                       derivative1, \
+                       derivative2, \
+                       width, \
+                       height, \
+                       inv_width, \
+                       inv_height, \
+                       sqrt_width, \
+                       height_by_sqrt_width, \
+                       result) \
+  kernel_assert(src##_img.elem_chs == 4); \
+  if (src->is_single_elem) { \
+    COORDS_DECL(src); \
+    SET_COORDS(src, 0, 0); \
+    READ_IMG4(src, result); \
+  } \
+  else { \
+    result = ewa_filter_read(CCL_IMAGE_ARG(src), \
+                             sampler, \
+                             false, \
+                             true, \
+                             uv, \
+                             derivative1, \
+                             derivative2, \
+                             width, \
+                             height, \
+                             inv_width, \
+                             inv_height, \
+                             sqrt_width, \
+                             height_by_sqrt_width); \
+  }
+
+#include "kernel_util/COM_kernel_algo.h"
 
 #endif

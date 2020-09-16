@@ -20,67 +20,72 @@
 
 CCL_NAMESPACE_BEGIN
 
+ccl_constant float4 ZERO_F4 = make_float4_1(0.0f);
+ccl_constant float4 ONE_F4 = make_float4_1(1.0f);
+ccl_constant float4 TRANSPARENT_PIXEL = make_float4_1(0.0f);
+ccl_constant float4 BLACK_PIXEL = make_float4(0.0f, 0.0f, 0.0f, 1.0f);
+ccl_constant float4 WHITE_PIXEL = make_float4(1.0f, 1.0f, 1.0f, 1.0f);
+ccl_constant float2 ZERO_F2 = make_float2(0.0f, 0.0f);
+ccl_constant float3 ZERO_F3 = make_float3_1(0.0f);
+ccl_constant float2 ONE_F2 = make_float2(1.0f, 1.0f);
+ccl_constant float3 ONE_F3 = make_float3_1(1.0f);
+
 /* Float Pi variations */
 
 /* Division */
-#ifndef M_PI_F
-#  define M_PI_F (3.1415926535897932f) /* pi */
-#endif
-#ifndef M_PI_2_F
-#  define M_PI_2_F (1.5707963267948966f) /* pi/2 */
-#endif
-#ifndef M_PI_4_F
-#  define M_PI_4_F (0.7853981633974830f) /* pi/4 */
-#endif
-#ifndef M_1_PI_F
-#  define M_1_PI_F (0.3183098861837067f) /* 1/pi */
-#endif
-#ifndef M_2_PI_F
-#  define M_2_PI_F (0.6366197723675813f) /* 2/pi */
-#endif
-#ifndef M_1_2PI_F
-#  define M_1_2PI_F (0.1591549430918953f) /* 1/(2*pi) */
-#endif
-#ifndef M_SQRT_PI_8_F
-#  define M_SQRT_PI_8_F (0.6266570686577501f) /* sqrt(pi/8) */
-#endif
-#ifndef M_LN_2PI_F
-#  define M_LN_2PI_F (1.8378770664093454f) /* ln(2*pi) */
-#endif
-#ifndef M_SQRT1_2_F
-#  define M_SQRT1_2_F (0.707106781186547524401f) /* 1/sqrt(2)  */
-#endif
+#undef M_PI_F
+#define M_PI_F (3.1415926535897932f) /* pi */
+
+#undef M_PI_2_F
+#define M_PI_2_F (1.5707963267948966f) /* pi/2 */
+
+#undef M_PI_4_F
+#define M_PI_4_F (0.7853981633974830f) /* pi/4 */
+
+#undef M_1_PI_F
+#define M_1_PI_F (0.3183098861837067f) /* 1/pi */
+
+#undef M_2_PI_F
+#define M_2_PI_F (0.6366197723675813f) /* 2/pi */
+
+#undef M_1_2PI_F
+#define M_1_2PI_F (0.1591549430918953f) /* 1/(2*pi) */
+
+#undef M_SQRT_PI_8_F
+#define M_SQRT_PI_8_F (0.6266570686577501f) /* sqrt(pi/8) */
+
+#undef M_LN_2PI_F
+#define M_LN_2PI_F (1.8378770664093454f) /* ln(2*pi) */
+
+#undef M_SQRT1_2_F
+#define M_SQRT1_2_F (0.707106781186547524401f) /* 1/sqrt(2)  */
 
 /* Multiplication */
-#ifndef M_2PI_F
-#  define M_2PI_F (6.2831853071795864f) /* 2*pi */
-#endif
-#ifndef M_4PI_F
-#  define M_4PI_F (12.566370614359172f) /* 4*pi */
-#endif
+#undef M_2PI_F
+#define M_2PI_F (6.2831853071795864f) /* 2*pi */
+
+#undef M_4PI_F
+#define M_4PI_F (12.566370614359172f) /* 4*pi */
 
 /* Float sqrt variations */
-#ifndef M_SQRT2_F
-#  define M_SQRT2_F (1.4142135623730950f) /* sqrt(2) */
-#endif
-#ifndef M_LN2_F
-#  define M_LN2_F (0.6931471805599453f) /* ln(2) */
-#endif
-#ifndef M_LN10_F
-#  define M_LN10_F (2.3025850929940457f) /* ln(10) */
-#endif
+#undef M_SQRT2_F
+#define M_SQRT2_F (1.4142135623730950f) /* sqrt(2) */
 
-#ifndef RAD2DEGF
-#  define RAD2DEGF(_rad) ((_rad) * (float)(180.0f / M_PI_F))
-#endif
-#ifndef DEG2RADF
-#  define DEG2RADF(_deg) ((_deg) * (float)(M_PI_F / 180.0f))
-#endif
+#undef M_LN2_F
+#define M_LN2_F (0.6931471805599453f) /* ln(2) */
+
+#undef M_LN10_F
+#define M_LN10_F (2.3025850929940457f) /* ln(10) */
+
+#undef RAD2DEGF
+#define RAD2DEGF(_rad) ((_rad) * (float)(180.0f / M_PI_F))
+
+#undef DEG2RADF
+#define DEG2RADF(_deg) ((_deg) * (float)(M_PI_F / 180.0f))
 
 /* Scalar */
 
-
-#  ifndef __KERNEL_OPENCL__
+#ifndef __KERNEL_OPENCL__
 ccl_device_inline float fmaxf(const float a, const float b)
 {
   return (a > b) ? a : b;
@@ -90,7 +95,7 @@ ccl_device_inline float fminf(const float a, const float b)
 {
   return (a < b) ? a : b;
 }
-#  endif /* !__KERNEL_OPENCL__ */
+#endif /* !__KERNEL_OPENCL__ */
 
 #ifndef __KERNEL_COMPUTE__
 using std::isfinite;
@@ -446,7 +451,7 @@ ccl_device_inline float triangle_area(const float3 &v1, const float3 &v2, const 
 ccl_device_inline float triangle_area(const float3 v1, const float3 v2, const float3 v3)
 #endif
 {
-  return len(cross(v3 - v2, v1 - v2)) * 0.5f;
+  return length(cross(v3 - v2, v1 - v2)) * 0.5f;
 }
 
 /* Orthonormal vectors */
@@ -727,7 +732,7 @@ ccl_device_inline float2 map_to_tube(const float3 co)
 
 ccl_device_inline float2 map_to_sphere(const float3 co)
 {
-  float l = len(co);
+  float l = length(co);
   float u, v;
   if (l > 0.0f) {
     if (UNLIKELY(co.x == 0.0f && co.y == 0.0f)) {

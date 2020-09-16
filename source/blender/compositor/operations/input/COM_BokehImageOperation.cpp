@@ -83,6 +83,69 @@ ResolutionType BokehImageOperation::determineResolution(int resolution[2],
 #define OPENCL_CODE
 CCL_NAMESPACE_BEGIN
 
+/**
+ * \brief determine the coordinate of a flap corner.
+ *
+ * \param r: result in bokehimage space are stored [x,y]
+ * \param flapNumber: the flap number to calculate
+ * \param distance: the lens distance is used to simulate lens shifts
+ */
+ccl_device_inline float2 bokehStartPointOfFlap(
+    int flapNumber, float distance, float2 center, float flap_rad, float flap_rad_add)
+{
+  return make_float2(sinf(flap_rad * flapNumber + flap_rad_add) * distance + center.x,
+                     cosf(flap_rad * flapNumber + flap_rad_add) * distance + center.y);
+}
+
+/**
+ * \brief Determine if a coordinate is inside the bokeh image
+ *
+ * \param distance: the distance that will be used.
+ * This parameter is modified a bit to mimic lens shifts.
+ * \param x: the x coordinate of the pixel to evaluate
+ * \param y: the y coordinate of the pixel to evaluate
+ * \return float range 0..1 0 is completely outside
+ */
+ccl_device_inline float bokehIsInside(const float c_distance,
+                                      const float2 coord,
+                                      const float2 center,
+                                      const float flap_rad,
+                                      const float flap_rad_add,
+                                      const float rounding,
+                                      const float catadioptric)
+{
+  float insideBokeh = 0.0f;
+  float2 delta = coord - center;
+
+  const float distanceToCenter = distance(coord, center);
+  const float bearing = (atan2f(delta.x, delta.y) + (M_PI_F * 2.0f));
+  int flapNumber = (int)((bearing - flap_rad_add) / flap_rad);
+
+  float2 lineP1 = bokehStartPointOfFlap(flapNumber, c_distance, center, flap_rad, flap_rad_add);
+  float2 lineP2 = bokehStartPointOfFlap(
+      flapNumber + 1, c_distance, center, flap_rad, flap_rad_add);
+  float2 closestPoint = closest_to_line_v2(coord, lineP1, lineP2);
+
+  const float distanceLineToCenter = distance(center, closestPoint);
+  const float distanceRoundingToCenter = (1.0f - rounding) * distanceLineToCenter +
+                                         rounding * c_distance;
+
+  const float catadioptricDistanceToCenter = distanceRoundingToCenter * catadioptric;
+  if (distanceRoundingToCenter >= distanceToCenter &&
+      catadioptricDistanceToCenter <= distanceToCenter) {
+    if (distanceRoundingToCenter - distanceToCenter < 1.0f) {
+      insideBokeh = (distanceRoundingToCenter - distanceToCenter);
+    }
+    else if (catadioptric != 0.0f && distanceToCenter - catadioptricDistanceToCenter < 1.0f) {
+      insideBokeh = (distanceToCenter - catadioptricDistanceToCenter);
+    }
+    else {
+      insideBokeh = 1.0f;
+    }
+  }
+  return insideBokeh;
+}
+
 ccl_kernel bokehImageOp(CCL_WRITE(dst),
                         const float2 center,
                         const float circular_distance,

@@ -19,71 +19,64 @@
 #include "COM_TranslateOperation.h"
 #include "COM_ComputeKernel.h"
 #include "COM_ExecutionManager.h"
+#include "COM_GlobalManager.h"
 #include "COM_PixelsUtil.h"
 #include "COM_kernel_cpu.h"
+
+TranslateOperation::TranslateOperation() : NodeOperation()
+{
+  this->addInputSocket(SocketType::DYNAMIC);
+  this->addInputSocket(SocketType::VALUE);
+  this->addInputSocket(SocketType::VALUE);
+  this->addOutputSocket(SocketType::DYNAMIC);
+  this->setMainInputSocketIndex(0);
+  this->m_wrappingType = CMP_NODE_WRAP_NONE;
+  m_relative = false;
+}
+
+void TranslateOperation::hashParams()
+{
+  NodeOperation::hashParams();
+  hashParam(m_relative);
+  hashParam(m_wrappingType);
+}
 
 #define OPENCL_CODE
 CCL_NAMESPACE_BEGIN
 
 ccl_kernel translateOp(CCL_WRITE(dst),
-                       CCL_READ(color),
-                       CCL_READ(x_input),
-                       CCL_READ(y_input),
-                       int color_width,
-                       int color_height,
-                       BOOL relative,
+                       CCL_READ(img),
+                       int translate_x,
+                       int translate_y,
+                       int last_x,
+                       int last_y,
                        BOOL wrap_x,
                        BOOL wrap_y)
 
 {
-  READ_DECL(color);
-  READ_DECL(x_input);
-  READ_DECL(y_input);
+  READ_DECL(img);
   WRITE_DECL(dst);
+  int2 read_coords;
 
   CPU_LOOP_START(dst);
 
-  COPY_COORDS(x_input, dst_coords);
-  COPY_COORDS(y_input, dst_coords);
+  read_coords.x = dst_coords.x - translate_x;
+  read_coords.y = dst_coords.y - translate_y;
 
-  READ_IMG1(x_input, x_input_pix);
-  READ_IMG1(y_input, y_input_pix);
-
-  int2 read_coords;
-  if (relative) {
-    read_coords.x = dst_coords.x - x_input_pix.x * color_width;
-    read_coords.y = dst_coords.y - y_input_pix.x * color_height;
-  }
-  else {
-    read_coords.x = dst_coords.x - x_input_pix.x;
-    read_coords.y = dst_coords.y - y_input_pix.x;
-  }
-
-  BOOL clip = FALSE;
   if (wrap_x) {
-    read_coords.x = wrapf(read_coords.x, color_width, 0);
-  }
-  else {
-    if (read_coords.x < 0 || read_coords.x >= color_width) {
-      clip = TRUE;
-    }
+    read_coords.x = wrapf(read_coords.x, last_x, 0);
   }
   if (wrap_y) {
-    read_coords.y = wrapf(read_coords.y, color_height, 0);
-  }
-  else {
-    if (read_coords.y < 0 || read_coords.y >= color_height) {
-      clip = TRUE;
-    }
+    read_coords.y = wrapf(read_coords.y, last_y, 0);
   }
 
-  if (clip) {
+  if (read_coords.x > last_x || read_coords.x < 0 || read_coords.y > last_y || read_coords.y < 0) {
     WRITE_IMG(dst, TRANSPARENT_PIXEL);
   }
   else {
-    COPY_COORDS(color, read_coords);
-    READ_IMG(color, color_pix);
-    WRITE_IMG(dst, color_pix);
+    COPY_COORDS(img, read_coords);
+    READ_IMG(img, img_pix);
+    WRITE_IMG(dst, img_pix);
   }
 
   CPU_LOOP_END
@@ -93,7 +86,6 @@ CCL_NAMESPACE_END
 #undef OPENCL_CODE
 
 using namespace std::placeholders;
-
 void TranslateOperation::execPixels(ExecutionManager &man)
 {
   bool wrap_x = false;
@@ -115,55 +107,37 @@ void TranslateOperation::execPixels(ExecutionManager &man)
       break;
   }
 
-  auto color_input = getInputOperation(0)->getPixels(this, man);
-  auto x_input = getInputOperation(1)->getPixels(this, man);
-  auto y_input = getInputOperation(2)->getPixels(this, man);
+  auto img_input = getInputOperation(0)->getPixels(this, man);
+  auto x_pix = getInputOperation(1)->getSinglePixel(this, man, 0, 0);
+  auto y_pix = getInputOperation(2)->getSinglePixel(this, man, 0, 0);
 
-  // we need full image input rect because translation can be variant between pixels
-  int color_width;
-  int color_height;
-  if (color_input) {
-    color_width = color_input->getWidth();
-    color_height = color_input->getHeight();
+  int color_width = 0;
+  int color_height = 0;
+  if (img_input) {
+    color_width = img_input->getWidth();
+    color_height = img_input->getHeight();
   }
 
+  int translate_x = 0, translate_y = 0;
+  if (x_pix) {
+    translate_x = m_relative ? x_pix[0] * color_width : x_pix[0];
+  }
+  if (y_pix) {
+    translate_y = m_relative ? y_pix[0] * color_height : y_pix[0];
+  }
+  int last_x = color_width - 1;
+  int last_y = color_height - 1;
+
+  auto sampler = PixelsSampler{PixelInterpolation::NEAREST, PixelExtend::CLIP};
   std::function<void(PixelsRect &, const WriteRectContext &)> cpu_write = std::bind(
-      CCL::translateOp,
-      _1,
-      color_input,
-      x_input,
-      y_input,
-      color_width,
-      color_height,
-      m_relative,
-      wrap_x,
-      wrap_y);
+      CCL::translateOp, _1, img_input, translate_x, translate_y, last_x, last_y, wrap_x, wrap_y);
   computeWriteSeek(man, cpu_write, "translateOp", [&](ComputeKernel *kernel) {
-    kernel->addReadImgArgs(*color_input);
-    kernel->addReadImgArgs(*x_input);
-    kernel->addReadImgArgs(*y_input);
-    kernel->addIntArg(color_width);
-    kernel->addIntArg(color_height);
-    kernel->addBoolArg(m_relative);
+    kernel->addReadImgArgs(*img_input);
+    kernel->addIntArg(translate_x);
+    kernel->addIntArg(translate_y);
+    kernel->addIntArg(last_x);
+    kernel->addIntArg(last_y);
     kernel->addBoolArg(wrap_x);
     kernel->addBoolArg(wrap_y);
   });
-}
-
-TranslateOperation::TranslateOperation() : NodeOperation()
-{
-  this->addInputSocket(SocketType::DYNAMIC);
-  this->addInputSocket(SocketType::VALUE);
-  this->addInputSocket(SocketType::VALUE);
-  this->addOutputSocket(SocketType::DYNAMIC);
-  this->setMainInputSocketIndex(0);
-  this->m_wrappingType = CMP_NODE_WRAP_NONE;
-  m_relative = false;
-}
-
-void TranslateOperation::hashParams()
-{
-  NodeOperation::hashParams();
-  hashParam(m_relative);
-  hashParam(m_wrappingType);
 }

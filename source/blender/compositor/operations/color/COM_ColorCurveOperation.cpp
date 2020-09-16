@@ -103,8 +103,8 @@ void ColorCurveOperation::deinitExecution()
 void ConstantLevelColorCurveOperation::hashParams()
 {
   CurveBaseOperation::hashParams();
-  hashDataAsParam(m_black, 3);
-  hashDataAsParam(m_white, 3);
+  hashFloatData(m_black, 3);
+  hashFloatData(m_white, 3);
 }
 
 ConstantLevelColorCurveOperation::ConstantLevelColorCurveOperation() : CurveBaseOperation()

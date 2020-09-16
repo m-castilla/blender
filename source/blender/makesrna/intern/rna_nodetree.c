@@ -364,7 +364,7 @@ const EnumPropertyItem rna_enum_node_filter_items[] = {
 static const EnumPropertyItem node_sampler_type_items[] = {
     {0, "NEAREST", 0, "Nearest", ""},
     {1, "BILINEAR", 0, "Bilinear", ""},
-    {2, "BICUBIC", 0, "Bicubic", ""},
+    // {2, "BICUBIC", 0, "Bicubic", ""},
     {0, NULL, 0, NULL, NULL},
 };
 
