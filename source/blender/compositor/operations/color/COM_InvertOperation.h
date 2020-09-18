@@ -38,6 +38,6 @@ class InvertOperation : public NodeOperation {
   }
 
  protected:
-  virtual void hashParams();
+  virtual void hashParams() override;
   virtual void execPixels(ExecutionManager &man) override;
 };

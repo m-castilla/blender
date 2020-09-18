@@ -75,6 +75,8 @@ ccl_device_inline void accumulate(CCL_IMAGE(color),
                                   float sum[4],
                                   int count[3],
                                   uint64_t *random_state,
+                                  unsigned int *random_idx_state,
+                                  int2 dst_coords,
                                   BOOL jitter)
 {
   float4 color_pix;
@@ -87,8 +89,11 @@ ccl_device_inline void accumulate(CCL_IMAGE(color),
   float dk4 = dk4_array[a];
 
   for (float z = 0; z < ds; z++) {
-    float tz = (z + (jitter ? random_float(random_state) : 0.5f)) * sd;
+    // printf("accumulate: %ul\n", *random_state);
+    float tz = (z + (jitter ? random_float(random_state, random_idx_state, dst_coords) : 0.5f)) *
+               sd;
     float t = 1.0f - (k4 + tz * dk4) * r_sq;
+    // printf("after: %ul\n", *random_state);
 
     float2 color_coordsf;
     distort_uv(uv, width, height, t, &color_coordsf);
@@ -113,12 +118,11 @@ ccl_kernel screenLensDistortOp(CCL_WRITE(dst),
                                const float cy,
                                ccl_constant float k4[3],
                                ccl_constant float dk4[3],
-                               uint64_t random_state,
+                               uint64_t random_seed,
                                BOOL jitter)
 {
   READ_DECL(color);
   WRITE_DECL(dst);
-
   CPU_LOOP_START(dst);
 
   float2 uv;
@@ -134,8 +138,10 @@ ccl_kernel screenLensDistortOp(CCL_WRITE(dst),
   bool valid_g = get_delta(uv_dot, k4[1], uv, width, height, &delta[1]);
   bool valid_b = get_delta(uv_dot, k4[2], uv, width, height, &delta[2]);
 
+  unsigned int random_idx_state = 0;
   if (valid_r && valid_g && valid_b) {
     int a = 0, b = 1;
+    // printf("%ul\n", random_state);
     accumulate(CCL_IMAGE_ARG(color),
                bilinear_sampler,
                width,
@@ -149,7 +155,9 @@ ccl_kernel screenLensDistortOp(CCL_WRITE(dst),
                dk4,
                sum,
                count,
-               &random_state,
+               &random_seed,
+               &random_idx_state,
+               dst_coords,
                jitter);
     a = 1;
     b = 2;
@@ -166,7 +174,9 @@ ccl_kernel screenLensDistortOp(CCL_WRITE(dst),
                dk4,
                sum,
                count,
-               &random_state,
+               &random_seed,
+               &random_idx_state,
+               dst_coords,
                jitter);
 
     color_pix = BLACK_PIXEL;
@@ -251,8 +261,8 @@ void ScreenLensDistortionOperation::execPixels(ExecutionManager &man)
     kernel->addFloatArg(sc);
     kernel->addFloatArg(cx);
     kernel->addFloatArg(cy);
-    kernel->addFloatCArrayArg(k4, 3);
-    kernel->addFloatCArrayArg(dk4, 3);
+    kernel->addFloatArrayArg(k4, 3, MemoryAccess::READ);
+    kernel->addFloatArrayArg(dk4, 3, MemoryAccess::READ);
     kernel->addRandomSeedArg();
     kernel->addBoolArg(m_jitter);
   });

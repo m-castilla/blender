@@ -46,12 +46,12 @@ class MixBaseOperation : public NodeOperation {
   /**
    * Initialize the execution
    */
-  void initExecution();
+  void initExecution() override;
 
   /**
    * Deinitialize the execution
    */
-  void deinitExecution();
+  void deinitExecution() override;
 
   // void determineResolution(int resolution[2], int preferredResolution[2]);
 

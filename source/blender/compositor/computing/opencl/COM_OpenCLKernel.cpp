@@ -260,19 +260,34 @@ void OpenCLKernel::addFloat4Arg(const CCL::float4 &value)
   m_args_count++;
 }
 
-cl_mem OpenCLKernel::addReadOnlyBufferArg(void *data, int elem_size, int n_elems)
+cl_mem OpenCLKernel::addBufferArg(void *data, int elem_size, int n_elems, MemoryAccess mem_access)
 {
   cl_int error;
 
   // if there is no data, just fill buffer with 1 elem as size (some OpenCL implementations
   // fail when passing null to kernels)
   size_t data_size = data ? elem_size * n_elems : elem_size;
+  int mem_access_flag = 0;
+  switch (mem_access) {
+    case MemoryAccess::READ:
+      mem_access_flag = CL_MEM_READ_ONLY;
+      break;
+    case MemoryAccess::WRITE:
+      mem_access_flag = CL_MEM_WRITE_ONLY;
+      break;
+    case MemoryAccess::READ_WRITE:
+      mem_access_flag = CL_MEM_READ_WRITE;
+      break;
+    default:
+      BLI_assert(!"Non implemented memory access");
+      break;
+  }
   cl_mem buffer = clCreateBuffer(
-      m_platform.getContext(), CL_MEM_READ_ONLY, data_size, NULL, &error);
+      m_platform.getContext(), mem_access_flag, data_size, NULL, &error);
   m_man.printIfError(error);
   m_args_buffers.push_back(buffer);
 
-  if (data) {
+  if (data && mem_access != MemoryAccess::WRITE) {
     m_man.printIfError(clEnqueueWriteBuffer(
         m_device->getQueue(), buffer, CL_FALSE, 0, data_size, data, 0, NULL, NULL));
     m_work_enqueued = true;
@@ -284,7 +299,9 @@ cl_mem OpenCLKernel::addReadOnlyBufferArg(void *data, int elem_size, int n_elems
   return buffer;
 }
 
-void OpenCLKernel::addFloat3CArrayArg(const CCL::float3 *float3_array, int n_elems)
+void OpenCLKernel::addFloat3ArrayArg(const CCL::float3 *float3_array,
+                                     int n_elems,
+                                     MemoryAccess mem_access)
 {
   cl_float3 *data = nullptr;
   size_t elem_size = sizeof(cl_float3);
@@ -300,10 +317,12 @@ void OpenCLKernel::addFloat3CArrayArg(const CCL::float3 *float3_array, int n_ele
     }
     m_args_datas.push_back(data);
   }
-  addReadOnlyBufferArg(data, elem_size, n_elems);
+  addBufferArg(data, elem_size, n_elems, mem_access);
 }
 
-void OpenCLKernel::addFloat4CArrayArg(const CCL::float4 *float4_array, int n_elems)
+void OpenCLKernel::addFloat4ArrayArg(const CCL::float4 *float4_array,
+                                     int n_elems,
+                                     MemoryAccess mem_access)
 {
   cl_float4 *data = nullptr;
   size_t elem_size = sizeof(cl_float4);
@@ -320,15 +339,20 @@ void OpenCLKernel::addFloat4CArrayArg(const CCL::float4 *float4_array, int n_ele
     }
     m_args_datas.push_back(data);
   }
-  addReadOnlyBufferArg(data, elem_size, n_elems);
+  addBufferArg(data, elem_size, n_elems, mem_access);
 }
 
-void OpenCLKernel::addIntCArrayArg(int *int_array, int n_elems)
+void OpenCLKernel::addIntArrayArg(int *int_array, int n_elems, MemoryAccess mem_access)
 {
-  addReadOnlyBufferArg(int_array, sizeof(cl_int), n_elems);
+  addBufferArg(int_array, sizeof(cl_int), n_elems, mem_access);
 }
 
-void OpenCLKernel::addFloatCArrayArg(float *float_array, int n_elems)
+void OpenCLKernel::addFloatArrayArg(float *float_array, int n_elems, MemoryAccess mem_access)
 {
-  addReadOnlyBufferArg(float_array, sizeof(cl_float), n_elems);
+  addBufferArg(float_array, sizeof(cl_float), n_elems, mem_access);
+}
+
+void OpenCLKernel::addUInt64ArrayArg(uint64_t *uint64_array, int n_elems, MemoryAccess mem_access)
+{
+  addBufferArg(uint64_array, sizeof(cl_ulong), n_elems, mem_access);
 }

@@ -23,8 +23,8 @@
 #include "COM_ExecutionManager.h"
 #include "COM_GlobalManager.h"
 #include "COM_NodeOperation.h"
-#include <functional>
 #include "COM_kernel_cpu.h"
+#include <functional>
 
 class GaussianBlurBaseOperation : public BlurBaseOperation {
  protected:
@@ -92,14 +92,16 @@ class GaussianBlurBaseOperation : public BlurBaseOperation {
         quality_step);
     computeWriteSeek(man, cpu_write, kernel_name, [&](ComputeKernel *kernel) {
       kernel->addReadImgArgs(*src);
-      kernel->addFloatCArrayArg(gausstab->host.buffer, gausstab->width * gausstab->height);
+      kernel->addFloatArrayArg(
+          gausstab->host.buffer, gausstab->width * gausstab->height, MemoryAccess::READ);
 
       if (distbuf_inv) {
-        kernel->addFloatCArrayArg(distbuf_inv->host.buffer,
-                                  distbuf_inv->width * distbuf_inv->height);
+        kernel->addFloatArrayArg(distbuf_inv->host.buffer,
+                                 distbuf_inv->width * distbuf_inv->height,
+                                 MemoryAccess::READ);
       }
       else {
-        kernel->addFloatCArrayArg(nullptr, 0);
+        kernel->addFloatArrayArg(nullptr, 0, MemoryAccess::READ);
       }
       kernel->addBoolArg(do_invert);
       kernel->addIntArg(filter_size);

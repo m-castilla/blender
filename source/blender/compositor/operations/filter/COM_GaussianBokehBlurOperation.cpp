@@ -167,7 +167,8 @@ void GaussianBokehBlurOperation::execPixels(ExecutionManager &man)
       quality_step);
   computeWriteSeek(man, cpu_write, "gaussianBokehBlurOp", [&](ComputeKernel *kernel) {
     kernel->addReadImgArgs(*value);
-    kernel->addFloatCArrayArg(gausstab->host.buffer, gausstab->width * gausstab->height);
+    kernel->addFloatArrayArg(
+        gausstab->host.buffer, gausstab->width * gausstab->height, MemoryAccess::READ);
     kernel->addIntArg(getWidth());
     kernel->addIntArg(getHeight());
     kernel->addIntArg(m_radx);
@@ -381,8 +382,9 @@ void GaussianBlurReferenceOperation::execPixels(ExecutionManager &man)
   computeWriteSeek(man, cpu_write, "gaussianBlurReferenceOp", [&](ComputeKernel *kernel) {
     kernel->addReadImgArgs(*color);
     kernel->addReadImgArgs(*size);
-    kernel->addFloatCArrayArg(ref_gauss->host.buffer, ref_gauss->width * ref_gauss->height);
-    kernel->addIntCArrayArg(ref_gauss_offsets, n_gauss_tabs);
+    kernel->addFloatArrayArg(
+        ref_gauss->host.buffer, ref_gauss->width * ref_gauss->height, MemoryAccess::READ);
+    kernel->addIntArrayArg(ref_gauss_offsets, n_gauss_tabs, MemoryAccess::READ);
     kernel->addIntArg(getWidth());
     kernel->addIntArg(getHeight());
     kernel->addFloatArg(m_radx);

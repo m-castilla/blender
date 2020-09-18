@@ -182,7 +182,7 @@ void DirectionalBlurOperation::execPixels(ExecutionManager &man)
     kernel->addReadImgArgs(*color);
     kernel->addSamplerArg(sampler);
     kernel->addIntArg(m_iterations);
-    kernel->addFloatCArrayArg(it_table, m_iterations * it_table_row_length);
+    kernel->addFloatArrayArg(it_table, m_iterations * it_table_row_length, MemoryAccess::READ);
     kernel->addIntArg(it_table_row_length);
     kernel->addFloat4Arg(one_by_iterations_plus_one_f4);
     kernel->addFloatArg(m_pix_center_x);

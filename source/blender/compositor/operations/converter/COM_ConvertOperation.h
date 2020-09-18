@@ -27,8 +27,8 @@ class ConvertBaseOperation : public NodeOperation {
  public:
   ConvertBaseOperation();
 
-  void initExecution();
-  void deinitExecution();
+  void initExecution() override;
+  void deinitExecution() override;
 };
 
 class ConvertValueToColorOperation : public ConvertBaseOperation {
