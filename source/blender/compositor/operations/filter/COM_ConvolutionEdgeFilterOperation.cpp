@@ -147,7 +147,7 @@ void ConvolutionEdgeFilterOperation::execPixels(ExecutionManager &man)
   computeWriteSeek(man, cpu_write, "convolutionEdgeFilterOp", [&](ComputeKernel *kernel) {
     kernel->addReadImgArgs(*color);
     kernel->addReadImgArgs(*value);
-    kernel->addFloat3CArrayArg(m_filter_f3, COM_CONVOLUTION_FILTER_SIZE);
+    kernel->addFloat3ArrayArg(m_filter_f3, COM_CONVOLUTION_FILTER_SIZE, MemoryAccess::READ);
     kernel->addInt3Arg(last_x);
     kernel->addInt3Arg(last_y);
   });

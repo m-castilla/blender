@@ -61,12 +61,15 @@ class OpenCLKernel : public ComputeKernel {
   void addFloat3Arg(const CCL::float3 &value) override;
   void addFloat4Arg(const CCL::float4 &value) override;
 
-  /* Constant read only array args */
-  void addFloat3CArrayArg(const CCL::float3 *float3_array, int n_elems) override;
-  void addFloat4CArrayArg(const CCL::float4 *float4_array, int n_elems) override;
-  void addIntCArrayArg(int *int_array, int n_elems) override;
-  void addFloatCArrayArg(float *float_array, int n_elems) override;
-  /* */
+  void addFloat3ArrayArg(const CCL::float3 *float3_array,
+                         int n_elems,
+                         MemoryAccess mem_access) override;
+  void addFloat4ArrayArg(const CCL::float4 *float4_array,
+                         int n_elems,
+                         MemoryAccess mem_access) override;
+  void addIntArrayArg(int *int_array, int n_elems, MemoryAccess mem_access) override;
+  void addFloatArrayArg(float *float_array, int n_elems, MemoryAccess mem_access) override;
+  void addUInt64ArrayArg(uint64_t *uint64_array, int n_elems, MemoryAccess mem_access) override;
 
   bool hasWorkEnqueued() override
   {
@@ -84,7 +87,7 @@ class OpenCLKernel : public ComputeKernel {
   }
 
  private:
-  cl_mem addReadOnlyBufferArg(void *data, int elem_size, int n_elems);
+  cl_mem addBufferArg(void *data, int elem_size, int n_elems, MemoryAccess mem_access);
 };
 
 #endif

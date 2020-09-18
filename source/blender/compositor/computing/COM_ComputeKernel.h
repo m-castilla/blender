@@ -2,6 +2,11 @@
 #define __COM_COMPUTEKERNEL_H__
 
 #include <string>
+#ifdef WITH_CXX_GUARDEDALLOC
+#  include "MEM_guardedalloc.h"
+#endif
+
+#include "COM_Buffer.h"
 
 #include "COM_kernel_cpu.h"
 
@@ -32,12 +37,15 @@ class ComputeKernel {
   // Parameter in kernel signature must be uint64_t
   virtual void addRandomSeedArg();
 
-  /* Constant read only array args */
-  virtual void addFloat3CArrayArg(const CCL::float3 *float3_array, int n_elems) = 0;
-  virtual void addFloat4CArrayArg(const CCL::float4 *carray, int n_elems) = 0;
-  virtual void addIntCArrayArg(int *value, int n_elems) = 0;
-  virtual void addFloatCArrayArg(float *float_array, int n_elems) = 0;
-  /* */
+  virtual void addFloat3ArrayArg(const CCL::float3 *float3_array,
+                                 int n_elems,
+                                 MemoryAccess mem_access) = 0;
+  virtual void addFloat4ArrayArg(const CCL::float4 *carray,
+                                 int n_elems,
+                                 MemoryAccess mem_access) = 0;
+  virtual void addIntArrayArg(int *value, int n_elems, MemoryAccess mem_access) = 0;
+  virtual void addFloatArrayArg(float *float_array, int n_elems, MemoryAccess mem_access) = 0;
+  virtual void addUInt64ArrayArg(uint64_t *uint64_array, int n_elems, MemoryAccess mem_access) = 0;
 
   virtual bool hasWorkEnqueued() = 0;
 
@@ -47,6 +55,10 @@ class ComputeKernel {
 
  protected:
   ComputeKernel(std::string kernel_name);
+
+#ifdef WITH_CXX_GUARDEDALLOC
+  MEM_CXX_CLASS_ALLOC_FUNCS("COM:TmpBuffer")
+#endif
 };
 
 #endif

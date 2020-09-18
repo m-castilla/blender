@@ -38,5 +38,5 @@ class AlphaOverMixedOperation : public MixBaseOperation {
 
  protected:
   virtual void execPixels(ExecutionManager &man) override;
-  virtual void hashParams();
+  virtual void hashParams() override;
 };

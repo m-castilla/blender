@@ -19,6 +19,7 @@
 #ifndef __COM_BUFFER_H__
 #define __COM_BUFFER_H__
 
+#include "COM_Buffer.h"
 #include "COM_defines.h"
 #include <string>
 #ifdef WITH_CXX_GUARDEDALLOC

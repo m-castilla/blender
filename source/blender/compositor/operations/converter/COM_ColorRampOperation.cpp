@@ -102,8 +102,8 @@ void ColorRampOperation::execPixels(ExecutionManager &man)
     kernel->addIntArg(m_colorBand->ipotype);
     kernel->addIntArg(m_colorBand->ipotype_hue);
     kernel->addIntArg(m_colorBand->color_mode);
-    kernel->addFloat4CArrayArg(colors, n_bands);
-    kernel->addFloatCArrayArg(positions, n_bands);
+    kernel->addFloat4ArrayArg(colors, n_bands, MemoryAccess::READ);
+    kernel->addFloatArrayArg(positions, n_bands, MemoryAccess::READ);
   });
 
   delete[] colors;
