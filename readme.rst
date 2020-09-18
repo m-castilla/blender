@@ -2,16 +2,6 @@ This is an experimental and unofficial Blender branch (https://www.blender.org/)
 
 I tried to reuse as much of compositor code as possible but in the end I almost changed everything, it's a very different approach from the previous compositor. So it could be said it's a new compositor system. 
 
-Currently I'm adapting all image operations to this new system. Only the following nodes are implemented at the moment (don't try the others, don't work):
-
-- All input nodes (including Memory Cache)
-- All output nodes
-- All color nodes
-- All convert nodes
-- All filter nodes
-- From distort group: Scale and Translate nodes
-- All things from group and layout can be used too.
-
 These are some of the changes from the previous system (is explained from development point of view):
 
 About writing and reading pixels
@@ -63,7 +53,6 @@ Other changes
 
 TODO
 ========
-- Get to work all the remaining nodes. 
 - Fixing bugs.
 - Better documentation if required.
 - Implement relative space.
