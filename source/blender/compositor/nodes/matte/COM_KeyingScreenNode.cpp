@@ -40,7 +40,7 @@ void KeyingScreenNode::convertToOperations(NodeConverter &converter,
   KeyingScreenOperation *operation = new KeyingScreenOperation();
   operation->setMovieClip(clip);
   operation->setTrackingObject(keyingscreen_data->tracking_object);
-  operation->setFramenumber(context.getFramenumber());
+  operation->setFramenumber(context.getCurrentFrame());
   converter.addOperation(operation);
 
   converter.mapOutputSocket(outputScreen, operation->getOutputSocket());

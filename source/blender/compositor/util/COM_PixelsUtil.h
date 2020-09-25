@@ -29,34 +29,37 @@ int getNUsedChannels(DataType dataType);
 DataType getNUsedChannelsDataType(int n_used_chs);
 SocketType dataToSocketType(DataType d);
 
-void copyBufferRect(PixelsRect &dst, float *read_buf, int n_used_chs, int n_buf_chs);
+void copyBufferRect(PixelsRect &dst, float *read_buf, int n_used_chs, int dst_buf_chs);
 void copyBufferRectNChannels(PixelsRect &dst,
                              float *read_buf,
                              int n_copied_channels,
                              int n_buf_chs);
 void copyBufferRectChannel(
-    PixelsRect &dst, int to_ch_idx, float *read_buf, int from_ch_idx, int n_buf_chs);
+    PixelsRect &dst, int to_ch_idx, float *read_buf, int from_ch_idx, int dst_buf_chs);
 
-void copyBufferRect(PixelsRect &dst, unsigned char *read_buf, int n_used_chs, int n_buf_chs);
+void copyBufferRect(PixelsRect &dst, unsigned char *read_buf, int n_used_chs, int dst_buf_chs);
 void copyBufferRectNChannels(PixelsRect &dst,
                              unsigned char *read_buf,
                              int n_channels,
-                             int n_buf_chs);
+                             int dst_buf_chs);
 void copyBufferRectChannel(
-    PixelsRect &dst, int to_ch_idx, unsigned char *read_buf, int from_ch_idx, int n_buf_chs);
+    PixelsRect &dst, int to_ch_idx, unsigned char *read_buf, int from_ch_idx, int dst_buf_chs);
 
 // returns whether the ImgBuf byte buffer was used for reading or not
-bool copyImBufRect(PixelsRect &dst, ImBuf *imbuf, int n_used_chs, int n_buf_chs);
+bool copyImBufRect(PixelsRect &dst, ImBuf *imbuf, int n_used_chs, int dst_buf_chs);
 // returns whether the ImgBuf byte buffer was used for reading or not
-bool copyImBufRectNChannels(PixelsRect &dst, ImBuf *imbuf, int n_channels, int n_buf_chs);
+bool copyImBufRectNChannels(PixelsRect &dst, ImBuf *imbuf, int n_channels, int dst_buf_chs);
 // returns whether the ImgBuf byte buffer was used for reading or not
 bool copyImBufRectChannel(
-    PixelsRect &dst, int to_ch_idx, ImBuf *imbuf, int from_ch_idx, int n_buf_chs);
+    PixelsRect &dst, int to_ch_idx, ImBuf *imbuf, int from_ch_idx, int dst_buf_chs);
 
 void copyBufferRect(
-    float *dst_buf, PixelsRect &dst_rect, int n_used_chs, int n_buf_chs, PixelsRect &src_rect);
-void copyBufferRectNChannels(
-    float *dst_buf, PixelsRect &dst_rect, int n_used_chs, int n_channels, PixelsRect &src_rect);
+    float *dst_buf, PixelsRect &dst_rect, int n_used_chs, int dst_buf_chs, PixelsRect &src_rect);
+void copyBufferRectNChannels(float *dst_buf,
+                             PixelsRect &dst_rect,
+                             int n_used_chs,
+                             int n_chandst_buf_chsnels,
+                             PixelsRect &src_rect);
 void copyBufferRectChannel(float *dst_buf,
                            int to_ch_idx,
                            PixelsRect &dst_rect,

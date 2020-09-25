@@ -2726,6 +2726,11 @@ static void node_composit_buts_denoise(uiLayout *layout, bContext *UNUSED(C), Po
   uiItemR(layout, ptr, "use_hdr", DEFAULT_FLAGS, NULL, ICON_NONE);
 }
 
+static void node_composit_buts_cache(uiLayout *layout, bContext *UNUSED(C), PointerRNA *ptr)
+{
+  uiItemR(layout, ptr, "persistent", DEFAULT_FLAGS, NULL, ICON_NONE);
+}
+
 static void node_composit_buts_videoseq(uiLayout *layout, bContext *UNUSED(C), PointerRNA *ptr)
 {
   uiItemR(layout, ptr, "channel", DEFAULT_FLAGS, NULL, ICON_NONE);
@@ -2970,6 +2975,9 @@ static void node_composit_set_butfunc(bNodeType *ntype)
       break;
     case CMP_NODE_DENOISE:
       ntype->draw_buttons = node_composit_buts_denoise;
+      break;
+    case CMP_NODE_CACHE:
+      ntype->draw_buttons = node_composit_buts_cache;
       break;
     case CMP_NODE_VIDEO_SEQ:
       ntype->draw_buttons = node_composit_buts_videoseq;

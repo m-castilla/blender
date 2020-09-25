@@ -16,14 +16,17 @@
  * Copyright 2020, Blender Foundation.
  */
 
-#include "COM_BufferManager.h"
 #include "BLI_assert.h"
 #include "BLI_rect.h"
 #include "BLI_utildefines.h"
-#include "COM_BrightnessOperation.h"
+#include <algorithm>
+#include <ctime>
+
 #include "COM_Buffer.h"
+#include "COM_BufferManager.h"
 #include "COM_BufferRecycler.h"
 #include "COM_BufferUtil.h"
+#include "COM_CacheManager.h"
 #include "COM_CompositorContext.h"
 #include "COM_ComputeDevice.h"
 #include "COM_ExecutionManager.h"
@@ -32,30 +35,23 @@
 #include "COM_ReadsOptimizer.h"
 #include "COM_RectUtil.h"
 #include "COM_defines.h"
-#include <algorithm>
-#include <ctime>
 
 const size_t CLEAN_CACHE_STEP_BYTES = 64 * 1024 * 1024;  // 64MB
                                                          /* Pass arguments into this contructor*/
 using namespace std::placeholders;
-BufferManager::BufferManager()
-    : m_initialized(false),
+BufferManager::BufferManager(CacheManager &cache_manager)
+    : m_cache_manager(cache_manager),
+      m_initialized(false),
       m_optimizers(),
-      m_cached_buffers(),
       m_recycler(),
       m_readers_reads(),
-      m_reads_gotten(false),
-      m_max_cache_bytes(0),
-      m_current_cache_bytes(0)
+      m_reads_gotten(false)
 {
 }
 
 BufferManager::~BufferManager()
 {
   deinitialize(false);
-  for (const auto &cache : m_cached_buffers) {
-    BufferUtil::deleteCacheBuffer(cache.second);
-  }
 }
 
 void BufferManager::initialize(const CompositorContext &context)
@@ -66,11 +62,6 @@ void BufferManager::initialize(const CompositorContext &context)
       m_recycler = std::unique_ptr<BufferRecycler>(new BufferRecycler());
     }
     m_recycler->setExecutionId(context.getExecutionId());
-
-    m_max_cache_bytes = context.getBufferCacheSize();
-    BLI_assert(m_max_cache_bytes >= CLEAN_CACHE_STEP_BYTES);
-
-    checkCache();
 
     m_initialized = true;
   }
@@ -117,38 +108,6 @@ void BufferManager::deinitialize(bool isBreaked)
   }
 }
 
-/* check if current cache size is greater than max, if so we delete the oldest used caches until
- size is under maximum */
-void BufferManager::checkCache()
-{
-  while (m_current_cache_bytes > m_max_cache_bytes && m_cached_buffers.size() > 1) {
-    size_t desired_bytes = CLEAN_CACHE_STEP_BYTES > m_max_cache_bytes ?
-                               0 :
-                               m_max_cache_bytes - CLEAN_CACHE_STEP_BYTES;
-    std::vector<std::pair<OpKey, CacheBuffer *>> caches_by_time(m_cached_buffers.begin(),
-                                                                m_cached_buffers.end());
-    std::sort(caches_by_time.begin(),
-              caches_by_time.end(),
-              [&](std::pair<OpKey, CacheBuffer *> entry1, std::pair<OpKey, CacheBuffer *> entry2) {
-                return entry1.second->last_use_time < entry2.second->last_use_time;
-              });
-
-    // we never delete the last cache added, would be undesirable for the user (end() - 1)
-    for (auto it = caches_by_time.begin(); it != caches_by_time.end() - 1; it++) {
-      if (m_current_cache_bytes > desired_bytes) {
-        CacheBuffer *cache = it->second;
-        HostBuffer host = cache->host;
-        m_current_cache_bytes -= cache->height * host.brow_bytes;
-        BufferUtil::deleteCacheBuffer(it->second);
-        m_cached_buffers.erase(it->first);
-      }
-      else {
-        break;
-      }
-    }
-  }
-}
-
 static std::shared_ptr<PixelsRect> tmpPixelsRect(NodeOperation *op,
                                                  ExecutionManager &man,
                                                  const rcti &op_rect,
@@ -179,7 +138,7 @@ void BufferManager::readOptimize(NodeOperation *op,
                                  ExecutionManager &man)
 {
   ReadsOptimizer *optimizer;
-  auto key = op->getKey();
+  auto &key = op->getKey();
 
   auto find_it = m_optimizers.find(key);
   if (find_it == m_optimizers.end()) {
@@ -207,22 +166,16 @@ BufferManager::ReadResult BufferManager::readSeek(NodeOperation *op, ExecutionMa
     auto optimizer = optimizer_found->second;
     auto reads = optimizer->peepReads(man);
 
-    if (op->getBufferType() == BufferType::CACHED) {
-      CacheBuffer *cache = getCache(op);
-      BLI_assert(cache);
-      if (cache->host.state == HostMemoryState::FILLED) {
+    if (m_cache_manager.hasCache(op)) {
+      TmpBuffer *cache = m_cache_manager.getCache(op);
+      if (cache) {
+        BLI_assert(cache->host.state == HostMemoryState::FILLED);
         if (!reads->is_write_complete) {
           reads->is_write_complete = true;
           reportWriteCompleted(op, reads, man);
         }
-        reads->tmp_buffer = m_recycler->createStdTmpBuffer(
-            false, nullptr, op->getWidth(), op->getHeight(), op->getOutputNUsedChannels());
-        reads->tmp_buffer->host = cache->host;
+        reads->tmp_buffer = cache;
         ASSERT_VALID_STD_TMP_BUFFER(reads->tmp_buffer, cache->width, cache->height);
-      }
-      else {
-        BLI_assert(cache->host.state == HostMemoryState::CLEARED);
-        BLI_assert(!reads->is_write_complete);
       }
     }
     else if (op->getBufferType() == BufferType::NO_BUFFER_NO_WRITE) {
@@ -266,15 +219,17 @@ void BufferManager::writeSeek(NodeOperation *op,
       }
       bool do_write = true;
       bool is_write_computed = op->isComputed(man);
-      if (op->getBufferType() == BufferType::CACHED) {
-        CacheBuffer *cache = getCache(op);
+      if (m_cache_manager.isCacheable(op)) {
+        BLI_assert(!is_write_computed);
+        TmpBuffer *cache = m_cache_manager.getCachedOrNewAndPrefetchNext(op);
         BLI_assert(cache);
-        // write cache should only be called when it's cleared because if filled it should be
-        // returned on readSeek
-        BLI_assert(cache->host.state == HostMemoryState::CLEARED);
-        reads->tmp_buffer = m_recycler->createStdTmpBuffer(
-            false, nullptr, op->getWidth(), op->getHeight(), op->getOutputNUsedChannels());
-        reads->tmp_buffer->host = cache->host;
+        if (cache->host.state == HostMemoryState::FILLED) {
+          do_write = false;
+        }
+        else {
+          BLI_assert(cache->host.state == HostMemoryState::CLEARED);
+        }
+        reads->tmp_buffer = cache;
       }
       else if (op->getBufferType() == BufferType::CUSTOM) {
         reads->tmp_buffer = getCustomBuffer(op);
@@ -432,11 +387,12 @@ bool BufferManager::prepareForWrite(bool is_write_computed,
     if (take_recycle) {
       work_enqueued |= m_recycler->takeStdRecycle(recycle_type, buf, width, height, elem_chs);
       BLI_assert(recycle_type != BufferRecycleType::HOST_CLEAR ||
-                 (buf->host.buffer != nullptr && buf->host.bwidth > 0 && buf->host.bheight > 0 &&
+                 (buf->host.buffer != nullptr && buf->host.bwidth >= width &&
+                  buf->host.bheight >= height &&
                   buf->host.belem_chs == COM_NUM_CHANNELS_STD));
       BLI_assert(recycle_type == BufferRecycleType::HOST_CLEAR ||
-                 (buf->device.buffer != nullptr && buf->device.bwidth > 0 &&
-                  buf->device.bheight > 0 && buf->device.belem_chs == COM_NUM_CHANNELS_STD));
+                 (buf->device.buffer != nullptr && buf->device.bwidth >= width &&
+                  buf->device.bheight >= height && buf->device.belem_chs == COM_NUM_CHANNELS_STD));
     }
   }
   return work_enqueued;
@@ -508,49 +464,6 @@ bool BufferManager::prepareForRead(bool is_compute_written, OpReads *reads)
   return work_enqueued;
 }
 
-CacheBuffer *BufferManager::getCache(NodeOperation *op)
-{
-  BLI_assert(op->getBufferType() == BufferType::CACHED);
-  CacheBuffer *cache = nullptr;
-  auto key = op->getKey();
-
-  auto find_cache_it = m_cached_buffers.find(key);
-  if (find_cache_it != m_cached_buffers.end()) {
-    cache = find_cache_it->second;
-    cache->last_use_time = clock();
-  }
-  else {
-    int n_used_chs = op->getOutputNUsedChannels();
-    cache = new CacheBuffer();
-    cache->height = op->getHeight();
-    cache->width = op->getWidth();
-    cache->elem_chs = n_used_chs;
-    HostBuffer &host = cache->host;
-    host.brow_bytes = BufferUtil::calcStdBufferRowBytes(cache->width);
-    host.bwidth = op->getWidth();
-    host.bheight = op->getHeight();
-    host.belem_chs = n_used_chs;
-    host.buffer = BufferUtil::hostAlloc(cache->width, cache->height, COM_NUM_CHANNELS_STD);
-    host.state = HostMemoryState::CLEARED;
-
-    m_cached_buffers.insert({key, cache});
-    m_current_cache_bytes += cache->height * cache->host.brow_bytes;
-    checkCache();
-    cache->last_use_time = clock();
-  }
-
-  BLI_assert(op->getOutputNUsedChannels() == cache->elem_chs);
-  BLI_assert(op->getHeight() == cache->height);
-  BLI_assert(op->getWidth() == cache->width);
-  return cache;
-}
-
-bool BufferManager::hasBufferCache(NodeOperation *op)
-{
-  return op->getBufferType() == BufferType::CACHED &&
-         m_cached_buffers.find(op->getKey()) != m_cached_buffers.end();
-}
-
 TmpBuffer *BufferManager::getCustomBuffer(NodeOperation *op)
 {
   BLI_assert(op->getBufferType() == BufferType::CUSTOM);
@@ -579,9 +492,6 @@ void BufferManager::reportWriteCompleted(NodeOperation *op,
                                          OpReads *op_reads,
                                          ExecutionManager &man)
 {
-  if (op->getBufferType() == BufferType::CACHED) {
-    getCache(op)->host.state = HostMemoryState::FILLED;
-  }
   if (op_reads->tmp_buffer != nullptr && op_reads->total_compute_reads == 0 &&
       op_reads->total_cpu_reads == 0) {
     m_recycler->giveRecycle(op_reads->tmp_buffer);

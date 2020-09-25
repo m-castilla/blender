@@ -48,8 +48,6 @@ enum class WriteType {
 enum class BufferType {
   /** \brief Temporal buffering in reused buffers */
   TEMPORAL,
-  /** \brief Temporal buffering + cached in memory for next executions */
-  CACHED,
   /** \brief The operation itself manages the creation, writing and
      destruction of the buffer. This is the case of already created images or that have been
      written on initialization */
@@ -97,7 +95,7 @@ enum class InputResizeMode {
      area of the node, image will be equally larger than the working area */
   STRETCH,
   /** \brief This is to indicate that you want to use the default one which depends on
-     DetermineREsolutionMode. This is the one applied when using
+     DetermineResolutionMode. This is the one applied when using
      NodeSocketReader::addInputSocket(socketType) function and you don't pass InputResizeMode
      argument */
   DEFAULT
@@ -125,7 +123,6 @@ enum class ResolutionType {
   /** \brief a fixed resolution which doesn't depend on inputs or outputs */
   Fixed
 };
-enum class DetermineResolutionMode { FromInput, FitOutput };
 
 #define COM_NUM_CHANNELS_VALUE 1
 #define COM_NUM_CHANNELS_VECTOR 3

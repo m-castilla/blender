@@ -541,6 +541,7 @@ ccl_kernel convertHsvToRgbOp(CCL_WRITE(dst), CCL_READ(hsv))
 
   READ_IMG4(hsv, hsv_pix);
   hsv_pix = hsv_to_rgb(hsv_pix);
+  hsv_pix = max(hsv_pix, 0.0f);
   WRITE_IMG4(dst, hsv_pix);
 
   CPU_LOOP_END

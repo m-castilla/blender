@@ -227,6 +227,11 @@ const UserDef U_default = {
     .sequencer_disk_cache_size_limit = 100,
     .sequencer_disk_cache_flag = 0,
 
+    .compositor_mem_cache_limit = 128,
+    .compositor_disk_cache_dir = "",
+    .compositor_disk_cache_limit = 20,
+    .compositor_flag = 0,
+
     .collection_instance_empty_size = 1.0f,
 
     .statusbar_flag = STATUSBAR_SHOW_VERSION,

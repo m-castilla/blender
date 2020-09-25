@@ -13,32 +13,15 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  *
- * Copyright 2011, Blender Foundation.
+ * Copyright 2020, Blender Foundation.
  */
 
-#ifndef __COM_MEMORYCACHEOPERATION_H__
-#define __COM_MEMORYCACHEOPERATION_H__
+#pragma once
 
-#include "COM_NodeOperation.h"
-#include "COM_defines.h"
+#include <string>
+#include <vector>
 
-/**
- * \brief Compositor output operation
- */
-class MemoryCacheOperation : public NodeOperation {
- public:
-  MemoryCacheOperation();
+namespace StringUtil {
+std::vector<std::string> split(const std::string &str, char delimiter);
 
-  BufferType getBufferType() const override
-  {
-    return BufferType::CACHED;
-  }
-
- protected:
-  bool canCompute() const override
-  {
-    return false;
-  }
-  void execPixels(ExecutionManager &man) override;
-};
-#endif
+};  // namespace StringUtil

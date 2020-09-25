@@ -159,13 +159,14 @@ class NodeOperationBuilder {
   void prune_operations();
 
   /** Sort operations by link dependencies */
-  void sort_operations();
+  //void sort_operations();
 
   /** Create execution groups */
   void group_operations();
   ExecutionGroup *make_group(NodeOperation *op);
 
  private:
+  void find_reachable_operations_recursive(std::set<NodeOperation*> &reachable, NodeOperation *op);
   Links getOutputLinks(NodeOperationOutput *output);
   NodeOperation *getCompositorOutput();
   std::vector<NodeOperation *> getNonViewNonCompositorOutputs();

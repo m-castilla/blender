@@ -56,7 +56,7 @@ void MaskNode::convertToOperations(NodeConverter &converter,
   }
 
   operation->setMask(mask);
-  operation->setFramenumber(context.getFramenumber());
+  operation->setFramenumber(context.getCurrentFrame());
   operation->setFeather((bool)(editorNode->custom1 & CMP_NODEFLAG_MASK_NO_FEATHER) == 0);
 
   if ((editorNode->custom1 & CMP_NODEFLAG_MASK_MOTION_BLUR) && (editorNode->custom2 > 1) &&

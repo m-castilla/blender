@@ -17,24 +17,21 @@
  */
 
 #include "COM_GlobalManager.h"
-#include "COM_BufferManager.h"
-#include "COM_CompositorContext.h"
-#include "COM_ComputeManager.h"
 #include "COM_ComputeNoneManager.h"
 #include "opencl/COM_OpenCLManager.h"
 
 std::unique_ptr<GlobalManager> GlobalMan;
 
 GlobalManager::GlobalManager()
-    : BufferMan(nullptr), ComputeMan(nullptr), ViewCacheMan(nullptr), m_context(nullptr)
+    : BufferMan(nullptr), ComputeMan(nullptr), CacheMan(nullptr), m_context(nullptr)
 {
 }
 
 GlobalManager::~GlobalManager()
 {
   delete BufferMan;
+  delete CacheMan;
   delete ComputeMan;
-  delete ViewCacheMan;
 }
 
 void GlobalManager::initialize(const CompositorContext &ctx)
@@ -67,27 +64,20 @@ void GlobalManager::initialize(const CompositorContext &ctx)
 
     ComputeMan = new_compute_man;
     ComputeMan->initialize();
-    BufferMan = new BufferManager();
+    CacheMan = new CacheManager();
+    BufferMan = new BufferManager(*CacheMan);
     BufferMan->initialize(ctx);
+    CacheMan->initialize(&ctx, BufferMan->recycler());
   }
   else {
     BufferMan->initialize(ctx);
+    CacheMan->initialize(&ctx, BufferMan->recycler());
   }
-
-  if (!ViewCacheMan) {
-    ViewCacheMan = new ViewCacheManager();
-  }
-  ViewCacheMan->initialize();
 }
 
 void GlobalManager::deinitialize(const CompositorContext &ctx)
 {
   BufferMan->deinitialize(ctx.isBreaked());
-  ViewCacheMan->deinitialize(ctx.isBreaked());
+  CacheMan->deinitialize(&ctx);
   m_context = nullptr;
-}
-
-bool GlobalManager::hasAnyKindOfCache(NodeOperation *op)
-{
-  return ViewCacheMan->hasViewCache(op) || BufferMan->hasBufferCache(op);
 }

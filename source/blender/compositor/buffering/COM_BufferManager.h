@@ -24,8 +24,8 @@
 #endif
 
 #include "COM_BufferRecycler.h"
+#include "COM_Keys.h"
 #include "COM_ReadsOptimizer.h"
-#include "COM_Rect.h"
 #include "DNA_vec_types.h"
 #include <functional>
 #include <memory>
@@ -37,12 +37,11 @@
 class NodeOperation;
 class ExecutionSystem;
 class ReadsOptimizer;
-struct CacheBuffer;
 class ExecutionManager;
 class BufferRecycler;
 class CompositorContext;
 struct OpReads;
-
+class CacheManager;
 class BufferManager {
  public:
   typedef struct ReadResult {
@@ -57,20 +56,18 @@ class BufferManager {
   } ReadResult;
 
  private:
+  CacheManager &m_cache_manager;
   bool m_initialized;
   std::unordered_map<OpKey, ReadsOptimizer *> m_optimizers;
-  std::unordered_map<OpKey, CacheBuffer *> m_cached_buffers;
   std::unique_ptr<BufferRecycler> m_recycler;
   /* reads make by each operations*/
   std::unordered_map<OpKey, std::vector<ReaderReads *>> m_readers_reads;
   /* received reads by each operation (saved readers op_key)*/
   std::unordered_map<OpKey, std::unordered_set<OpKey>> m_received_reads;
   bool m_reads_gotten;
-  size_t m_max_cache_bytes;
-  size_t m_current_cache_bytes;
 
  public:
-  BufferManager();
+  BufferManager(CacheManager &cache_manager);
   bool isInitialized()
   {
     return m_initialized;
@@ -86,7 +83,6 @@ class BufferManager {
                  ExecutionManager &man,
                  std::function<void(TmpRectBuilder &, const rcti *)> write_func,
                  const rcti *custom_write_rect);
-  bool hasBufferCache(NodeOperation *op);
 
   const std::unordered_map<OpKey, std::vector<ReaderReads *>> *getReadersReads(
       ExecutionManager &man);
@@ -100,8 +96,6 @@ class BufferManager {
 
  private:
   void assureReadsGotten(ExecutionManager &man);
-  void checkCache();
-  CacheBuffer *getCache(NodeOperation *op);
   TmpBuffer *getCustomBuffer(NodeOperation *op);
   bool prepareForWrite(bool is_write_computed, OpReads *reads, const rcti *custom_write_rect);
   bool prepareForRead(bool is_compute_written, OpReads *reads);

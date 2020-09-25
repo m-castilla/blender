@@ -49,6 +49,7 @@ bool ExecutionManager::isBreaked() const
 void ExecutionManager::setOperationMode(OperationMode mode)
 {
   m_op_mode = mode;
+  GlobalMan->CacheMan->setOperationMode(mode);
 }
 OperationMode ExecutionManager::getOperationMode() const
 {
@@ -111,61 +112,66 @@ void ExecutionManager::execWriteJob(
 
       int n_total_works = m_context.getNCpuWorkThreads() * 8;
       n_total_works = std::min(n_total_works, height);
-      std::vector<rcti> splits = RectUtil::splitImgRectInEqualRects(n_total_works, width, height);
-      for (auto &rect : splits) {
-        if (xmin > 0) {
-          rect.xmin += xmin;
-          rect.xmax += xmin;
-        }
-        if (ymin > 0) {
-          rect.ymin += ymin;
-          rect.ymax += ymin;
-        }
+      if (n_total_works > 0) {
+        std::vector<rcti> splits = RectUtil::splitImgRectInEqualRects(
+            n_total_works, width, height);
+        for (auto &rect : splits) {
+          if (xmin > 0) {
+            rect.xmin += xmin;
+            rect.xmax += xmin;
+          }
+          if (ymin > 0) {
+            rect.ymin += ymin;
+            rect.ymax += ymin;
+          }
 
-        std::shared_ptr<PixelsRect> w_rect = write_rect_builder(rect);
-        WorkPackage *work = new WorkPackage(*this, w_rect, cpu_write_func);
-        works.push_back(work);
+          std::shared_ptr<PixelsRect> w_rect = write_rect_builder(rect);
+          WorkPackage *work = new WorkPackage(*this, w_rect, cpu_write_func);
+          works.push_back(work);
+        }
       }
     }
 
-    int current_pass = 0;
-    int n_passes = op->getNPasses();
-    while (current_pass < n_passes) {
-      m_n_subworks = works.size();
-      m_n_exec_subworks = 0;
-      for (auto work : works) {
-        work->reset();
-        WriteRectContext ctx;
-        ctx.n_passes = n_passes;
-        ctx.n_rects = works.size();
-        ctx.current_pass = current_pass;
-        work->setWriteContext(ctx);
-        WorkScheduler::schedule(work);
-      }
+    if (works.size() > 0) {
+      int current_pass = 0;
+      int n_passes = op->getNPasses();
+      while (current_pass < n_passes) {
+        m_n_subworks = works.size();
+        m_n_exec_subworks = 0;
+        for (auto work : works) {
+          work->reset();
+          WriteRectContext ctx;
+          ctx.n_passes = n_passes;
+          ctx.n_rects = works.size();
+          ctx.current_pass = current_pass;
+          work->setWriteContext(ctx);
+          WorkScheduler::schedule(work);
+        }
 
-      bool finished = false;
-      while (!finished) {
-        WorkScheduler::finish();
-        finished = true;
-        for (WorkPackage *work : works) {
-          if (!work->hasFinished()) {
-            finished = false;
-            break;
+        bool finished = false;
+        while (!finished) {
+          WorkScheduler::finish();
+          finished = true;
+          for (WorkPackage *work : works) {
+            if (!work->hasFinished()) {
+              finished = false;
+              break;
+            }
           }
         }
+        current_pass++;
       }
-      current_pass++;
-    }
 
-    for (WorkPackage *work : works) {
-      delete work;
-    }
-
-    if (after_write_func && !isBreaked()) {
-      if (is_computed) {
-        deviceWaitQueueToFinish();
+      for (WorkPackage *work : works) {
+        delete work;
       }
-      after_write_func(*full_write_rect);
+
+      if (after_write_func && !isBreaked()) {
+        if (is_computed) {
+          deviceWaitQueueToFinish();
+        }
+        after_write_func(*full_write_rect);
+      }
     }
   }
 }

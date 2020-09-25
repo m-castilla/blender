@@ -115,11 +115,14 @@ void ExecutionSystem::execute()
   DebugInfo::execute_started(this);
 
   // initialize operations
-  for (int index = 0; index < this->m_operations.size(); index++) {
-    NodeOperation *operation = this->m_operations[index];
-    operation->setbNodeTree(m_context.getbNodeTree());
-    operation->initExecution();
+  for (int index = 0; index < m_groups.size(); index++) {
+    m_groups[index]->initExecution();
   }
+
+  // for (int index = 0; index < this->m_operations.size(); index++) {
+  //  NodeOperation *operation = this->m_operations[index];
+  //  operation->initExecution();
+  //}
 
   man.setOperationMode(OperationMode::Optimize);
   execGroups(man);
@@ -132,9 +135,8 @@ void ExecutionSystem::execute()
   //}
 
   m_bNodeTree->stats_draw(m_bNodeTree->sdh, TIP_("Compositing | De-initializing execution"));
-  for (int index = 0; index < this->m_operations.size(); index++) {
-    NodeOperation *operation = this->m_operations[index];
-    operation->deinitExecution();
+  for (int index = 0; index < m_groups.size(); index++) {
+    m_groups[index]->deinitExecution();
   }
 
   WorkScheduler::stop();
@@ -148,6 +150,20 @@ void ExecutionSystem::execGroups(ExecutionManager &man)
       ExecutionGroup *group = m_groups[index];
       group->execute(man);
     }
+  }
+}
+
+void ExecutionSystem::initGroups(ExecutionManager &man)
+{
+  for (int index = 0; index < m_groups.size(); index++) {
+    m_groups[index]->initExecution();
+  }
+}
+
+void ExecutionSystem::deinitGroups(ExecutionManager &man)
+{
+  for (int index = 0; index < m_groups.size(); index++) {
+    m_groups[index]->deinitExecution();
   }
 }
 

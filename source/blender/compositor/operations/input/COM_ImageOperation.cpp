@@ -83,6 +83,7 @@ void BaseImageOperation::initExecution()
 void BaseImageOperation::deinitExecution()
 {
   BKE_image_release_ibuf(this->m_image, this->m_imbuf, NULL);
+  NodeOperation::deinitExecution();
 }
 
 ResolutionType BaseImageOperation::determineResolution(int resolution[2],

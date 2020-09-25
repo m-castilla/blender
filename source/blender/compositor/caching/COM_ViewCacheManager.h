@@ -19,7 +19,7 @@
 #ifndef __COM_VIEWCACHEMANAGER_H__
 #define __COM_VIEWCACHEMANAGER_H__
 
-#include "COM_Rect.h"
+#include "COM_Keys.h"
 #include <unordered_map>
 #include <unordered_set>
 

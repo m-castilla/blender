@@ -28,8 +28,12 @@ set(CMP_OPS ${CMP_BASE}/operations)
 set(INC
   ${CMP_BASE}
   ${CMP_BASE}/buffering
+  ${CMP_BASE}/caching
   ../build_defmerger
   ${CMP_BASE}/intern
+  ${CMP_BASE}/util
+  ${CMP_BASE}/computing
+  
   ${CMP_NODES}
   ${CMP_NODES}/input
   ${CMP_NODES}/output
@@ -40,6 +44,7 @@ set(INC
   ${CMP_NODES}/matte
   ${CMP_NODES}/distort
   ${CMP_NODES}/layout
+
   ${CMP_OPS}
   ${CMP_OPS}/input
   ${CMP_OPS}/output
@@ -49,8 +54,7 @@ set(INC
   ${CMP_OPS}/vector
   ${CMP_OPS}/matte
   ${CMP_OPS}/distort
-  ${CMP_BASE}/util
-  ${CMP_BASE}/computing
+
   ${CMP_BASE}/../blenkernel
   ${CMP_BASE}/../blenlib
   ${CMP_BASE}/../blentranslation
@@ -95,6 +99,7 @@ set(SRC
   ${CMP_BASE}/intern/COM_ExecutionSystem.h
   ${CMP_BASE}/intern/COM_GlobalManager.cpp
   ${CMP_BASE}/intern/COM_GlobalManager.h
+  ${CMP_BASE}/intern/COM_Keys.h
   ${CMP_BASE}/intern/COM_Node.cpp
   ${CMP_BASE}/intern/COM_Node.h
   ${CMP_BASE}/intern/COM_NodeConverter.cpp
@@ -125,10 +130,22 @@ set(SRC
   ${CMP_BASE}/buffering/COM_Pixels.h
   ${CMP_BASE}/buffering/COM_ReadsOptimizer.h
   ${CMP_BASE}/buffering/COM_ReadsOptimizer.cpp
-  ${CMP_BASE}/buffering/COM_ViewCacheManager.h
-  ${CMP_BASE}/buffering/COM_ViewCacheManager.cpp
+
+  #caching
+  ${CMP_BASE}/caching/COM_BaseCache.cpp
+  ${CMP_BASE}/caching/COM_BaseCache.h
+  ${CMP_BASE}/caching/COM_CacheManager.cpp
+  ${CMP_BASE}/caching/COM_CacheManager.h
+  ${CMP_BASE}/caching/COM_DiskCache.cpp
+  ${CMP_BASE}/caching/COM_DiskCache.h
+  ${CMP_BASE}/caching/COM_MemoryCache.cpp
+  ${CMP_BASE}/caching/COM_MemoryCache.h
+  ${CMP_BASE}/caching/COM_ViewCacheManager.cpp
+  ${CMP_BASE}/caching/COM_ViewCacheManager.h
 
   # util
+  ${CMP_BASE}/util/COM_BaseConverter.cpp
+  ${CMP_BASE}/util/COM_BaseConverter.h
   ${CMP_BASE}/util/COM_Bmp.cpp
   ${CMP_BASE}/util/COM_Bmp.h
   ${CMP_BASE}/util/COM_PixelsUtil.cpp
@@ -137,6 +154,10 @@ set(SRC
   ${CMP_BASE}/util/COM_RectUtil.h
   ${CMP_BASE}/util/COM_MathUtil.cpp
   ${CMP_BASE}/util/COM_MathUtil.h
+  ${CMP_BASE}/util/COM_TimeUtil.cpp
+  ${CMP_BASE}/util/COM_TimeUtil.h
+  ${CMP_BASE}/util/COM_StringUtil.cpp
+  ${CMP_BASE}/util/COM_StringUtil.h
   ${CMP_BASE}/util/COM_BufferUtil.cpp
   ${CMP_BASE}/util/COM_BufferUtil.h
   ${CMP_BASE}/util/COM_UiConvert.cpp
@@ -209,8 +230,8 @@ set(SRC
   ${CMP_NODES}/input/COM_ImageNode.h
   ${CMP_NODES}/input/COM_MaskNode.cpp
   ${CMP_NODES}/input/COM_MaskNode.h
-  ${CMP_NODES}/input/COM_MemoryCacheNode.cpp
-  ${CMP_NODES}/input/COM_MemoryCacheNode.h
+  ${CMP_NODES}/input/COM_CacheNode.cpp
+  ${CMP_NODES}/input/COM_CacheNode.h
   ${CMP_NODES}/input/COM_MovieClipNode.cpp
   ${CMP_NODES}/input/COM_MovieClipNode.h
   ${CMP_NODES}/input/COM_RenderLayersNode.cpp
@@ -404,7 +425,6 @@ set(SRC
   ${CMP_OPS}/COM_SingleElemReadyOperation.cpp
   ${CMP_OPS}/COM_SingleElemReadyOperation.h
 
-
   # input operations
   ${CMP_OPS}/input/COM_BokehImageOperation.cpp
   ${CMP_OPS}/input/COM_BokehImageOperation.h
@@ -412,8 +432,8 @@ set(SRC
   ${CMP_OPS}/input/COM_ImageOperation.h
   ${CMP_OPS}/input/COM_MaskOperation.cpp
   ${CMP_OPS}/input/COM_MaskOperation.h
-  ${CMP_OPS}/input/COM_MemoryCacheOperation.cpp
-  ${CMP_OPS}/input/COM_MemoryCacheOperation.h
+  ${CMP_OPS}/input/COM_CacheOperation.cpp
+  ${CMP_OPS}/input/COM_CacheOperation.h
   ${CMP_OPS}/input/COM_MovieClipOperation.cpp
   ${CMP_OPS}/input/COM_MovieClipOperation.h
   ${CMP_OPS}/input/COM_MultilayerImageOperation.cpp

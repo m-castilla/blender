@@ -102,13 +102,13 @@ void NodeOperationBuilder::convertToOperations()
 
   determineResolutions();
 
-  add_operation_input_constants();
-
   /* links not available from here on */
   /* XXX make m_links a local variable to avoid confusion! */
   m_links.clear();
 
   prune_operations();
+
+  add_operation_input_constants();
 
   /* create execution groups */
   group_operations();
@@ -139,6 +139,9 @@ void NodeOperationBuilder::convertToOperations()
 void NodeOperationBuilder::addOperation(NodeOperation *operation)
 {
   m_operations.push_back(operation);
+  if (m_current_node) {
+    operation->setNodeId(m_current_node->getInstanceKey().value);
+  }
 }
 
 void NodeOperationBuilder::mapInputSocket(NodeInput *node_socket,
@@ -239,7 +242,6 @@ PreviewOperation *NodeOperationBuilder::make_preview_operation() const
   if (previews) {
     PreviewOperation *operation = new PreviewOperation(m_context->getViewSettings(),
                                                        m_context->getDisplaySettings());
-    operation->setbNodeTree(m_context->getbNodeTree());
     operation->verifyPreview(previews, m_current_node->getInstanceKey());
     return operation;
   }
@@ -565,8 +567,9 @@ std::vector<NodeOperation *> NodeOperationBuilder::getNonViewNonCompositorOutput
   return views;
 }
 
-typedef std::set<NodeOperation *> Tags;
-static void find_reachable_operations_recursive(Tags &reachable, NodeOperation *op)
+// operations with 0 width or height are considered unreachable and are pruned
+void NodeOperationBuilder::find_reachable_operations_recursive(
+    std::set<NodeOperation *> &reachable, NodeOperation *op)
 {
   if (reachable.find(op) != reachable.end()) {
     return;
@@ -576,7 +579,14 @@ static void find_reachable_operations_recursive(Tags &reachable, NodeOperation *
   for (int i = 0; i < op->getNumberOfInputSockets(); i++) {
     NodeOperationInput *input = op->getInputSocket(i);
     if (input->isConnected()) {
-      find_reachable_operations_recursive(reachable, input->getLink()->getOperation());
+      auto input_op = input->getLink()->getOperation();
+      // operations with no size are pruned as they cannot be executed
+      if (input_op->getWidth() == 0 || input_op->getHeight() == 0) {
+        input->setLink(nullptr);
+      }
+      else {
+        find_reachable_operations_recursive(reachable, input_op);
+      }
     }
   }
 
@@ -588,9 +598,10 @@ static void find_reachable_operations_recursive(Tags &reachable, NodeOperation *
   //}
 }
 
+// operations with 0 width or height are considered unreachable and are pruned
 void NodeOperationBuilder::prune_operations()
 {
-  Tags reachable;
+  std::set<NodeOperation *> reachable;
   for (Operations::const_iterator it = m_operations.begin(); it != m_operations.end(); ++it) {
     NodeOperation *op = *it;
 
@@ -617,7 +628,9 @@ void NodeOperationBuilder::prune_operations()
   m_operations = reachable_ops;
 }
 
-static void add_group_operations_recursive(Tags &visited, NodeOperation *op, ExecutionGroup *group)
+static void add_group_operations_recursive(std::set<NodeOperation *> &visited,
+                                           NodeOperation *op,
+                                           ExecutionGroup *group)
 {
   if (visited.find(op) != visited.end()) {
     return;
@@ -642,7 +655,7 @@ ExecutionGroup *NodeOperationBuilder::make_group(NodeOperation *op)
   ExecutionGroup *group = new ExecutionGroup(m_sys);
   m_groups.push_back(group);
 
-  Tags visited;
+  std::set<NodeOperation *> visited;
   add_group_operations_recursive(visited, op, group);
 
   return group;

@@ -16,23 +16,25 @@
  * Copyright 2011, Blender Foundation.
  */
 
-#include "COM_MemoryCacheNode.h"
+#include "COM_CacheNode.h"
+#include "COM_CacheOperation.h"
 #include "COM_ExecutionSystem.h"
-#include "COM_MemoryCacheOperation.h"
 
-MemoryCacheNode::MemoryCacheNode(bNode *editorNode) : Node(editorNode)
+CacheNode::CacheNode(bNode *editorNode) : Node(editorNode)
 {
   /* pass */
 }
 
-void MemoryCacheNode::convertToOperations(NodeConverter &converter,
-                                          const CompositorContext & /*context*/) const
+void CacheNode::convertToOperations(NodeConverter &converter,
+                                    const CompositorContext & /*context*/) const
 {
   NodeInput *input = this->getInputSocket(0);
-  if (input->isLinked()) {
-    MemoryCacheOperation *cache_op = new MemoryCacheOperation();
-    converter.addOperation(cache_op);
-    converter.mapInputSocket(input, cache_op->getInputSocket(0));
-    converter.mapOutputSocket(this->getOutputSocket(0), cache_op->getOutputSocket());
-  }
+  bNode *editorNode = this->getbNode();
+  bool is_persistent = editorNode->custom1;
+
+  CacheOperation *cache_op = new CacheOperation();
+  cache_op->setIsPersistent(is_persistent);
+  converter.addOperation(cache_op);
+  converter.mapInputSocket(input, cache_op->getInputSocket(0));
+  converter.mapOutputSocket(this->getOutputSocket(0), cache_op->getOutputSocket());
 }

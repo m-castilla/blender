@@ -55,7 +55,6 @@ class VideoSequencerOperation : public NodeOperation {
     m_n_channel = n_channel;
   }
 
-  void initExecution() override;
   void deinitExecution() override;
 
  protected:

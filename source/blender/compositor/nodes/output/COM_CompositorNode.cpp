@@ -41,7 +41,6 @@ void CompositorNode::convertToOperations(NodeConverter &converter,
   compositorOperation->setSceneName(context.getScene()->id.name);
   compositorOperation->setRenderData(context.getRenderData());
   compositorOperation->setViewName(context.getViewName());
-  compositorOperation->setbNodeTree(context.getbNodeTree());
   /* alpha socket gives either 1 or a custom alpha value if "use alpha" is enabled */
   compositorOperation->setUseAlphaInput(ignore_alpha || alphaSocket->isLinked());
   compositorOperation->setActive(is_active);

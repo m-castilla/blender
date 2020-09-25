@@ -324,7 +324,6 @@ compositor_node_categories = [
     CompositorNodeCategory("CMP_INPUT", "Input", items=[
         NodeItem("CompositorNodeRLayers"),
         NodeItem("CompositorNodeImage"),
-        NodeItem("CompositorNodeMemoryCache"),
         NodeItem("CompositorNodeMovieClip"),
         NodeItem("CompositorNodeMask"),
         NodeItem("CompositorNodeRGB"),
@@ -333,6 +332,7 @@ compositor_node_categories = [
         NodeItem("CompositorNodeBokehImage"),
         NodeItem("CompositorNodeTime"),
         NodeItem("CompositorNodeTrackPos"),
+        NodeItem("CompositorNodeCache"),
         NodeItem("CompositorNodeVideoSeq"),
         NodeItem("NodeGroupInput", poll=group_input_output_item_poll),
     ]),

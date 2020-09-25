@@ -16,21 +16,15 @@
  * Copyright 2011, Blender Foundation.
  */
 
-#include "COM_MemoryCacheOperation.h"
-#include "BLI_assert.h"
-#include "COM_PixelsUtil.h"
+#pragma once
 
-MemoryCacheOperation::MemoryCacheOperation() : NodeOperation()
-{
-  this->addInputSocket(SocketType::DYNAMIC);
-  this->addOutputSocket(SocketType::DYNAMIC);
-}
-void MemoryCacheOperation::execPixels(ExecutionManager &man)
-{
-  auto src = getInputOperation(0)->getPixels(this, man);
-  auto cpu_write = [&](PixelsRect &dst, const WriteRectContext & /*ctx*/) {
-    PixelsRect src_rect = src->toRect(dst);
-    PixelsUtil::copyEqualRects(dst, src_rect);
-  };
-  cpuWriteSeek(man, cpu_write);
-}
+#include "COM_Node.h"
+/**
+ * \brief CompositorNode
+ * \ingroup Node
+ */
+class CacheNode : public Node {
+ public:
+  CacheNode(bNode *editorNode);
+  void convertToOperations(NodeConverter &converter, const CompositorContext &context) const;
+};

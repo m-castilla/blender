@@ -19,6 +19,7 @@
 #include "COM_ReadsOptimizer.h"
 #include "BLI_assert.h"
 #include "COM_ExecutionManager.h"
+#include "COM_GlobalManager.h"
 #include "COM_NodeOperation.h"
 #include "COM_RectUtil.h"
 
@@ -71,6 +72,11 @@ void ReadsOptimizer::optimize(NodeOperation *op, NodeOperation *reader_op, Execu
   }
 
   if (reader_op) {
+    auto cache_man = GlobalMan->CacheMan;
+    if (cache_man->isCacheable(op)) {
+      cache_man->cacheReadOptimize(op);
+    }
+
     bool is_reader_computed = reader_op->isComputed(man);
     if (is_reader_computed) {
       m_reads->total_compute_reads++;

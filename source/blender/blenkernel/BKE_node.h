@@ -1193,7 +1193,7 @@ void ntreeGPUMaterialNodes(struct bNodeTree *localtree,
 #define CMP_NODE_SWITCH_VIEW 322
 #define CMP_NODE_CRYPTOMATTE 323
 #define CMP_NODE_DENOISE 324
-#define CMP_NODE_MEMORYCACHE 325
+#define CMP_NODE_CACHE 325
 #define CMP_NODE_VIDEO_SEQ 326
 
 /* channel toggles */

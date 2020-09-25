@@ -85,7 +85,9 @@ class ExecutionGroup {
   }
   bool hasOutputViewerBorder();
 
+  void initExecution();
   void execute(ExecutionManager &man);
+  void deinitExecution();
 
   /**
    * \brief set border for viewer operation

@@ -19,13 +19,14 @@
 #ifndef __COM_MATHUTIL_H__
 #define __COM_MATHUTIL_H__
 
+#include <cstdint>
 #include <stddef.h> /* For size_t */
 #include <utility>
 namespace MathUtil {
 
-std::pair<size_t, size_t> findMultiplesOfNumber(size_t num,
-                                                size_t max_multiple1,
-                                                size_t max_multiple2);
+std::pair<uint64_t, uint64_t> findMultiplesOfNumber(uint64_t num,
+                                                    uint64_t max_multiple1,
+                                                    uint64_t max_multiple2);
 
 inline void hashCombine(size_t &r_current_hash, size_t hash_to_combine)
 {

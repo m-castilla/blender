@@ -85,12 +85,12 @@ void deviceAlloc(
     TmpBuffer *dst, MemoryAccess device_access, int width, int height, bool alloc_host);
 void deviceFree(TmpBuffer *dst);
 float *hostAlloc(int width, int height, int elem_chs);
+float *hostAlloc(size_t bytes);
 void hostNonStdAlloc(TmpBuffer *dst, int width, int height, int belem_chs);
 void hostStdAlloc(TmpBuffer *dst, int width, int height);
 void hostFree(float *buffer);
 void hostFree(TmpBuffer *dst);
 void origHostFree(TmpBuffer *dst);
-void deleteCacheBuffer(CacheBuffer *buffer);
 
 void deviceMapToHostEnqueue(TmpBuffer *buf, MemoryAccess host_access);
 void deviceUnmapFromHostEnqueue(TmpBuffer *buffer);

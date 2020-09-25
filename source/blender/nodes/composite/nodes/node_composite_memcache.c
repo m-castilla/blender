@@ -25,19 +25,19 @@
 
 /* **************** Memory Cache ******************** */
 
-static bNodeSocketTemplate cmp_node_memcache_in[] = {
+static bNodeSocketTemplate cmp_node_cache_in[] = {
     {SOCK_ANY_DATA, N_("Data"), 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, PROP_NONE, SOCK_HIDE_VALUE},
     {-1, ""}};
-static bNodeSocketTemplate cmp_node_memcache_out[] = {
+static bNodeSocketTemplate cmp_node_cache_out[] = {
     {SOCK_ANY_DATA, N_("Data"), 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, PROP_NONE, SOCK_HIDE_VALUE},
     {-1, ""}};
 
-void register_node_type_cmp_memcache(void)
+void register_node_type_cmp_cache(void)
 {
   static bNodeType ntype;
 
-  cmp_node_type_base(&ntype, CMP_NODE_MEMORYCACHE, "Memory Cache", NODE_CLASS_INPUT, 0);
-  node_type_socket_templates(&ntype, cmp_node_memcache_in, cmp_node_memcache_out);
+  cmp_node_type_base(&ntype, CMP_NODE_CACHE, "Cache", NODE_CLASS_INPUT, 0);
+  node_type_socket_templates(&ntype, cmp_node_cache_in, cmp_node_cache_out);
 
   nodeRegisterType(&ntype);
 }

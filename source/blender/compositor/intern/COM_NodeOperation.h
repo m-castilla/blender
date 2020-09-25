@@ -23,6 +23,7 @@
 #include <utility>
 #include <vector>
 
+#include "COM_Keys.h"
 #include "COM_MathUtil.h"
 #include "COM_NodeSocketReader.h"
 #include "COM_Pixels.h"
@@ -50,7 +51,6 @@ class NodeOperation : public NodeSocketReader {
 
   bool m_key_calculated;
   OpKey m_key;
-  bool m_op_hash_calculated;
   size_t m_op_hash;
   bool m_exec_pixels_optimized;
   bool base_hash_params_called;
@@ -235,8 +235,6 @@ class NodeOperation : public NodeSocketReader {
       current++;
     }
   }
-
-  size_t getOpHash();
 
  private:
   /* allow the DebugInfo class to look at internals for printing info and let BufferManager get

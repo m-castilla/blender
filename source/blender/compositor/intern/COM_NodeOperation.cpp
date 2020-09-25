@@ -35,7 +35,6 @@ NodeOperation::NodeOperation()
     : m_float_hasher(),
       m_key_calculated(false),
       m_key(),
-      m_op_hash_calculated(false),
       m_op_hash(0),
       m_exec_pixels_optimized(false),
       base_hash_params_called(false),
@@ -60,7 +59,7 @@ void NodeOperation::hashParams()
   for (auto input : m_inputs) {
     auto input_op = input->getLinkedOp();
     if (input_op) {
-      MathUtil::hashCombine(m_op_hash, input_op->getOpHash());
+      MathUtil::hashCombine(m_op_hash, input_op->getKey().op_hash);
     }
   }
 }
@@ -73,15 +72,6 @@ void NodeOperation::hashFloatData(const float *data, size_t length, int incremen
     MathUtil::hashCombine(m_op_hash, m_float_hasher(*current));
     current += increment;
   }
-}
-
-size_t NodeOperation::getOpHash()
-{
-  if (!m_op_hash_calculated) {
-    hashParams();
-    m_op_hash_calculated = true;
-  }
-  return m_op_hash;
 }
 
 void NodeOperation::initExecution()
@@ -114,13 +104,25 @@ const OpKey &NodeOperation::getKey()
     // Be sure that you have called base class initExecution() when overriding the method in a
     // subclass
     BLI_assert(m_initialized);
-    hashParams();
-    m_key.op_width = m_width;
-    m_key.op_height = m_height;
-    m_key.op_data_type = getNumberOfOutputSockets() > 0 ? getOutputSocket(0)->getDataType() :
-                                                          DataType::COLOR;
-    m_key.op_type_hash = typeid(*this).hash_code();
-    m_key.op_hash = getOpHash();
+
+    bool has_persistent_op_key = false;
+    if (GlobalMan->CacheMan->isCacheable(this)) {
+      auto persistent_result = GlobalMan->CacheMan->checkPersistentOpKey(this);
+      has_persistent_op_key = persistent_result.first;
+      if (has_persistent_op_key) {
+        m_key = persistent_result.second;
+        m_op_hash = m_key.op_hash;
+      }
+    }
+
+    if (!has_persistent_op_key) {
+      hashParams();
+      m_key.op_width = m_width;
+      m_key.op_height = m_height;
+      m_key.op_data_type = getOutputDataType();
+      m_key.op_type_hash = typeid(*this).hash_code();
+      m_key.op_hash = m_op_hash;
+    }
 
     m_key_calculated = true;
   }
@@ -196,10 +198,12 @@ void NodeOperation::computeWriteSeek(
 std::shared_ptr<PixelsRect> NodeOperation::getPixels(NodeOperation *reader_op,
                                                      ExecutionManager &man)
 {
-  if (!isBreaked()) {
+  if (!man.isBreaked()) {
     if (man.getOperationMode() == OperationMode::Optimize) {
-      if (!m_exec_pixels_optimized && !GlobalMan->hasAnyKindOfCache(this)) {
-        execPixels(man);
+      if (!m_exec_pixels_optimized) {
+        if (!GlobalMan->CacheMan->hasAnyKindOfCache(this) && !isFinalOperation()) {
+          execPixels(man);
+        }
         m_exec_pixels_optimized = true;
         man.reportOperationOptimized(this);
       }
@@ -211,7 +215,9 @@ std::shared_ptr<PixelsRect> NodeOperation::getPixels(NodeOperation *reader_op,
         return result.pixels;
       }
       else {
-        execPixels(man);
+        if (!isFinalOperation()) {
+          execPixels(man);
+        }
         result = GlobalMan->BufferMan->readSeek(this, man);
         return result.pixels;
       }

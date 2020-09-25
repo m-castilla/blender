@@ -6,9 +6,9 @@
 /* Implementation taken from  BLI_rand.hh */
 CCL_NAMESPACE_BEGIN
 
-ccl_constant uint64_t multiplier = 0x5DEECE66Dll;
+ccl_constant uint64_t multiplier = 0x5DEECE66D;
 ccl_constant uint64_t addend = 0xB;
-ccl_constant uint64_t mask = 0x0000FFFFFFFFFFFFll;
+ccl_constant uint64_t mask = 0x0000FFFFFFFFFFFF;
 
 /*Thomas Wang's hash function. See:
  * http://web.archive.org/web/20071223173210/http://www.concentric.net/~Ttwang/tech/inthash.htm*/
@@ -24,9 +24,7 @@ ccl_device_inline uint64_t hash64shift(uint64_t key)
   return key;
 }
 
-ccl_device_inline int random_int(uint64_t *random_state,
-                                 unsigned int *random_idx_state,
-                                 int2 dst_coords)
+ccl_device_inline int random_int(uint64_t *random_state, int2 dst_coords)
 {
 #ifdef __KERNEL_COMPUTE__
   // The initial random state is the same for all work items. We hash it with the given item
@@ -35,7 +33,6 @@ ccl_device_inline int random_int(uint64_t *random_state,
   uint64_t x_hash = hash64shift(*random_state ^ (*random_state * dst_coords.x));
   *random_state = hash64shift(x_hash ^ (*random_state * dst_coords.y));
 #else
-  (void)random_idx_state;
   (void)dst_coords;
 #endif
   *random_state = (multiplier * (*random_state) + addend) & mask;
@@ -43,20 +40,11 @@ ccl_device_inline int random_int(uint64_t *random_state,
   return (int)((*random_state) >> 17);
 }
 
-ccl_device_inline float random_float(uint64_t *random_state,
-                                     unsigned int *random_idx_state,
-                                     int2 dst_coords)
+// From 0.0 to 1.0
+ccl_device_inline float random_float(uint64_t *random_state, int2 dst_coords)
 {
-  return (float)random_int(random_state, random_idx_state, dst_coords) / 0x80000000;
+  return (float)random_int(random_state, dst_coords) / 0x80000000;
 }
-
-//
-// ccl_device_inline int random_int(uint64_t *random_state, int2 dst_coords, int dst_width)
-//{
-//  uint64_t offset = (uint64_t)dst_coords.y * dst_width + dst_coords.x;
-//  *random_state = (multiplier * (*random_state + offset) + addend) & mask;
-//  return (int)((*random_state) >> 17);
-//}
 
 CCL_NAMESPACE_END
 

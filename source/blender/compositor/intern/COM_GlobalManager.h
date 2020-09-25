@@ -20,9 +20,9 @@
 #define __COM_GLOBALMANAGER_H__
 
 #include "COM_BufferManager.h"
+#include "COM_CacheManager.h"
 #include "COM_CompositorContext.h"
 #include "COM_ComputeManager.h"
-#include "COM_ViewCacheManager.h"
 #include <memory>
 
 class GlobalManager;
@@ -32,13 +32,13 @@ class GlobalManager {
  public:
   BufferManager *BufferMan;
   ComputeManager *ComputeMan;
-  ViewCacheManager *ViewCacheMan;
+  CacheManager *CacheMan;
 
   const CompositorContext *m_context;
 
   void initialize(const CompositorContext &ctx);
   void deinitialize(const CompositorContext &ctx);
-  bool hasAnyKindOfCache(NodeOperation *op);
+
   const CompositorContext *getContext()
   {
     return m_context;
