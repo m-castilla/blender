@@ -222,7 +222,7 @@ DefNode(CompositorNode, CMP_NODE_CORNERPIN,      0,                      "CORNER
 DefNode(CompositorNode, CMP_NODE_SUNBEAMS,       def_cmp_sunbeams,       "SUNBEAMS",       SunBeams,         "Sun Beams",         ""              )
 DefNode(CompositorNode, CMP_NODE_CRYPTOMATTE,    def_cmp_cryptomatte,    "CRYPTOMATTE",    Cryptomatte,      "Cryptomatte",       ""              )
 DefNode(CompositorNode, CMP_NODE_DENOISE,        def_cmp_denoise,        "DENOISE",        Denoise,          "Denoise",           ""              )
-DefNode(CompositorNode, CMP_NODE_MEMORYCACHE,    0,                      "MEMORYCACHE",    MemoryCache,      "Memory Cache",      ""              )
+DefNode(CompositorNode, CMP_NODE_CACHE,          def_cmp_cache,          "CACHE",          Cache,            "Cache",             ""              )
 DefNode(CompositorNode, CMP_NODE_VIDEO_SEQ,      def_cmp_video_sequencer,"VIDEOSEQ",       VideoSeq,         "Video Sequencer",   ""              )
 
 DefNode(TextureNode,    TEX_NODE_OUTPUT,         def_tex_output,         "OUTPUT",         Output,           "Output",            ""              )

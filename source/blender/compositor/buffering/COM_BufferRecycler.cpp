@@ -290,6 +290,12 @@ TmpBuffer *BufferRecycler::createStdTmpBuffer(
       is_host_recyclable, host_buffer, width, height, n_used_chs, COM_NUM_CHANNELS_STD);
 }
 
+void BufferRecycler::setBufferAsTakenRecycle(TmpBuffer *dst)
+{
+  BLI_assert(dst->is_host_recyclable);
+  m_created_buffers.insert(dst);
+}
+
 /* returns whether there has been work enqueued to device*/
 bool BufferRecycler::takeNonStdRecycle(BufferRecycleType type,
                                        TmpBuffer *dst,

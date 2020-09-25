@@ -142,20 +142,21 @@ void PixelsUtil::copyBufferRect(PixelsRect &dst,
 void PixelsUtil::copyBufferRectNChannels(PixelsRect &dst,
                                          unsigned char *read_buf,
                                          int n_channels,
-                                         int n_buf_chs)
+                                         int dst_buf_chs)
 {
-  copyBufferRect(dst, read_buf, n_channels, n_buf_chs);
+  copyBufferRect(dst, read_buf, n_channels, dst_buf_chs);
 }
 
 void PixelsUtil::copyBufferRectChannel(
-    PixelsRect &dst, int to_ch_idx, unsigned char *read_buf, int from_ch_idx, int n_buf_chs)
+    PixelsRect &dst, int to_ch_idx, unsigned char *read_buf, int from_ch_idx, int dst_buf_chs)
 {
   float norm_mult = 1.0 / 255.0;
   PixelsImg dst_img = dst.pixelsImg();
   float *dst_cur = dst_img.start + to_ch_idx;
 
-  size_t buf_brow_chs = dst.tmp_buffer->width * n_buf_chs;
-  unsigned char *buf_cur = read_buf + dst.ymin * buf_brow_chs + dst.xmin * n_buf_chs + from_ch_idx;
+  size_t buf_brow_chs = dst.tmp_buffer->width * dst_buf_chs;
+  unsigned char *buf_cur = read_buf + dst.ymin * buf_brow_chs + dst.xmin * dst_buf_chs +
+                           from_ch_idx;
 
   float *dst_row_end = dst_img.start + dst_img.row_chs;
   while (dst_cur < dst_img.end) {
@@ -163,65 +164,65 @@ void PixelsUtil::copyBufferRectChannel(
       *dst_cur = *buf_cur * norm_mult;
 
       dst_cur += dst_img.belem_chs;
-      buf_cur += n_buf_chs;
+      buf_cur += dst_buf_chs;
     }
     dst_cur += dst_img.row_jump;
     dst_row_end += dst_img.brow_chs_incr;
   }
 }
 
-bool PixelsUtil::copyImBufRect(PixelsRect &dst, ImBuf *imbuf, int n_used_chs, int n_buf_chs)
+bool PixelsUtil::copyImBufRect(PixelsRect &dst, ImBuf *imbuf, int n_used_chs, int dst_buf_chs)
 {
   if (!BufferUtil::isImBufAvailable(imbuf)) {
     PixelsUtil::setRectElem(dst, (float *)&CCL::TRANSPARENT_PIXEL);
     return false;
   }
   else if (imbuf->rect_float) {
-    copyBufferRect(dst, imbuf->rect_float, n_used_chs, n_buf_chs);
+    copyBufferRect(dst, imbuf->rect_float, n_used_chs, dst_buf_chs);
     return false;
   }
   else {
-    copyBufferRect(dst, (unsigned char *)imbuf->rect, n_used_chs, n_buf_chs);
+    copyBufferRect(dst, (unsigned char *)imbuf->rect, n_used_chs, dst_buf_chs);
     return true;
   }
 }
 bool PixelsUtil::copyImBufRectNChannels(PixelsRect &dst,
                                         ImBuf *imbuf,
                                         int n_channels,
-                                        int n_buf_chs)
+                                        int dst_buf_chs)
 {
-  return copyImBufRect(dst, imbuf, n_channels, n_buf_chs);
+  return copyImBufRect(dst, imbuf, n_channels, dst_buf_chs);
 }
 bool PixelsUtil::copyImBufRectChannel(
-    PixelsRect &dst, int to_ch_idx, ImBuf *imbuf, int from_ch_idx, int n_buf_chs)
+    PixelsRect &dst, int to_ch_idx, ImBuf *imbuf, int from_ch_idx, int dst_buf_chs)
 {
   if (!BufferUtil::isImBufAvailable(imbuf)) {
     PixelsUtil::setRectElem(dst, (float *)&CCL::TRANSPARENT_PIXEL);
     return false;
   }
   else if (imbuf->rect_float) {
-    copyBufferRectChannel(dst, to_ch_idx, imbuf->rect_float, from_ch_idx, n_buf_chs);
+    copyBufferRectChannel(dst, to_ch_idx, imbuf->rect_float, from_ch_idx, dst_buf_chs);
     return false;
   }
   else {
-    copyBufferRectChannel(dst, to_ch_idx, (unsigned char *)imbuf->rect, from_ch_idx, n_buf_chs);
+    copyBufferRectChannel(dst, to_ch_idx, (unsigned char *)imbuf->rect, from_ch_idx, dst_buf_chs);
     return true;
   }
 }
 
 void PixelsUtil::copyBufferRect(
-    float *dst_buf, PixelsRect &dst_rect, int n_used_chs, int n_buf_chs, PixelsRect &src_rect)
+    float *dst_buf, PixelsRect &dst_rect, int n_used_chs, int dst_buf_chs, PixelsRect &src_rect)
 {
   auto buf = BufferUtil::createNonStdTmpBuffer(
-      dst_buf, true, dst_rect.getWidth(), dst_rect.getHeight(), n_buf_chs);
+      dst_buf, true, dst_rect.getWidth(), dst_rect.getHeight(), dst_buf_chs);
   PixelsRect dst_buf_rect = PixelsRect(buf.get(), dst_rect);
   PixelsUtil::copyEqualRectsNChannels(dst_buf_rect, src_rect, n_used_chs);
 }
 
 void PixelsUtil::copyBufferRectNChannels(
-    float *dst_buf, PixelsRect &dst_rect, int n_used_chs, int n_channels, PixelsRect &src_rect)
+    float *dst_buf, PixelsRect &dst_rect, int n_used_chs, int dst_buf_chs, PixelsRect &src_rect)
 {
-  copyBufferRect(dst_buf, dst_rect, n_used_chs, n_channels, src_rect);
+  copyBufferRect(dst_buf, dst_rect, n_used_chs, dst_buf_chs, src_rect);
 }
 
 void PixelsUtil::copyBufferRectChannel(float *dst_buf,

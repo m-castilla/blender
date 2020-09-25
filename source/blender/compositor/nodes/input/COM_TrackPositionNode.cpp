@@ -67,7 +67,7 @@ void TrackPositionNode::convertToOperations(NodeConverter &converter,
     frame_number = editorNode->custom2;
   }
   else {
-    frame_number = context.getFramenumber();
+    frame_number = context.getCurrentFrame();
   }
 
   TrackPositionOperation *operationX = new TrackPositionOperation();

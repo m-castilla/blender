@@ -62,6 +62,7 @@
 #include "COM_BokehBlurNode.h"
 #include "COM_BokehImageNode.h"
 #include "COM_BrightnessNode.h"
+#include "COM_CacheNode.h"
 #include "COM_ColorBalanceNode.h"
 #include "COM_ColorCorrectionNode.h"
 #include "COM_ColorCurveNode.h"
@@ -92,7 +93,6 @@
 #include "COM_MapValueNode.h"
 #include "COM_MaskNode.h"
 #include "COM_MathNode.h"
-#include "COM_MemoryCacheNode.h"
 #include "COM_MixNode.h"
 #include "COM_MovieClipNode.h"
 #include "COM_NodeOperation.h"
@@ -152,8 +152,8 @@ Node *Converter::convert(bNode *b_node)
     case CMP_NODE_VIEW_LEVELS:
       node = new ViewLevelsNode(b_node);
       break;
-    case CMP_NODE_MEMORYCACHE:
-      node = new MemoryCacheNode(b_node);
+    case CMP_NODE_CACHE:
+      node = new CacheNode(b_node);
       break;
       /* */
 

@@ -17,10 +17,14 @@
  */
 
 #include "COM_CompositorContext.h"
+#include "BKE_context.h"
+#include "BKE_global.h"
+#include "BKE_main.h"
 #include "BKE_node.h"
 #include "BKE_scene.h"
 #include "BLI_assert.h"
 #include "COM_defines.h"
+#include "DNA_userdef_types.h"
 #include <stdio.h>
 
 CompositorContext::CompositorContext()
@@ -31,15 +35,18 @@ CompositorContext::CompositorContext()
   m_viewSettings = nullptr;
   m_displaySettings = nullptr;
   m_cpu_work_threads = 0;
-  m_res_mode = DetermineResolutionMode::FromInput;
   m_previews = nullptr;
   m_inputs_scale = 0.2f;
-  m_max_cache_bytes = 0;
+  m_max_mem_cache_bytes = 0;
+  m_max_disk_cache_bytes = 0;
+  m_use_disk_cache = false;
+  m_disk_cache_dir = "";
   m_bnodetree = nullptr;
   m_rendering = false;
   m_viewName = nullptr;
   m_main = nullptr;
   m_depsgraph = nullptr;
+  m_view_layer = nullptr;
 }
 
 CompositorContext CompositorContext::build(const std::string &execution_id,
@@ -54,13 +61,11 @@ CompositorContext CompositorContext::build(const std::string &execution_id,
                                            const ColorManagedDisplaySettings *displaySettings,
                                            const char *viewName)
 {
-  const size_t DEFAULT_BUFFER_CACHE_BYTES = (size_t)2048 * 1024 * 1024;  // 1024 * 1024 = MB
-
   CompositorContext context;
-  context.setMain(main);
-  context.setDepsgraph(depsgraph);
-  context.setbNodeTree(editingtree);
-  context.setViewLayer(view_layer);
+  context.m_main = main;
+  context.m_depsgraph = depsgraph;
+  context.m_bnodetree = editingtree;
+  context.m_view_layer = view_layer;
 
   /* Make sure node tree has previews.
    * Don't create previews in advance, this is done when adding preview operations.
@@ -82,23 +87,29 @@ CompositorContext CompositorContext::build(const std::string &execution_id,
   }
   BKE_node_preview_init_tree(editingtree, preview_width, preview_height, false);
 
-  context.setExecutionId(execution_id);
-  context.setBufferCacheSize(DEFAULT_BUFFER_CACHE_BYTES);
-  context.setViewName(viewName);
-  context.setScene(scene);
-  context.setPreviewHash(editingtree->previews);
+  context.m_execution_id = execution_id;
+  context.m_viewName = viewName;
+  context.m_scene = scene;
+  context.m_previews = editingtree->previews;
+
   /* initialize the CompositorContext */
   if (rendering) {
-    context.setQuality(static_cast<CompositorQuality>(editingtree->render_quality));
+    context.m_quality = static_cast<CompositorQuality>(editingtree->render_quality);
   }
   else {
-    context.setQuality(static_cast<CompositorQuality>(editingtree->edit_quality));
+    context.m_quality = static_cast<CompositorQuality>(editingtree->edit_quality);
   }
-  context.setRendering(rendering);
+  context.m_rendering = rendering;
+  context.m_rd = rd;
+  context.m_viewSettings = viewSettings;
+  context.m_displaySettings = displaySettings;
 
-  context.setRenderData(rd);
-  context.setViewSettings(viewSettings);
-  context.setDisplaySettings(displaySettings);
+  context.m_max_mem_cache_bytes = (size_t)U.compositor_mem_cache_limit * 1024 * 1024;  // MB
+  context.m_max_disk_cache_bytes = (size_t)U.compositor_disk_cache_limit * 1024 * 1024 *
+                                   1024;  // GB
+  context.m_disk_cache_dir = U.compositor_disk_cache_dir ? U.compositor_disk_cache_dir : "";
+  context.m_use_disk_cache = U.compositor_flag &
+                             eUserpref_Compositor_Flag::USER_COMPOSITOR_DISK_CACHE_ENABLE;
 
   return context;
 }
@@ -106,6 +117,13 @@ CompositorContext CompositorContext::build(const std::string &execution_id,
 bool CompositorContext::isBreaked() const
 {
   return m_bnodetree->test_break && m_bnodetree->test_break(m_bnodetree->tbh);
+}
+
+void CompositorContext::updateDraw() const
+{
+  if (m_bnodetree->update_draw) {
+    m_bnodetree->update_draw(this->m_bnodetree->udh);
+  }
 }
 
 int CompositorContext::getPreviewSize() const
@@ -123,7 +141,7 @@ int CompositorContext::getPreviewSize() const
   }
 }
 
-int CompositorContext::getFramenumber() const
+int CompositorContext::getCurrentFrame() const
 {
   if (this->m_rd) {
     return this->m_rd->cfra;

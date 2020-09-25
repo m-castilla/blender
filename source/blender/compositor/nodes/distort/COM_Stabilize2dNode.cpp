@@ -53,22 +53,22 @@ void Stabilize2dNode::convertToOperations(NodeConverter &converter,
   MovieClipAttributeOperation *yAttribute = new MovieClipAttributeOperation();
 
   scaleAttribute->setAttribute(MovieClipAttribute::MCA_SCALE);
-  scaleAttribute->setFramenumber(context.getFramenumber());
+  scaleAttribute->setFramenumber(context.getCurrentFrame());
   scaleAttribute->setMovieClip(clip);
   scaleAttribute->setInvert(invert);
 
   angleAttribute->setAttribute(MovieClipAttribute::MCA_ANGLE);
-  angleAttribute->setFramenumber(context.getFramenumber());
+  angleAttribute->setFramenumber(context.getCurrentFrame());
   angleAttribute->setMovieClip(clip);
   angleAttribute->setInvert(invert);
 
   xAttribute->setAttribute(MovieClipAttribute::MCA_X);
-  xAttribute->setFramenumber(context.getFramenumber());
+  xAttribute->setFramenumber(context.getCurrentFrame());
   xAttribute->setMovieClip(clip);
   xAttribute->setInvert(invert);
 
   yAttribute->setAttribute(MovieClipAttribute::MCA_Y);
-  yAttribute->setFramenumber(context.getFramenumber());
+  yAttribute->setFramenumber(context.getCurrentFrame());
   yAttribute->setMovieClip(clip);
   yAttribute->setInvert(invert);
 

@@ -54,6 +54,39 @@ NodeOperation *ExecutionGroup::getOutputOperation() const
       ->m_operations[0];  // the first operation of the group is always the output operation.
 }
 
+#if defined(DEBUG) || defined(COM_DEBUG)
+static void assertGroupOperations(NodeOperation *output_op,
+                                  std::function<bool(NodeOperation *)> condition)
+{
+  BLI_assert(condition(output_op));
+  auto n_inputs = output_op->getNumberOfInputSockets();
+  for (int index = 0; index < n_inputs; index++) {
+    auto op_input = output_op->getInputSocket(index);
+    if (op_input->isConnected()) {
+      assertGroupOperations(op_input->getLinkedOp(), condition);
+    }
+  }
+}
+#endif
+
+void ExecutionGroup::initExecution()
+{
+  auto output_op = getOutputOperation();
+  output_op->initExecution();
+#if defined(DEBUG) || defined(COM_DEBUG)
+  assertGroupOperations(output_op, [=](NodeOperation *op) { return op->isInitialized(); });
+#endif
+}
+
+void ExecutionGroup::deinitExecution()
+{
+  auto output_op = getOutputOperation();
+  output_op->deinitExecution();
+#if defined(DEBUG) || defined(COM_DEBUG)
+  assertGroupOperations(output_op, [=](NodeOperation *op) { return op->isDeinitialized(); });
+#endif
+}
+
 /**
  * this method is called for the top execution groups. containing the compositor node or the
  * preview node or the viewer node)

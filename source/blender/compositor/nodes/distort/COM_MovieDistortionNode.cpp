@@ -38,7 +38,7 @@ void MovieDistortionNode::convertToOperations(NodeConverter &converter,
 
   MovieDistortionOperation *operation = new MovieDistortionOperation(bnode->custom1 == 1);
   operation->setMovieClip(clip);
-  operation->setFramenumber(context.getFramenumber());
+  operation->setFramenumber(context.getCurrentFrame());
   converter.addOperation(operation);
 
   converter.mapInputSocket(inputSocket, operation->getInputSocket(0));

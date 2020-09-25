@@ -28,7 +28,7 @@
 void GlareStreaksOperation::generateGlare(PixelsRect &dst,
                                           PixelsRect &src,
                                           NodeGlare *settings,
-                                          ExecutionManager & /*man*/)
+                                          ExecutionManager &man)
 {
   int n;
   unsigned int nump = 0;
@@ -119,7 +119,7 @@ void GlareStreaksOperation::generateGlare(PixelsRect &dst,
         }
         INCR1_COORDS_Y(tdst);
         UPDATE_COORDS_X(tdst, 0);
-        if (isBreaked()) {
+        if (man.isBreaked()) {
           breaked = true;
         }
       }

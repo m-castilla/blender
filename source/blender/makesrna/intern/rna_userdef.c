@@ -5363,6 +5363,27 @@ static void rna_def_userdef_system(BlenderRNA *brna)
   RNA_def_property_ui_text(
       prop, "Scrollback", "Maximum number of lines to store for the console buffer");
 
+  /* Compositor */
+
+  prop = RNA_def_property(srna, "compositor_mem_cache_limit", PROP_INT, PROP_NONE);
+  RNA_def_property_int_sdna(prop, NULL, "compositor_mem_cache_limit");
+  RNA_def_property_range(prop, 0, max_memory_in_megabytes_int());
+  RNA_def_property_ui_text(prop, "Memory Cache Limit", "Memory cache limit (in megabytes)");
+
+  prop = RNA_def_property(srna, "compositor_use_disk_cache", PROP_BOOLEAN, PROP_NONE);
+  RNA_def_property_boolean_sdna(prop, NULL, "compositor_flag", USER_COMPOSITOR_DISK_CACHE_ENABLE);
+  RNA_def_property_ui_text(
+      prop, "Use Disk Cache", "Store cached images to disk when memory cache is full");
+
+  prop = RNA_def_property(srna, "compositor_disk_cache_dir", PROP_STRING, PROP_DIRPATH);
+  RNA_def_property_string_sdna(prop, NULL, "compositor_disk_cache_dir");
+  RNA_def_property_ui_text(prop, "Disk Cache Directory", "Override default directory");
+
+  prop = RNA_def_property(srna, "compositor_disk_cache_limit", PROP_INT, PROP_NONE);
+  RNA_def_property_int_sdna(prop, NULL, "compositor_disk_cache_limit");
+  RNA_def_property_range(prop, 0, INT_MAX);
+  RNA_def_property_ui_text(prop, "Disk Cache Limit", "Disk cache limit (in gigabytes)");
+
   /* OpenGL */
 
   /* Viewport anti-aliasing */

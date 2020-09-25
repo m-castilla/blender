@@ -22,6 +22,7 @@
 #include "BLI_assert.h"
 #include "DNA_node_types.h"
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "COM_defines.h"
@@ -48,10 +49,12 @@ class NodeSocketReader {
 
  protected:
   bool m_initialized;
+  bool m_deinitialized;
   int m_width;
   int m_height;
   Inputs m_inputs;
   Outputs m_outputs;
+  unsigned int m_node_id;
 
   static uint s_order_counter;
   uint m_order;
@@ -62,11 +65,6 @@ class NodeSocketReader {
   int m_mainInputSocketIndex;
 
   /**
-   * \brief reference to the editing bNodeTree, used for break and update callback
-   */
-  const bNodeTree *m_btree;
-
-  /**
    * \brief set to truth when resolution for this operation is set
    */
   bool m_isResolutionSet;
@@ -75,6 +73,14 @@ class NodeSocketReader {
 
  public:
   virtual ~NodeSocketReader();
+  bool isInitialized()
+  {
+    return m_initialized;
+  }
+  bool isDeinitialized()
+  {
+    return m_deinitialized;
+  }
   NodeOperationOutput *getOutputSocket(int index) const;
   NodeOperationOutput *getOutputSocket() const
   {
@@ -88,6 +94,16 @@ class NodeSocketReader {
     return getInputSocket(m_mainInputSocketIndex);
   }
   bool hasAnyInputConnected() const;
+
+  void setNodeId(unsigned int id)
+  {
+    m_node_id = id;
+  }
+  // unique id of the UI node
+  unsigned int getNodeId() const
+  {
+    return m_node_id;
+  }
 
   /**
    * \brief determine the resolution of this node
@@ -115,7 +131,8 @@ class NodeSocketReader {
 
   /**
    * \brief Subclases implementing it must call their base method at the end.
-   *
+   * \param will_exec: whether the operation will be executed or not. This is the case when an
+   * evaluated operation is behind an evaluated final operation.
    */
   virtual void initExecution();
 
@@ -124,6 +141,13 @@ class NodeSocketReader {
    *
    */
   virtual void deinitExecution();
+
+  // Only override when the operation has a condition by which there is no need to execute
+  // previous operations in the tree. Default is false.
+  virtual bool isFinalOperation()
+  {
+    return false;
+  }
 
   uint getOrder() const
   {
@@ -161,24 +185,7 @@ class NodeSocketReader {
     return m_inputs.empty();
   }
 
-  void setbNodeTree(const bNodeTree *tree)
-  {
-    this->m_btree = tree;
-  }
-
   void getConnectedInputSockets(Inputs *sockets) const;
-
-  inline bool isBreaked() const
-  {
-    return this->m_btree->test_break && this->m_btree->test_break(this->m_btree->tbh);
-  }
-
-  inline void updateDraw()
-  {
-    if (this->m_btree->update_draw) {
-      this->m_btree->update_draw(this->m_btree->udh);
-    }
-  }
 
  protected:
   NodeSocketReader();
@@ -265,8 +272,6 @@ class NodeOperationInput {
 
   NodeOperation *getLinkedOp();
 
-  void determineResolution(int resolution[2], int preferredResolution[2], bool setResolution);
-
 #ifdef WITH_CXX_GUARDEDALLOC
   MEM_CXX_CLASS_ALLOC_FUNCS("COM:NodeOperationInput")
 #endif
@@ -274,9 +279,20 @@ class NodeOperationInput {
 
 class NodeOperationOutput {
  private:
+  typedef struct ResolutionResult {
+    int calc_width;
+    int calc_height;
+    int set_width;
+    int set_height;
+    ResolutionType res_type;
+  } ResolutionResult;
   NodeOperation *m_operation;
   SocketType m_socket_type;
   bNodeSocket *m_bOutputSocket;
+
+  // already calculated resolutions from preferred resolutions
+  std::unordered_map<uint64_t, ResolutionResult> m_set_res_off;
+  std::unordered_map<uint64_t, ResolutionResult> m_set_res_on;
 
  public:
   NodeOperationOutput(NodeOperation *op, SocketType socket_type);

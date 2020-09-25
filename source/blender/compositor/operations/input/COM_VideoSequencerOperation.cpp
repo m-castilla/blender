@@ -21,6 +21,7 @@
 #include "BKE_scene.h"
 #include "BKE_sequencer.h"
 #include "BLI_listbase.h"
+#include "BLI_threads.h"
 #include "COM_Buffer.h"
 #include "COM_BufferUtil.h"
 #include "COM_CompositorContext.h"
@@ -47,13 +48,6 @@ VideoSequencerOperation::VideoSequencerOperation()
   m_is_rendering = context->isRendering();
 }
 
-void VideoSequencerOperation::initExecution()
-{
-  assureSequencerRender();
-
-  NodeOperation::initExecution();
-}
-
 void VideoSequencerOperation::hashParams()
 {
   NodeOperation::hashParams();
@@ -73,6 +67,7 @@ void VideoSequencerOperation::deinitExecution()
     IMB_freeImBuf(m_seq_frame);
     m_seq_frame = nullptr;
   }
+  NodeOperation::deinitExecution();
 }
 
 void VideoSequencerOperation::assureSequencerRender()
@@ -80,7 +75,7 @@ void VideoSequencerOperation::assureSequencerRender()
   if (!m_seq_frame) {
     auto context = GlobalMan->getContext();
     auto scene = context->getScene();
-    m_n_frame = context->getFramenumber();
+    m_n_frame = context->getCurrentFrame();
 
     Render *render = nullptr;
     if (m_is_rendering) {

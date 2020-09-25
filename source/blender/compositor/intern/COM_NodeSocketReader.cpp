@@ -46,9 +46,10 @@ NodeSocketReader::NodeSocketReader()
   this->m_width = 0;
   this->m_height = 0;
   this->m_isResolutionSet = false;
-  this->m_btree = NULL;
   m_initialized = false;
+  m_deinitialized = false;
   m_resolution_type = ResolutionType::Determined;
+  m_node_id = 0;
 }
 
 NodeSocketReader::~NodeSocketReader()
@@ -87,7 +88,7 @@ NodeOperationOutput *NodeSocketReader::getOutputSocket(int index) const
 
 DataType NodeSocketReader::getOutputDataType() const
 {
-  return getOutputSocket()->getDataType();
+  return m_outputs.size() > 0 ? getOutputSocket()->getDataType() : DataType::COLOR;
 }
 
 int NodeSocketReader::getOutputNUsedChannels() const
@@ -117,30 +118,32 @@ ResolutionType NodeSocketReader::determineResolution(int resolution[2],
 {
   /* Look for a valid resolution of any input. First looking at the main input socket. This doesn't
    * set resolution on inputs yet */
-  bool is_local_preferred_set = false;
+  int total_inputs = m_inputs.size();
+  bool is_local_preferred_new = false;
   int local_preferred[2] = {preferredResolution[0], preferredResolution[1]};
-  if (m_inputs.size() > 0) {
-    NodeOperationInput *input = m_inputs[m_mainInputSocketIndex];
-    if (input->isConnected()) {
-      int temp[2] = {0, 0};
-      input->determineResolution(temp, local_preferred, false);
+  int temp[2] = {0, 0};
+  if (total_inputs > 0) {
+    NodeOperationInput *main_input = m_inputs[m_mainInputSocketIndex];
+    if (main_input->isConnected()) {
+      main_input->getLink()->determineResolution(temp, local_preferred, false);
       if (temp[0] > 0 && temp[1] > 0) {
         local_preferred[0] = temp[0];
         local_preferred[1] = temp[1];
-        is_local_preferred_set = true;
+        is_local_preferred_new = true;
       }
     }
 
-    if (!is_local_preferred_set) {
-      for (int index = 0; index < m_inputs.size(); index++) {
+    NodeOperationInput *input;
+    if (!is_local_preferred_new) {
+      for (int index = 0; index < total_inputs; index++) {
         if (index != m_mainInputSocketIndex) {
           input = m_inputs[index];
           if (input->isConnected()) {
-            int temp[2] = {0, 0};
-            input->determineResolution(temp, local_preferred, false);
+            input->getLink()->determineResolution(temp, local_preferred, false);
             if (temp[0] > 0 && temp[1] > 0) {
               local_preferred[0] = temp[0];
               local_preferred[1] = temp[1];
+              is_local_preferred_new = true;
               break;
             }
           }
@@ -148,27 +151,44 @@ ResolutionType NodeSocketReader::determineResolution(int resolution[2],
       }
     }
 
-    /* Determine and set inputs resolutions taking into account our local preferred resolution */
+    /* Determine local resolution and set inputs resolutions taking into account our local
+     * preferred resolution */
     bool is_local_res_set = false;
-    input = m_inputs[m_mainInputSocketIndex];
-    if (input->isConnected()) {
-      input->determineResolution(resolution, local_preferred, setResolution);
+    if (main_input->isConnected()) {
+      main_input->getLink()->determineResolution(resolution, local_preferred, setResolution);
       if (resolution[0] > 0 && resolution[1] > 0) {
         is_local_res_set = true;
       }
     }
-    for (int index = 0; index < m_inputs.size(); index++) {
-      if (index != m_mainInputSocketIndex) {
-        input = m_inputs[index];
-        if (input->isConnected()) {
-          if (is_local_res_set) {
-            int temp[2] = {0, 0};
-            input->determineResolution(temp, local_preferred, setResolution);
+
+    if (is_local_res_set) {
+      if (setResolution) {
+        for (int index = 0; index < total_inputs; index++) {
+          if (index != m_mainInputSocketIndex) {
+            input = m_inputs[index];
+            if (input->isConnected()) {
+              input->getLink()->determineResolution(temp, local_preferred, true);
+            }
           }
-          else {
-            input->determineResolution(resolution, local_preferred, setResolution);
-            if (resolution[0] > 0 && resolution[1] > 0) {
-              is_local_res_set = true;
+        }
+      }
+    }
+    else {
+      for (int index = 0; index < total_inputs; index++) {
+        if (index != m_mainInputSocketIndex) {
+          input = m_inputs[index];
+          if (input->isConnected()) {
+            if (is_local_res_set) {
+              input->getLink()->determineResolution(temp, local_preferred, setResolution);
+            }
+            else {
+              input->getLink()->determineResolution(resolution, local_preferred, setResolution);
+              if (resolution[0] > 0 && resolution[1] > 0) {
+                is_local_res_set = true;
+                if (!setResolution) {
+                  break;
+                }
+              }
             }
           }
         }
@@ -198,12 +218,32 @@ void NodeSocketReader::setMainInputSocketIndex(int index)
 }
 void NodeSocketReader::initExecution()
 {
-  m_initialized = true;
+  if (!m_initialized) {
+    for (auto input : m_inputs) {
+      if (input->isConnected()) {
+        auto linked_op = input->getLinkedOp();
+        if (!linked_op->isInitialized()) {
+          linked_op->initExecution();
+        }
+      }
+    }
+    m_initialized = true;
+  }
 }
 
 void NodeSocketReader::deinitExecution()
 {
-  m_initialized = false;
+  if (!m_deinitialized) {
+    for (auto input : m_inputs) {
+      if (input->isConnected()) {
+        auto linked_op = input->getLinkedOp();
+        if (!linked_op->isDeinitialized()) {
+          linked_op->deinitExecution();
+        }
+      }
+    }
+    m_deinitialized = true;
+  }
 }
 
 NodeOperation *NodeSocketReader::getInputOperation(int inputSocketIndex) const
@@ -299,21 +339,16 @@ NodeOperation *NodeOperationInput::getLinkedOp()
   }
 }
 
-void NodeOperationInput::determineResolution(int resolution[2],
-                                             int preferredResolution[2],
-                                             bool setResolution)
-{
-  if (m_link) {
-    m_link->determineResolution(resolution, preferredResolution, setResolution);
-  }
-}
-
 /******************
  **** OpOutput ****
  ******************/
 
 NodeOperationOutput::NodeOperationOutput(NodeOperation *op, SocketType socket_type)
-    : m_operation(op), m_socket_type(socket_type), m_bOutputSocket(NULL)
+    : m_operation(op),
+      m_socket_type(socket_type),
+      m_bOutputSocket(NULL),
+      m_set_res_off(),
+      m_set_res_on()
 {
 }
 
@@ -355,19 +390,40 @@ void NodeOperationOutput::determineResolution(int resolution[2],
                                               int preferredResolution[2],
                                               bool setResolution)
 {
-  NodeOperation *operation = getOperation();
-  auto res_type = operation->determineResolution(resolution, preferredResolution, setResolution);
-  if (setResolution) {
-    operation->setResolution(resolution[0], resolution[1], res_type);
-  }
-  if (res_type == ResolutionType::Fixed && operation->getNumberOfInputSockets() == 0) {
-    // input resolutions are forcedly scaled down later. Set input resolution as future scale
-    // down.
-    float input_scale = GlobalMan->getContext()->getInputsScale();
-    if (input_scale < 1.0f) {
-      resolution[0] *= input_scale;
-      resolution[1] *= input_scale;
+  uint64_t res_key = ((uint64_t)preferredResolution[0] << 32) | ((uint32_t)preferredResolution[1]);
+  auto &res_map = setResolution ? m_set_res_on : m_set_res_off;
+  auto calc_res_it = res_map.find(res_key);
+  if (calc_res_it != res_map.end()) {
+    auto &calc_res = calc_res_it->second;
+    if (setResolution) {
+      getOperation()->setResolution(calc_res.set_width, calc_res.set_height, calc_res.res_type);
     }
+    resolution[0] = calc_res.calc_width;
+    resolution[1] = calc_res.calc_height;
+  }
+  else {
+    NodeOperation *operation = getOperation();
+    auto res_type = operation->determineResolution(resolution, preferredResolution, setResolution);
+    ResolutionResult result;
+    result.res_type = res_type;
+    result.set_width = resolution[0];
+    result.set_height = resolution[1];
+    if (setResolution) {
+      operation->setResolution(result.set_width, result.set_height, result.res_type);
+    }
+    if (res_type == ResolutionType::Fixed && operation->getNumberOfInputSockets() == 0) {
+      // Fixed resolutions are forcedly scaled down later to global InputsScale. Set returned
+      // resolution as future scale down.
+      float input_scale = GlobalMan->getContext()->getInputsScale();
+      if (input_scale < 1.0f) {
+        resolution[0] *= input_scale;
+        resolution[1] *= input_scale;
+      }
+    }
+    result.calc_width = resolution[0];
+    result.calc_height = resolution[1];
+
+    res_map.emplace(res_key, result);
   }
 }
 

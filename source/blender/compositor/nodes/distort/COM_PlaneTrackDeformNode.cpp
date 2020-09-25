@@ -37,7 +37,7 @@ void PlaneTrackDeformNode::convertToOperations(NodeConverter &converter,
   MovieClip *clip = (MovieClip *)editorNode->id;
   NodePlaneTrackDeformData *data = (NodePlaneTrackDeformData *)editorNode->storage;
 
-  int frame_number = context.getFramenumber();
+  int frame_number = context.getCurrentFrame();
 
   NodeInput *input_image = this->getInputSocket(0);
   NodeOutput *output_warped_image = this->getOutputSocket(0);

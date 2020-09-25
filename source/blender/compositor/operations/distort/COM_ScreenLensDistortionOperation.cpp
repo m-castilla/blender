@@ -75,7 +75,6 @@ ccl_device_inline void accumulate(CCL_IMAGE(color),
                                   float sum[4],
                                   int count[3],
                                   uint64_t *random_state,
-                                  unsigned int *random_idx_state,
                                   int2 dst_coords,
                                   BOOL jitter)
 {
@@ -88,12 +87,9 @@ ccl_device_inline void accumulate(CCL_IMAGE(color),
   float k4 = k4_array[a];
   float dk4 = dk4_array[a];
 
-  for (float z = 0; z < ds; z++) {
-    // printf("accumulate: %ul\n", *random_state);
-    float tz = (z + (jitter ? random_float(random_state, random_idx_state, dst_coords) : 0.5f)) *
-               sd;
+  for (int z = 0; z < ds; z++) {
+    float tz = (z + (jitter ? random_float(random_state, dst_coords) : 0.5f)) * sd;
     float t = 1.0f - (k4 + tz * dk4) * r_sq;
-    // printf("after: %ul\n", *random_state);
 
     float2 color_coordsf;
     distort_uv(uv, width, height, t, &color_coordsf);
@@ -138,10 +134,8 @@ ccl_kernel screenLensDistortOp(CCL_WRITE(dst),
   bool valid_g = get_delta(uv_dot, k4[1], uv, width, height, &delta[1]);
   bool valid_b = get_delta(uv_dot, k4[2], uv, width, height, &delta[2]);
 
-  unsigned int random_idx_state = 0;
   if (valid_r && valid_g && valid_b) {
     int a = 0, b = 1;
-    // printf("%ul\n", random_state);
     accumulate(CCL_IMAGE_ARG(color),
                bilinear_sampler,
                width,
@@ -156,7 +150,6 @@ ccl_kernel screenLensDistortOp(CCL_WRITE(dst),
                sum,
                count,
                &random_seed,
-               &random_idx_state,
                dst_coords,
                jitter);
     a = 1;
@@ -175,7 +168,6 @@ ccl_kernel screenLensDistortOp(CCL_WRITE(dst),
                sum,
                count,
                &random_seed,
-               &random_idx_state,
                dst_coords,
                jitter);
 

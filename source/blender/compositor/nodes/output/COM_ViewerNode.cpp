@@ -39,7 +39,6 @@ void ViewerNode::convertToOperations(NodeConverter &converter,
   Image *image = (Image *)this->getbNode()->id;
   ImageUser *imageUser = (ImageUser *)this->getbNode()->storage;
   ViewerOperation *viewerOperation = new ViewerOperation();
-  viewerOperation->setbNodeTree(context.getbNodeTree());
   viewerOperation->setImage(image);
   viewerOperation->setImageUser(imageUser);
   viewerOperation->setCenterX(editorNode->custom3);

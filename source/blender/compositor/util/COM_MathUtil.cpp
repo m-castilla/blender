@@ -20,12 +20,13 @@
 #include "BLI_assert.h"
 #include <algorithm>
 #include <math.h>
+#include <string>
 
 namespace MathUtil {
 
-std::pair<size_t, size_t> findMultiplesOfNumber(size_t num,
-                                                size_t max_multiple1,
-                                                size_t max_multiple2)
+std::pair<uint64_t, uint64_t> findMultiplesOfNumber(uint64_t num,
+                                                    uint64_t max_multiple1,
+                                                    uint64_t max_multiple2)
 {
   BLI_assert(max_multiple1 * max_multiple2 >= num);
 
@@ -37,9 +38,9 @@ std::pair<size_t, size_t> findMultiplesOfNumber(size_t num,
     max_multiple2 = tmp;
   }
 
-  size_t m1 = (size_t)sqrt(num);
-  size_t m2 = m1;
-  size_t current_n = m1 * m2;
+  uint64_t m1 = (uint64_t)sqrt(num);
+  uint64_t m2 = m1;
+  uint64_t current_n = m1 * m2;
   while (current_n != num && m1 > max_multiple1 && m2 > max_multiple2) {
     if (num - current_n >= m1) {
       ++m2;

@@ -87,6 +87,7 @@ class ExecutionSystem {
 
   void set_operations(const Operations &operations, const Groups &groups);
 
+  void initGroups(ExecutionManager &man);
   /**
    * \brief execute this system
    * - initialize the NodeOperation's and ExecutionGroup's
@@ -94,6 +95,8 @@ class ExecutionSystem {
    * - deinitialize the ExecutionGroup's and NodeOperation's
    */
   void execute();
+
+  void deinitGroups(ExecutionManager &man);
 
   int getNOperations() const
   {

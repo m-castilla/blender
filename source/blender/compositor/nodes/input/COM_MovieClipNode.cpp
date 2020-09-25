@@ -52,7 +52,7 @@ void MovieClipNode::convertToOperations(NodeConverter &converter,
   MovieClipOperation *operation = new MovieClipOperation();
   operation->setMovieClip(movieClip);
   operation->setMovieClipUser(movieClipUser);
-  operation->setFramenumber(context.getFramenumber());
+  operation->setFramenumber(context.getCurrentFrame());
   operation->setCacheFrame(cacheFrame);
 
   converter.addOperation(operation);
@@ -62,7 +62,7 @@ void MovieClipNode::convertToOperations(NodeConverter &converter,
   MovieClipAlphaOperation *alphaOperation = new MovieClipAlphaOperation();
   alphaOperation->setMovieClip(movieClip);
   alphaOperation->setMovieClipUser(movieClipUser);
-  alphaOperation->setFramenumber(context.getFramenumber());
+  alphaOperation->setFramenumber(context.getCurrentFrame());
   alphaOperation->setCacheFrame(cacheFrame);
 
   converter.addOperation(alphaOperation);
@@ -78,7 +78,7 @@ void MovieClipNode::convertToOperations(NodeConverter &converter,
     if (stab->flag & TRACKING_2D_STABILIZATION) {
 
       int clip_framenr = BKE_movieclip_remap_scene_to_clip_frame(movieClip,
-                                                                 context.getFramenumber());
+                                                                 context.getCurrentFrame());
       int width, height;
       BKE_movieclip_get_size(movieClip, movieClipUser, &width, &height);
       BKE_tracking_stabilization_data_get(

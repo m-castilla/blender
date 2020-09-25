@@ -17,6 +17,8 @@
  */
 
 #include "COM_ViewerOperation.h"
+#include "COM_GlobalManager.h"
+
 #include "BKE_global.h"
 #include "BKE_image.h"
 #include "BKE_scene.h"
@@ -74,15 +76,15 @@ void ViewerOperation::initExecution()
     initImage();
   }
   NodeOperation::initExecution();
-  m_needs_write = GlobalMan->ViewCacheMan->viewerNeedsUpdate(this);
+  m_needs_write = GlobalMan->CacheMan->getViewCacheMan()->viewerNeedsUpdate(this);
 }
 
 void ViewerOperation::deinitExecution()
 {
   this->m_outputBuffer = NULL;
   this->m_depthBuffer = NULL;
-  if (!isBreaked() && m_needs_write) {
-    GlobalMan->ViewCacheMan->reportViewerWrite(this);
+  if (!GlobalMan->getContext()->isBreaked() && m_needs_write) {
+    GlobalMan->CacheMan->getViewCacheMan()->reportViewerWrite(this);
   }
   NodeOperation::deinitExecution();
 }
@@ -203,5 +205,5 @@ void ViewerOperation::updateImage(const rcti *rect)
                                     rect->xmax,
                                     rect->ymax);
   this->m_image->gpuflag |= IMA_GPU_REFRESH;
-  this->updateDraw();
+  GlobalMan->getContext()->updateDraw();
 }

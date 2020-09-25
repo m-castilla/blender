@@ -84,7 +84,7 @@ void PreviewOperation::initExecution()
   m_preview->ysize = getHeight();
 
   NodeOperation::initExecution();
-  bool has_cache = GlobalMan->ViewCacheMan->getPreviewCache(this) != nullptr;
+  bool has_cache = GlobalMan->CacheMan->getViewCacheMan()->getPreviewCache(this) != nullptr;
   if (has_cache) {
     m_needs_write = false;
   }
@@ -98,7 +98,7 @@ void PreviewOperation::deinitExecution()
 {
   unsigned char *preview_buffer = nullptr;
   if (m_needs_write) {
-    if (isBreaked()) {
+    if (GlobalMan->getContext()->isBreaked()) {
       if (m_outputBuffer) {
         MEM_freeN(m_outputBuffer);
       }
@@ -106,13 +106,13 @@ void PreviewOperation::deinitExecution()
     else {
       preview_buffer = createPreviewBuffer();
       memcpy(preview_buffer, m_outputBuffer, getBufferBytes());
-      GlobalMan->ViewCacheMan->reportPreviewWrite(this, m_outputBuffer);
+      GlobalMan->CacheMan->getViewCacheMan()->reportPreviewWrite(this, m_outputBuffer);
     }
   }
 
   // set preview
   if (preview_buffer == nullptr) {
-    auto cache = GlobalMan->ViewCacheMan->getPreviewCache(this);
+    auto cache = GlobalMan->CacheMan->getViewCacheMan()->getPreviewCache(this);
     if (cache) {
       preview_buffer = createPreviewBuffer();
       memcpy(preview_buffer, cache, getBufferBytes());

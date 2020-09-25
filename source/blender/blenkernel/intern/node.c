@@ -4554,7 +4554,7 @@ static void registerCompositNodes(void)
   register_node_type_cmp_planetrackdeform();
   register_node_type_cmp_cornerpin();
 
-  register_node_type_cmp_memcache();
+  register_node_type_cmp_cache();
   register_node_type_cmp_videoseq();
 }
 

@@ -121,7 +121,12 @@ void deviceFree(TmpBuffer *dst)
 float *hostAlloc(int width, int height, int belem_chs)
 {
   size_t bytes = (size_t)height * width * belem_chs * sizeof(float);
-  return (float *)MEM_mallocN_aligned(bytes, 16, "COM_BufferUtil::hostNonStdAlloc");
+  return hostAlloc(bytes);
+}
+
+float *hostAlloc(size_t bytes)
+{
+  return (float *)MEM_mallocN_aligned(bytes, 16, "COM_BufferUtil::hostAlloc");
 }
 
 void hostNonStdAlloc(TmpBuffer *dst, int width, int height, int belem_chs)
@@ -161,12 +166,6 @@ void origHostFree(TmpBuffer *dst)
   hostFree(dst->orig_host.buffer);
   dst->orig_host.buffer = nullptr;
   dst->orig_host.state = HostMemoryState::NONE;
-}
-
-void deleteCacheBuffer(CacheBuffer *buffer)
-{
-  hostFree(buffer->host.buffer);
-  delete buffer;
 }
 
 void deviceMapToHostEnqueue(TmpBuffer *buf, MemoryAccess host_access)

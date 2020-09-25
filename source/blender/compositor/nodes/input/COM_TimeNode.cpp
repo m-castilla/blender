@@ -38,7 +38,7 @@ void TimeNode::convertToOperations(NodeConverter &converter,
 
   /* stack order output: fac */
   float fac = 0.0f;
-  const int framenumber = context.getFramenumber();
+  const int framenumber = context.getCurrentFrame();
 
   if (framenumber < node->custom1) {
     fac = 0.0f;
@@ -47,7 +47,7 @@ void TimeNode::convertToOperations(NodeConverter &converter,
     fac = 1.0f;
   }
   else if (node->custom1 < node->custom2) {
-    fac = (context.getFramenumber() - node->custom1) / (float)(node->custom2 - node->custom1);
+    fac = (context.getCurrentFrame() - node->custom1) / (float)(node->custom2 - node->custom1);
   }
 
   BKE_curvemapping_init((CurveMapping *)node->storage);

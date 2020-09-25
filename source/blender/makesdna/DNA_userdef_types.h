@@ -883,12 +883,17 @@ typedef struct UserDef {
   int sequencer_disk_cache_compression; /* eUserpref_DiskCacheCompression */
   int sequencer_disk_cache_size_limit;
   short sequencer_disk_cache_flag;
-  char _pad5[2];
+
+  short compositor_flag;
+  int compositor_mem_cache_limit;
+  int compositor_disk_cache_limit;
+  char compositor_disk_cache_dir[1024];
 
   float collection_instance_empty_size;
-  char _pad10[3];
 
   char statusbar_flag; /* eUserpref_StatusBar_Flag */
+
+  char _pad10[3];
 
   struct WalkNavigation walk_navigation;
 
@@ -1335,6 +1340,11 @@ typedef enum eUserpref_DiskCacheCompression {
   USER_SEQ_DISK_CACHE_COMPRESSION_LOW = 1,
   USER_SEQ_DISK_CACHE_COMPRESSION_HIGH = 2,
 } eUserpref_DiskCacheCompression;
+
+/** #UserDef.compo_flag */
+typedef enum eUserpref_Compositor_Flag {
+  USER_COMPOSITOR_DISK_CACHE_ENABLE = (1 << 0),
+} eUserpref_Compositor_Flag;
 
 /* Locale Ids. Auto will try to get local from OS. Our default is English though. */
 /** #UserDef.language */

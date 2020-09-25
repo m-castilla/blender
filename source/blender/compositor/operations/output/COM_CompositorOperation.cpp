@@ -17,6 +17,8 @@
  */
 
 #include "COM_CompositorOperation.h"
+#include "COM_GlobalManager.h"
+
 #include "BKE_global.h"
 #include "BKE_image.h"
 #include "BLI_listbase.h"
@@ -75,7 +77,7 @@ void CompositorOperation::deinitExecution()
     return;
   }
 
-  if (!isBreaked()) {
+  if (!GlobalMan->getContext()->isBreaked()) {
     Render *re = RE_GetSceneRender(this->m_scene);
     RenderResult *rr = RE_AcquireResultWrite(re);
 

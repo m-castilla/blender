@@ -83,15 +83,15 @@ class CompositorContext {
    */
   const char *m_viewName;
 
-  size_t m_max_cache_bytes;
-
   std::string m_execution_id;
 
   int m_cpu_work_threads;
 
-  DetermineResolutionMode m_res_mode;
-
   float m_inputs_scale;
+  uint64_t m_max_mem_cache_bytes;
+  uint64_t m_max_disk_cache_bytes;
+  const char *m_disk_cache_dir;
+  bool m_use_disk_cache;
 
  private:
   CompositorContext();
@@ -116,11 +116,6 @@ class CompositorContext {
   {
     return m_main;
   }
-  void setMain(struct Main *main)
-  {
-    m_main = main;
-  }
-
   struct Depsgraph *getDepsgraph() const
   {
     return m_depsgraph;
@@ -129,15 +124,6 @@ class CompositorContext {
   {
     return m_view_layer;
   }
-  void setViewLayer(ViewLayer *view_layer)
-  {
-    m_view_layer = view_layer;
-  }
-  void setDepsgraph(struct Depsgraph *depsgraph)
-  {
-    m_depsgraph = depsgraph;
-  }
-
   PixelsSampler getDefaultSampler() const
   {
     return PixelsSampler{PixelInterpolation::BILINEAR, PixelExtend::CLIP};
@@ -148,17 +134,16 @@ class CompositorContext {
     return PixelsSampler{PixelInterpolation::NEAREST, PixelExtend::CLIP};
   }
 
-  bool isBreaked() const;
-  int getPreviewSize() const;
+  // Is video sequencer activated in the post-processing pipeline
+  bool isVseSequencerPassOn() const
+  {
+    return (m_scene->r.scemode & R_DOSEQ);
+  }
 
-  void setDetermineResolutionMode(DetermineResolutionMode mode)
-  {
-    m_res_mode = mode;
-  }
-  DetermineResolutionMode getDetermineResolutionMode() const
-  {
-    return m_res_mode;
-  }
+  bool isBreaked() const;
+  void updateDraw() const;
+
+  int getPreviewSize() const;
 
   float getInputsScale() const
   {
@@ -169,14 +154,9 @@ class CompositorContext {
   {
     return m_cpu_work_threads;
   }
-
   void setNCpuWorkThreads(int n_threads)
   {
     m_cpu_work_threads = n_threads;
-  }
-  void setExecutionId(const std::string &execution_id)
-  {
-    m_execution_id = execution_id;
   }
 
   std::string getExecutionId() const
@@ -184,35 +164,34 @@ class CompositorContext {
     return m_execution_id;
   }
 
-  void setBufferCacheSize(size_t bytes)
+  void setMemCacheBytes(size_t bytes)
   {
-    m_max_cache_bytes = bytes;
+    m_max_mem_cache_bytes = bytes;
   }
 
-  size_t getBufferCacheSize() const
+  size_t getMemCacheBytes() const
   {
-    return m_max_cache_bytes;
+    return m_max_mem_cache_bytes;
   }
 
-  /**
-   * \brief set the rendering field of the context
-   */
-  void setRendering(bool rendering)
+  size_t getDiskCacheBytes() const
   {
-    this->m_rendering = rendering;
+    return useDiskCache() ? m_max_disk_cache_bytes : 0;
   }
 
-  /**
-   * \brief get the rendering field of the context
-   */
+  bool useDiskCache() const
+  {
+    return m_use_disk_cache;
+  }
+
+  const char *getDiskCacheDir() const
+  {
+    return m_disk_cache_dir;
+  }
+
   bool isRendering() const
   {
     return this->m_rendering;
-  }
-
-  void setRenderData(RenderData *rd)
-  {
-    this->m_rd = rd;
   }
 
   const RenderData *getRenderData() const
@@ -229,34 +208,14 @@ class CompositorContext {
     return m_rd->ysch;
   }
 
-  void setbNodeTree(bNodeTree *bnodetree)
-  {
-    this->m_bnodetree = bnodetree;
-  }
-
-  /**
-   * \brief get the bnodetree of the context
-   */
   bNodeTree *getbNodeTree() const
   {
     return this->m_bnodetree;
   }
 
-  void setScene(Scene *scene)
-  {
-    m_scene = scene;
-  }
   Scene *getScene() const
   {
     return m_scene;
-  }
-
-  /**
-   * \brief set the preview image hash table
-   */
-  void setPreviewHash(bNodeInstanceHash *previews)
-  {
-    this->m_previews = previews;
   }
 
   /**
@@ -268,14 +227,6 @@ class CompositorContext {
   }
 
   /**
-   * \brief set view settings of color color management
-   */
-  void setViewSettings(const ColorManagedViewSettings *viewSettings)
-  {
-    this->m_viewSettings = viewSettings;
-  }
-
-  /**
    * \brief get view settings of color color management
    */
   const ColorManagedViewSettings *getViewSettings() const
@@ -284,27 +235,11 @@ class CompositorContext {
   }
 
   /**
-   * \brief set display settings of color color management
-   */
-  void setDisplaySettings(const ColorManagedDisplaySettings *displaySettings)
-  {
-    this->m_displaySettings = displaySettings;
-  }
-
-  /**
    * \brief get display settings of color color management
    */
   const ColorManagedDisplaySettings *getDisplaySettings() const
   {
     return this->m_displaySettings;
-  }
-
-  /**
-   * \brief set the quality
-   */
-  void setQuality(CompositorQuality quality)
-  {
-    this->m_quality = quality;
   }
 
   /**
@@ -318,7 +253,7 @@ class CompositorContext {
   /**
    * \brief get the current frame-number of the scene in this context
    */
-  int getFramenumber() const;
+  int getCurrentFrame() const;
 
   /**
    * \brief get the active rendering view
@@ -326,14 +261,6 @@ class CompositorContext {
   const char *getViewName() const
   {
     return this->m_viewName;
-  }
-
-  /**
-   * \brief set the active rendering view
-   */
-  void setViewName(const char *viewName)
-  {
-    this->m_viewName = viewName;
   }
 
 #ifdef WITH_CXX_GUARDEDALLOC

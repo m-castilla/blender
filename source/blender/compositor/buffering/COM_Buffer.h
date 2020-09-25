@@ -74,13 +74,6 @@ typedef struct DeviceBuffer {
   DeviceMemoryState state;
 } DeviceBuffer;
 
-typedef struct CacheBuffer {
-  HostBuffer host;
-  int width;
-  int height;
-  int elem_chs;
-  long last_use_time;
-} CacheBuffer;
 typedef struct TmpBuffer {
   DeviceBuffer device;
   HostBuffer host;
@@ -140,13 +133,5 @@ typedef struct TmpBuffer {
   MEM_CXX_CLASS_ALLOC_FUNCS("COM:TmpBuffer")
 #endif
 } TmpBuffer;
-// typedef struct SimpleBuffer {
-//  float *buffer;
-//  size_t n_elems;
-//  inline size_t getBufferBytes()
-//  {
-//    return n_elems * sizeof(float);
-//  }
-//} SimpleBuffer;
 
 #endif

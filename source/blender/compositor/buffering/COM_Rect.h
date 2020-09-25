@@ -29,36 +29,6 @@
 
 typedef std::function<std::shared_ptr<PixelsRect>(const rcti)> TmpRectBuilder;
 struct TmpBuffer;
-typedef struct OpKey {
-  int op_width;
-  int op_height;
-  DataType op_data_type;
-  size_t op_type_hash;
-  size_t op_hash;
-
-  bool const operator==(const OpKey &o) const
-  {
-    return op_width == o.op_width && op_height == o.op_height && op_data_type == o.op_data_type &&
-           op_type_hash == o.op_type_hash && op_hash == o.op_hash;
-  }
-  bool const operator!=(const OpKey &o) const
-  {
-    return !operator==(o);
-  }
-} OpKey;
-namespace std {
-/* OpKey default hash function. Mainly for being used by default in std::unordermap*/
-template<> struct hash<OpKey> {
-  std::size_t operator()(const OpKey &k) const
-  {
-    return k.op_hash;
-  }
-#ifdef WITH_CXX_GUARDEDALLOC
-  MEM_CXX_CLASS_ALLOC_FUNCS("COM:OpKey")
-#endif
-};
-
-}  // namespace std
 
 class PixelsRect : public rcti {
  public:

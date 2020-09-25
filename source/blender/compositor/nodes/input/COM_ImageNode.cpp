@@ -16,13 +16,13 @@
  * Copyright 2011, Blender Foundation.
  */
 
-#include <string.h> 
+#include <string.h>
 
-#include "COM_ImageNode.h"
 #include "BKE_node.h"
 #include "BLI_utildefines.h"
 #include "COM_ConvertOperation.h"
 #include "COM_ExecutionSystem.h"
+#include "COM_ImageNode.h"
 #include "COM_ImageOperation.h"
 #include "COM_MultilayerImageOperation.h"
 
@@ -79,10 +79,10 @@ void ImageNode::convertToOperations(NodeConverter &converter,
   bNode *editorNode = this->getbNode();
   Image *image = (Image *)editorNode->id;
   ImageUser *imageuser = (ImageUser *)editorNode->storage;
-  int framenumber = context.getFramenumber();
+  int framenumber = context.getCurrentFrame();
   int numberOfOutputs = this->getNumberOfOutputSockets();
   bool outputStraightAlpha = (editorNode->custom1 & CMP_NODE_IMAGE_USE_STRAIGHT_OUTPUT) != 0;
-  BKE_image_user_frame_calc(image, imageuser, context.getFramenumber());
+  BKE_image_user_frame_calc(image, imageuser, context.getCurrentFrame());
   /* force a load, we assume iuser index will be set OK anyway */
   if (image && image->type == IMA_TYPE_MULTILAYER) {
     bool is_multilayer_ok = false;
