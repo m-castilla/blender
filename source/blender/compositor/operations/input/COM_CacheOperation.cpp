@@ -21,6 +21,8 @@
 #include "COM_GlobalManager.h"
 #include "COM_PixelsUtil.h"
 
+#include "COM_kernel_cpu.h"
+
 CacheOperation::CacheOperation() : NodeOperation(), m_persistent(false)
 {
   this->addInputSocket(SocketType::DYNAMIC);
@@ -43,9 +45,15 @@ bool CacheOperation::isFinalOperation()
 void CacheOperation::execPixels(ExecutionManager &man)
 {
   auto src = getInputOperation(0)->getPixels(this, man);
-  auto cpu_write = [&](PixelsRect &dst, const WriteRectContext & /*ctx*/) {
-    PixelsRect src_rect = src->toRect(dst);
-    PixelsUtil::copyEqualRects(dst, src_rect);
+  auto cpu_write = [=](PixelsRect &dst, const WriteRectContext & /*ctx*/) {
+    // src is empty sometimes. Needs Fix: TODO (probably related to BufferManager readSeek method)
+    if (src) {
+      PixelsRect src_rect = src->toRect(dst);
+      PixelsUtil::copyEqualRects(dst, src_rect);
+    }
+    else {
+      PixelsUtil::setRectElem(dst, (float *)&CCL::TRANSPARENT_PIXEL);
+    }
   };
   cpuWriteSeek(man, cpu_write);
 }

@@ -69,6 +69,7 @@ void BokehImageOperation::deinitExecution()
       this->m_data = NULL;
     }
   }
+  NodeOperation::deinitExecution();
 }
 
 ResolutionType BokehImageOperation::determineResolution(int resolution[2],

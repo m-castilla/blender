@@ -76,7 +76,8 @@ void CacheManager::checkCaches()
         auto c = cache.get();
         c->last_use_time = 0;
       };
-      m_disk_cache->saveCache(cache->op_key, cache->data, on_save_end, cache->last_use_time);
+      m_disk_cache->saveCache(
+          cache->op_key, cache->data, on_save_end, cache->last_save_time, cache->last_use_time);
     }
     m_disk_cache->checkCaches(true);
   }
@@ -129,17 +130,20 @@ std::pair<bool, OpKey> CacheManager::checkPersistentOpKey(NodeOperation *op)
 TmpBuffer *CacheManager::getCachedOrNewAndPrefetchNext(NodeOperation *op)
 {
   auto tmp = getCache(op, true);
+  BLI_assert(!tmp || tmp->host.state == HostMemoryState::FILLED);
   if (!tmp) {
     tmp = BufferUtil::createStdTmpBuffer(
               nullptr, false, op->getWidth(), op->getHeight(), op->getOutputNUsedChannels())
               .release();
     BufferUtil::hostStdAlloc(tmp, op->getWidth(), op->getHeight());
-    m_mem_cache->saveCache(op->getKey(), tmp->host.buffer, {});
+    m_mem_cache->saveCache(op->getKey(), tmp->host.buffer);
     if (isCacheableAndPersistent(op)) {
       auto pkey = buildPersistentKey(op);
       m_persistent_map.insert_or_assign(pkey, op->getKey());
     }
+    BLI_assert(tmp->host.state == HostMemoryState::CLEARED);
   }
+
   return tmp;
 }
 
@@ -171,6 +175,7 @@ TmpBuffer *CacheManager::getCache(NodeOperation *op, bool prefetch_next)
       m_recycler->setBufferAsTakenRecycle(tmp);
     }
 
+    BLI_assert(!tmp || tmp->host.state == HostMemoryState::FILLED);
     return tmp;
   }
   else {

@@ -29,14 +29,23 @@ GlobalManager::GlobalManager()
 
 GlobalManager::~GlobalManager()
 {
-  delete BufferMan;
-  delete CacheMan;
-  delete ComputeMan;
+  if (BufferMan != nullptr) {
+    delete BufferMan;
+  }
+  if (CacheMan != nullptr) {
+    delete CacheMan;
+  }
+  if (ComputeMan != nullptr) {
+    delete ComputeMan;
+  }
 }
 
 void GlobalManager::initialize(const CompositorContext &ctx)
 {
   m_context = &ctx;
+  if (CacheMan == nullptr) {
+    CacheMan = new CacheManager();
+  }
   /* initialize compute manager */
   bool use_opencl = (ctx.getbNodeTree()->flag & NTREE_COM_OPENCL) != 0;
   ComputeType compute_type = use_opencl ? ComputeType::OPENCL : ComputeType::NONE;
@@ -64,7 +73,6 @@ void GlobalManager::initialize(const CompositorContext &ctx)
 
     ComputeMan = new_compute_man;
     ComputeMan->initialize();
-    CacheMan = new CacheManager();
     BufferMan = new BufferManager(*CacheMan);
     BufferMan->initialize(ctx);
     CacheMan->initialize(&ctx, BufferMan->recycler());

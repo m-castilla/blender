@@ -23,6 +23,7 @@
 #include "COM_NodeOperation.h"
 #include "DNA_scene_types.h"
 #include "MEM_guardedalloc.h"
+#include <mutex>
 
 #include "RE_pipeline.h"
 
@@ -39,6 +40,8 @@ class VideoSequencerOperation : public NodeOperation {
   int m_n_channel;
   Scene *m_scene;
   bool m_is_rendering;
+
+  std::mutex m_rects_mutex;
 
   /**
    * Determine the output resolution. The resolution is retrieved from the Renderer

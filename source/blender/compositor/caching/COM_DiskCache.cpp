@@ -43,6 +43,7 @@ DiskCache::DiskCache(size_t op_type_hash)
       m_cache_dir_set(false),
       m_base_convert()
 {
+  deleteAllCaches();
 }
 
 DiskCache::~DiskCache()
@@ -50,6 +51,8 @@ DiskCache::~DiskCache()
   joinAllThreads();
   // if prefetched cache has not been gotten (when gotten is set to nullptr). Just free it.
   assurePreviousPrefetchFreed();
+
+  deleteAllCaches();
 }
 
 static void printException(std::string msg_start, std::exception e)
@@ -133,8 +136,8 @@ void DiskCache::saveCache(const CacheInfo *info, float *data, std::function<void
 
     auto op_key = info->op_key;
     auto total_bytes = info->getTotalBytes();
+    auto file_path = getFilePath(info);
     std::function task = [=]() {
-      auto file_path = getFilePath(info->op_key, info->last_use_time);
       try {
         auto myfile = std::fstream(file_path, std::ios::out | std::ios::binary);
         myfile.write((char *)data, total_bytes);
@@ -165,12 +168,11 @@ void DiskCache::prefetchCache(const CacheInfo *info)
     assurePreviousPrefetchFreed();
 
     m_prefetch_key = info->op_key;
-    auto last_use_time = info->last_use_time;
     auto total_bytes = info->getTotalBytes();
+    auto file_path = getFilePath(info);
+    BLI_assert(fs::exists(file_path));
+    BLI_assert(fs::file_size(file_path) == total_bytes);
     std::function task = [=]() {
-      auto file_path = getFilePath(m_prefetch_key, last_use_time);
-      BLI_assert(fs::exists(file_path));
-      BLI_assert(fs::file_size(file_path) == total_bytes);
       try {
         auto myfile = std::fstream(file_path, std::ios::in | std::ios::binary);
         m_prefetched_cache = BufferUtil::hostAlloc(total_bytes);
@@ -212,10 +214,9 @@ void DiskCache::deleteCache(const CacheInfo *info)
     joinRelatedThreads(info);
 
     auto op_key = info->op_key;
-    auto last_use_time = info->last_use_time;
+    auto file_path = getFilePath(info);
+    BLI_assert(fs::exists(file_path));
     std::function task = [=]() {
-      auto file_path = getFilePath(op_key, last_use_time);
-      BLI_assert(fs::exists(file_path));
       try {
         std::filesystem::remove(file_path);
       }
@@ -250,7 +251,10 @@ void DiskCache::loadCacheDir()
       if (fs::is_regular_file(itr->status())) {
         auto cache_info = getCacheInfoFromFilename(itr->path().filename().string());
         if (std::get<0>(cache_info)) {
-          loadCacheInfo(std::get<1>(cache_info), std::get<2>(cache_info));
+          uint64_t last_save_time = std::get<2>(cache_info);
+          // we intentionally use last_save_time as last_use_time on loading. As we rather avoid
+          // having to change filename or updating the file each time cache is used.
+          loadCacheInfo(std::get<1>(cache_info), last_save_time, last_save_time);
         }
       }
     }
@@ -358,13 +362,15 @@ void DiskCache::removeEndedThreads()
 }
 
 const int FILENAME_N_PARTS = 5;
-std::string DiskCache::getFilePath(const OpKey &op_key, uint64_t last_use_time)
+std::string DiskCache::getFilePath(const CacheInfo *cache_info)
 {
+  const auto &op_key = cache_info->op_key;
   auto width_str = m_base_convert.convertBase10ToBase(op_key.op_width, BaseConverter::MAX_BASE);
   auto height_str = m_base_convert.convertBase10ToBase(op_key.op_height, BaseConverter::MAX_BASE);
   auto datatype_str = m_base_convert.convertBase10ToBase((size_t)op_key.op_data_type,
                                                          BaseConverter::MAX_BASE);
-  auto save_time_str = m_base_convert.convertBase10ToBase(last_use_time, BaseConverter::MAX_BASE);
+  auto save_time_str = m_base_convert.convertBase10ToBase(cache_info->last_save_time,
+                                                          BaseConverter::MAX_BASE);
   auto hash_str = m_base_convert.convertBase10ToBase(op_key.op_hash, BaseConverter::MAX_BASE);
   std::string filename = width_str + FILENAME_PARTS_DELIMITER + height_str +
                          FILENAME_PARTS_DELIMITER + datatype_str + FILENAME_PARTS_DELIMITER +
@@ -380,7 +386,7 @@ std::tuple<bool, OpKey, uint64_t> DiskCache::getCacheInfoFromFilename(const std:
   if (parts.size() == FILENAME_N_PARTS) {
     size_t results[FILENAME_N_PARTS];
     for (int i = 0; i < FILENAME_N_PARTS; i++) {
-      auto result = m_base_convert.convertBaseToBase10(parts[0], BaseConverter::MAX_BASE);
+      auto result = m_base_convert.convertBaseToBase10(parts[i], BaseConverter::MAX_BASE);
       if (result.first) {
         results[i] = result.second;
       }

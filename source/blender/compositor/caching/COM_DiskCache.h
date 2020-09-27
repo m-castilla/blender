@@ -26,7 +26,7 @@
 
 class DiskCache : public BaseCache {
  private:
-  const char *CACHE_INNER_DIR_NAME = "cmpdiskcache";
+  const char *CACHE_INNER_DIR_NAME = "blender_cmpcache";
   std::string m_cache_dir_path;
   std::thread m_load_thread;
 
@@ -81,7 +81,7 @@ class DiskCache : public BaseCache {
   void loadCacheDir();
   void joinRelatedThreads(const CacheInfo *info);
   void joinAllThreads();
-  std::string getFilePath(const OpKey &op_key, uint64_t last_use_time);
+  std::string getFilePath(const CacheInfo *cache_info);
   // returns whether its a valid filename and the op key with last_use_time if true.
   std::tuple<bool, OpKey, uint64_t> getCacheInfoFromFilename(const std::string filename);
 

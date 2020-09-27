@@ -36,8 +36,6 @@
 #include "COM_RectUtil.h"
 #include "COM_defines.h"
 
-const size_t CLEAN_CACHE_STEP_BYTES = 64 * 1024 * 1024;  // 64MB
-                                                         /* Pass arguments into this contructor*/
 using namespace std::placeholders;
 BufferManager::BufferManager(CacheManager &cache_manager)
     : m_cache_manager(cache_manager),
@@ -158,28 +156,25 @@ BufferManager::ReadResult BufferManager::readSeek(NodeOperation *op, ExecutionMa
   const auto &key = op->getKey();
   auto optimizer_found = m_optimizers.find(key);
   if (optimizer_found == m_optimizers.end()) {
-    // this operation getPixels() has not beed called during optimization phase. Probably an input
-    // constant
+    BLI_assert(!"Should not happen");
+    // temporary fix if it happens. TODO: find a way to exec operation writing when this happens.
     result.is_written = true;
+    auto tmp_buf = recycler()->createStdTmpBuffer(
+        true, nullptr, op->getWidth(), op->getHeight(), op->getOutputNUsedChannels());
+    m_recycler->takeStdRecycle(BufferRecycleType::HOST_CLEAR,
+                               tmp_buf,
+                               op->getWidth(),
+                               op->getHeight(),
+                               op->getOutputNUsedChannels());
+    auto new_rect = new PixelsRect(tmp_buf, 0, op->getWidth(), 0, op->getHeight());
+    result.pixels = std::shared_ptr<PixelsRect>(new_rect);
   }
   else {
     auto optimizer = optimizer_found->second;
     auto reads = optimizer->peepReads(man);
 
-    if (m_cache_manager.hasCache(op)) {
-      TmpBuffer *cache = m_cache_manager.getCache(op);
-      if (cache) {
-        BLI_assert(cache->host.state == HostMemoryState::FILLED);
-        if (!reads->is_write_complete) {
-          reads->is_write_complete = true;
-          reportWriteCompleted(op, reads, man);
-        }
-        reads->tmp_buffer = cache;
-        ASSERT_VALID_STD_TMP_BUFFER(reads->tmp_buffer, cache->width, cache->height);
-      }
-    }
-    else if (op->getBufferType() == BufferType::NO_BUFFER_NO_WRITE) {
-      if (!reads->is_write_complete) {
+    if (!reads->is_write_complete) {
+      if (op->getBufferType() == BufferType::NO_BUFFER_NO_WRITE) {
         reads->is_write_complete = true;
         reportWriteCompleted(op, reads, man);
       }
@@ -388,8 +383,7 @@ bool BufferManager::prepareForWrite(bool is_write_computed,
       work_enqueued |= m_recycler->takeStdRecycle(recycle_type, buf, width, height, elem_chs);
       BLI_assert(recycle_type != BufferRecycleType::HOST_CLEAR ||
                  (buf->host.buffer != nullptr && buf->host.bwidth >= width &&
-                  buf->host.bheight >= height &&
-                  buf->host.belem_chs == COM_NUM_CHANNELS_STD));
+                  buf->host.bheight >= height && buf->host.belem_chs == COM_NUM_CHANNELS_STD));
       BLI_assert(recycle_type == BufferRecycleType::HOST_CLEAR ||
                  (buf->device.buffer != nullptr && buf->device.bwidth >= width &&
                   buf->device.bheight >= height && buf->device.belem_chs == COM_NUM_CHANNELS_STD));

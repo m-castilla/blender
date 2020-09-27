@@ -677,6 +677,15 @@ ccl_kernel mixGlareOp(
   float4 zero4 = make_float4_1(0.0f);
   float alpha = color1_pix.w;
   color1_pix = select(color1_pix, zero4, color1_pix < zero4);
+  // if (color1_pix.x < 0.0f) {
+  //  color1_pix.x = 0.0f;
+  //}
+  // if (color1_pix.y < 0.0f) {
+  //  color1_pix.y = 0.0f;
+  //}
+  // if (color1_pix.z < 0.0f) {
+  //  color1_pix.z = 0.0f;
+  //}
   color2_pix = mf * max(color1_pix + value_pix.x * (color2_pix - color1_pix), 0.0f);
   color2_pix.w = alpha;
   if (use_clamp) {
