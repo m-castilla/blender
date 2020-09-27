@@ -60,8 +60,8 @@ ${ZLIB_LIBRARIES}
 
 link_directories(${FREETYPE_LIBPATH})
 
-setup_platform_linker_flags()
-
 add_executable(defmerger ${SRC_EXEC})
+
+setup_platform_linker_flags(defmerger)
 
 target_link_libraries(defmerger ${LIB_EXEC})
