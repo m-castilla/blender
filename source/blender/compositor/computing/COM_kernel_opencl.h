@@ -187,7 +187,8 @@
                                 dst##_start_y + get_global_id(1));
 
 /*src_img must be a image2d_t*/
-#define READ_IMG(src, result) result = read_imagef(src, src##_coords * src##_is_not_single);
+#define READ_IMG(src, result) \
+  result = read_imagef(src, src##_is_not_single ? src##_coords : make_int2(0, 0));
 
 #define READ_IMG1(src, result) READ_IMG(src, result);
 #define READ_IMG3(src, result) READ_IMG(src, result);
@@ -230,19 +231,19 @@
 
 #define INCR1_COORDS_X(src) src##_coords.x++;
 
-#define INCR1_SAMPLE_COORDS_X(src) src##_coordsf.x++;
+#define INCR1_SAMPLE_COORDS_X(src) src##_coordsf.x += 1.0f;
 
 #define INCR1_COORDS_Y(src) src##_coords.y++;
 
-#define INCR1_SAMPLE_COORDS_Y(src) src##_coordsf.y++;
+#define INCR1_SAMPLE_COORDS_Y(src) src##_coordsf.y += 1.0f;
 
 #define DECR1_COORDS_X(src) src##_coords.x--;
 
-#define DECR1_SAMPLE_COORDS_X(src) src##_coordsf.x--;
+#define DECR1_SAMPLE_COORDS_X(src) src##_coordsf.x -= 1.0f;
 
 #define DECR1_COORDS_Y(src) src##_coords.y--;
 
-#define DECR1_SAMPLE_COORDS_Y(src) src##_coordsf.y--;
+#define DECR1_SAMPLE_COORDS_Y(src) src##_coordsf.y -= 1.0f;
 
 #define INCR_COORDS_X(src, incr) src##_coords.x += incr;
 
@@ -256,9 +257,9 @@
 
 /*src_img must be a image2d_t, sampler must be sampler_t, coords must be float2*/
 #define SAMPLE_IMG(src, sampler, result) \
-  result = read_imagef(src, sampler, src##_coordsf * src##_is_not_single);
+  result = read_imagef(src, sampler, src##_is_not_single ? src##_coordsf : make_float2(0, 0));
 #define SAMPLE_INT_IMG(src, sampler, result) \
-  result = read_imagef(src, sampler, src##_coords * src##_is_not_single);
+  result = read_imagef(src, sampler, src##_is_not_single ? src##_coords : make_int2(0, 0));
 
 #include "kernel_util/COM_kernel_filter.h"
 

@@ -107,7 +107,8 @@ CompositorContext CompositorContext::build(const std::string &execution_id,
   context.m_max_mem_cache_bytes = (size_t)U.compositor_mem_cache_limit * 1024 * 1024;  // MB
   context.m_max_disk_cache_bytes = (size_t)U.compositor_disk_cache_limit * 1024 * 1024 *
                                    1024;  // GB
-  context.m_disk_cache_dir = U.compositor_disk_cache_dir ? U.compositor_disk_cache_dir : "";
+  context.m_disk_cache_dir = U.compositor_disk_cache_dir[0] == '\0' ? U.tempdir :
+                                                                      U.compositor_disk_cache_dir;
   context.m_use_disk_cache = U.compositor_flag &
                              eUserpref_Compositor_Flag::USER_COMPOSITOR_DISK_CACHE_ENABLE;
 

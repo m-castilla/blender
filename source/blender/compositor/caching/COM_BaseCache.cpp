@@ -81,6 +81,7 @@ std::vector<std::shared_ptr<RemovedCache>> BaseCache::checkCaches(bool delete_ca
       auto cache_data = new RemovedCache();
       cache_data->data = cache_buf;
       cache_data->last_use_time = oldest_cache->last_use_time;
+      cache_data->last_save_time = oldest_cache->last_save_time;
       cache_data->op_key = oldest_cache->op_key;
       removed_caches.emplace_back(cache_data);
     }
@@ -109,26 +110,34 @@ void BaseCache::deleteCacheInfo(CacheInfo *info)
 
 void BaseCache::initialize(const CompositorContext *ctx)
 {
+  m_prefetch_added.clear();
   m_prefetch_queue.clear();
   m_max_bytes = getMaxBytes(ctx);
 }
 void BaseCache::deinitialize(const CompositorContext *ctx)
 {
+  m_prefetch_added.clear();
   m_prefetch_queue.clear();
 }
 
 void BaseCache::cacheReadOptimize(const OpKey &op_key)
 {
-  m_prefetch_queue.push_back(op_key);
+  // Only add the first read to the prefetch queue , because once cache is read on write,
+  // cache will be kept in buffer manager for next reads.
+  if (m_prefetch_added.find(op_key) == m_prefetch_added.end()) {
+    m_prefetch_added.insert(op_key);
+    m_prefetch_queue.push_back(op_key);
+  }
 }
 
 void BaseCache::saveCache(const OpKey &op_key,
                           float *data,
                           std::function<void()> on_save_end,
+                          uint64_t last_save_time,
                           uint64_t last_use_time)
 {
   BLI_assert(m_op_mode == OperationMode::Exec);
-  auto info = loadCacheInfo(op_key, last_use_time);
+  auto info = loadCacheInfo(op_key, last_save_time, last_use_time);
   saveCache(info, data, on_save_end);
 }
 
@@ -196,22 +205,27 @@ BaseCache::CacheInfo *BaseCache::getCacheInfo(const OpKey &key)
   }
 }
 
-BaseCache::CacheInfo *BaseCache::loadCacheInfo(const OpKey &op_key, uint64_t last_use_time)
+BaseCache::CacheInfo *BaseCache::loadCacheInfo(const OpKey &op_key,
+                                               uint64_t last_save_time,
+                                               uint64_t last_use_time)
 {
   BLI_assert(op_key.op_type_hash == m_op_type_hash);
   CacheInfo *info = nullptr;
   auto found_it = m_caches.find(op_key);
+  auto now = TimeUtil::getNowNsTime();
   if (found_it == m_caches.end()) {
     info = new CacheInfo();
     info->op_key = op_key;
-    info->last_use_time = last_use_time <= 0 ? TimeUtil::getNowNsTime() : last_use_time;
+    info->last_use_time = last_use_time <= 0 ? now : last_use_time;
+    info->last_save_time = last_save_time <= 0 ? now : last_save_time;
     m_caches.emplace(op_key, info);
     m_caches_by_time.insert(info);
     m_current_bytes += info->getTotalBytes();
   }
   else {
     info = found_it->second;
-    info->last_use_time = last_use_time <= 0 ? TimeUtil::getNowNsTime() : last_use_time;
+    info->last_use_time = last_use_time <= 0 ? now : last_use_time;
+    info->last_save_time = last_save_time <= 0 ? now : last_save_time;
   }
   return info;
 }

@@ -28,6 +28,7 @@
 #include "COM_RectUtil.h"
 #include "COM_WorkScheduler.h"
 
+const int MAXIMUM_IMAGE_PIXELS_PER_WORK = 320 * 320;
 ExecutionManager::ExecutionManager(const CompositorContext &context,
                                    std::vector<ExecutionGroup *> &exec_groups)
     : m_context(context),
@@ -110,8 +111,20 @@ void ExecutionManager::execWriteJob(
       int width = xmax - xmin;
       int height = ymax - ymin;
 
-      int n_total_works = m_context.getNCpuWorkThreads() * 8;
-      n_total_works = std::min(n_total_works, height);
+#if COM_CURRENT_THREADING_MODEL == COM_TM_NOTHREAD
+      int n_total_works = 1;
+#else
+      // we set a minimun so that if user cancels the execution it's responsive and don't have to
+      // wait too much to finish heavy load works
+      int n_min_works = (width * height) / MAXIMUM_IMAGE_PIXELS_PER_WORK;
+      n_min_works = std::min(n_min_works, height);
+      // double the number of cpu threads is usually a good number for performance
+      int n_total_works = m_context.getNCpuWorkThreads() * 2;
+      if (n_total_works < n_min_works) {
+        n_total_works = n_min_works;
+      }
+#endif
+
       if (n_total_works > 0) {
         std::vector<rcti> splits = RectUtil::splitImgRectInEqualRects(
             n_total_works, width, height);

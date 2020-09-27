@@ -2728,7 +2728,8 @@ static void node_composit_buts_denoise(uiLayout *layout, bContext *UNUSED(C), Po
 
 static void node_composit_buts_cache(uiLayout *layout, bContext *UNUSED(C), PointerRNA *ptr)
 {
-  uiItemR(layout, ptr, "persistent", DEFAULT_FLAGS, NULL, ICON_NONE);
+  // TODO: Enable when persistent option is working correctly
+  // uiItemR(layout, ptr, "persistent", DEFAULT_FLAGS, NULL, ICON_NONE);
 }
 
 static void node_composit_buts_videoseq(uiLayout *layout, bContext *UNUSED(C), PointerRNA *ptr)

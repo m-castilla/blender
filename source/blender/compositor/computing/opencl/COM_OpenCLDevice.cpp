@@ -108,6 +108,12 @@ void OpenCLDevice::queueJob(PixelsRect &dst,
   auto setOffsetArgsFunc = kernel->addWriteImgArgs(dst);
   add_kernel_args_func((ComputeKernel *)kernel);
 
+  // Kernel may have added argument buffers that need write work. We have to execute it now,
+  // otherwise arguments would be empty when calling clEnqueueNDRangeKernel
+  if (kernel->hasWorkEnqueued()) {
+    waitQueueToFinish();
+  }
+
   size_t img_width = (size_t)dst.getWidth();
   size_t img_height = (size_t)dst.getHeight();
 

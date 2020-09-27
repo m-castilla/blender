@@ -24,6 +24,7 @@
 #include <stddef.h>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #ifdef WITH_CXX_GUARDEDALLOC
 #  include "MEM_guardedalloc.h"
 #endif
@@ -34,6 +35,7 @@ typedef struct RemovedCache {
   // might be null when cache couldn't be retrieved (e.g. user deleted it from disk)
   float *data;
   OpKey op_key;
+  uint64_t last_save_time;
   uint64_t last_use_time;
   ~RemovedCache();
 
@@ -53,8 +55,10 @@ class BaseCache {
  protected:
   typedef struct CacheInfo {
     OpKey op_key;
-    // in nanoseoncds from linux epoch
+    // in nanoseconds from linux epoch
     uint64_t last_use_time;
+    // in nanoseconds from linux epoch
+    uint64_t last_save_time;
 
     size_t getTotalBytes() const;
 #ifdef WITH_CXX_GUARDEDALLOC
@@ -63,7 +67,7 @@ class BaseCache {
   } CacheInfo;
 
  private:
-  struct SortBySaveTime {
+  struct SortByUseTime {
     bool operator()(const CacheInfo *lhs, const CacheInfo *rhs) const
     {
       return lhs->last_use_time < rhs->last_use_time;
@@ -74,11 +78,12 @@ class BaseCache {
   size_t m_current_bytes;
 
   std::unordered_map<OpKey, CacheInfo *> m_caches;
-  std::set<CacheInfo *, SortBySaveTime> m_caches_by_time;
+  std::set<CacheInfo *, SortByUseTime> m_caches_by_time;
 
   // Optimization calls order, which should be
   // the same as when in execution mode. Used for prefetching caches
   std::deque<OpKey> m_prefetch_queue;
+  std::unordered_set<OpKey> m_prefetch_added;
 
   OperationMode m_op_mode;
 
@@ -100,11 +105,12 @@ class BaseCache {
 
   void cacheReadOptimize(const OpKey &op_key);
 
-  // last_use_time must only be given when the data being saved has been retrieved from other type
-  // of cache
+  // last_save_time and last_use_time must only be given when the data being saved has been
+  // retrieved from other type of cache
   void saveCache(const OpKey &op_key,
                  float *data,
                  std::function<void()> on_save_end = {},
+                 uint64_t last_save_time = 0,
                  uint64_t last_use_time = 0);
 
   // Returns null if there were any problem getting the cache (e.g. user deleted it from disk)
@@ -130,7 +136,7 @@ class BaseCache {
   }
   // may be called by subclasses on app initialization to load persistent caches infos.
   // last_use_time must be in nanoseoncds from linux epoch, if 0 current time will be set
-  CacheInfo *loadCacheInfo(const OpKey &key, uint64_t last_use_time);
+  CacheInfo *loadCacheInfo(const OpKey &key, uint64_t last_save_time, uint64_t last_use_time);
 
   // last_use_time must only be given when the data being saved has been retrieved from other type
   // of cache

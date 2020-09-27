@@ -86,7 +86,11 @@ void COM_execute(struct Main *main,
                                                        viewSettings,
                                                        displaySettings,
                                                        viewName);
+#if COM_CURRENT_THREADING_MODEL == COM_TM_NOTHREAD
+  int m_cpu_work_threads = 1;
+#else
   int m_cpu_work_threads = BLI_system_thread_count();
+#endif
   context.setNCpuWorkThreads(m_cpu_work_threads);
 
   /* set progress bar to 0% and status to init compositing */
