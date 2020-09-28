@@ -20,7 +20,11 @@
 #include "BLI_path_util.h"
 #include <chrono>
 #include <cstring>
-#include <filesystem>
+#ifdef __APPLE__
+#  include <experimental/filesystem>
+#else
+#  include <filesystem>
+#endif
 #include <fstream>
 
 #include "COM_BufferUtil.h"
