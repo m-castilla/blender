@@ -19,6 +19,7 @@
 #include "BLI_assert.h"
 #include "BLI_path_util.h"
 #include <chrono>
+#include <cstring>
 #include <filesystem>
 #include <fstream>
 
@@ -59,7 +60,7 @@ static void printException(std::string msg_start, std::exception e)
 {
   auto what = std::string(e.what());
   auto msg = msg_start + what;
-  printf(msg.c_str());
+  printf("%s", msg.c_str());
 }
 
 void DiskCache::initialize(const CompositorContext *ctx)
@@ -193,7 +194,7 @@ void DiskCache::prefetchCache(const CacheInfo *info)
   }
 }
 
-float *DiskCache::getCache(const CacheInfo *info)
+float *DiskCache::getCache(const CacheInfo * /*info*/)
 {
   if (m_cache_dir_set) {
     if (m_prefetch_thread.joinable()) {
@@ -232,7 +233,7 @@ void DiskCache::deleteCache(const CacheInfo *info)
   }
 }
 
-float *DiskCache::removeCache(const CacheInfo *info)
+float *DiskCache::removeCache(const CacheInfo * /*info*/)
 {
   // removeCache must not be called for non-memory based caches
   throw std::bad_function_call();
