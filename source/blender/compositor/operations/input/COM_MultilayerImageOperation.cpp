@@ -56,6 +56,7 @@ void MultilayerBaseOperation::hashParams()
   BaseImageOperation::hashParams();
   hashParam(this->m_view);
   hashParam(this->m_passId);
+  hashParam((size_t)&m_renderlayer);
 }
 
 void MultilayerColorOperation::execPixels(ExecutionManager &man)
@@ -70,7 +71,7 @@ void MultilayerValueOperation::execPixels(ExecutionManager &man)
 {
   auto cpuWrite = [&](PixelsRect &dst, const WriteRectContext &) {
     PixelsUtil::copyImBufRectNChannels(
-        dst, m_imbuf, COM_NUM_CHANNELS_VALUE, COM_NUM_CHANNELS_COLOR);
+        dst, m_imbuf, COM_NUM_CHANNELS_VALUE, COM_NUM_CHANNELS_VALUE);
   };
   return cpuWriteSeek(man, cpuWrite);
 }
@@ -79,7 +80,7 @@ void MultilayerVectorOperation::execPixels(ExecutionManager &man)
 {
   auto cpuWrite = [&](PixelsRect &dst, const WriteRectContext & /*ctx*/) {
     PixelsUtil::copyImBufRectNChannels(
-        dst, m_imbuf, COM_NUM_CHANNELS_VECTOR, COM_NUM_CHANNELS_COLOR);
+        dst, m_imbuf, COM_NUM_CHANNELS_VECTOR, COM_NUM_CHANNELS_VECTOR);
   };
   return cpuWriteSeek(man, cpuWrite);
 }

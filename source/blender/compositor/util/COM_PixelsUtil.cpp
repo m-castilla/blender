@@ -74,10 +74,13 @@ SocketType PixelsUtil::dataToSocketType(DataType d)
   }
 }
 
-void PixelsUtil::copyBufferRect(PixelsRect &dst, float *read_buf, int n_used_chs, int n_buf_chs)
+void PixelsUtil::copyBufferRect(PixelsRect &dst,
+                                float *read_buf,
+                                int n_used_chs,
+                                int n_read_buf_chs)
 {
   auto buf = BufferUtil::createNonStdTmpBuffer(
-      read_buf, true, dst.tmp_buffer->width, dst.tmp_buffer->height, n_buf_chs);
+      read_buf, true, dst.tmp_buffer->width, dst.tmp_buffer->height, n_read_buf_chs);
   PixelsRect src_rect = PixelsRect(buf.get(), dst);
   PixelsUtil::copyEqualRectsNChannels(dst, src_rect, n_used_chs);
 }
@@ -91,10 +94,10 @@ void PixelsUtil::copyBufferRectNChannels(PixelsRect &dst,
 }
 
 void PixelsUtil::copyBufferRectChannel(
-    PixelsRect &dst, int to_ch_idx, float *read_buf, int from_ch_idx, int n_buf_chs)
+    PixelsRect &dst, int to_ch_idx, float *read_buf, int from_ch_idx, int n_read_buf_chs)
 {
   auto buf = BufferUtil::createNonStdTmpBuffer(
-      read_buf, true, dst.tmp_buffer->width, dst.tmp_buffer->height, n_buf_chs);
+      read_buf, true, dst.tmp_buffer->width, dst.tmp_buffer->height, n_read_buf_chs);
   PixelsRect src_rect = PixelsRect(buf.get(), dst);
   PixelsUtil::copyEqualRectsChannel(dst, to_ch_idx, src_rect, from_ch_idx);
 }
@@ -102,11 +105,12 @@ void PixelsUtil::copyBufferRectChannel(
 void PixelsUtil::copyBufferRect(PixelsRect &dst,
                                 unsigned char *read_buf,
                                 int n_used_chs,
-                                int n_buf_chs)
+                                int n_read_buf_chs)
 {
   float norm_mult = 1.0 / 255.0;
   CCL::float4 src_pixel;
-  size_t src_offset = dst.ymin * dst.tmp_buffer->width * n_buf_chs + dst.xmin * n_buf_chs;
+  size_t src_offset = dst.ymin * dst.tmp_buffer->width * n_read_buf_chs +
+                      dst.xmin * n_read_buf_chs;
   WRITE_DECL(dst);
 
   if (n_used_chs == 4) {
@@ -116,7 +120,7 @@ void PixelsUtil::copyBufferRect(PixelsRect &dst,
                                  read_buf[src_offset + 2],
                                  read_buf[src_offset + 3]);
     src_pixel *= norm_mult;  // normalize
-    src_offset += n_buf_chs;
+    src_offset += n_read_buf_chs;
     WRITE_IMG(dst, src_pixel);
     CPU_LOOP_END;
   }
@@ -126,14 +130,14 @@ void PixelsUtil::copyBufferRect(PixelsRect &dst,
     src_pixel.y = read_buf[src_offset];
     src_pixel.z = read_buf[src_offset];
     src_pixel *= norm_mult;  // normalize
-    src_offset += n_buf_chs;
+    src_offset += n_read_buf_chs;
     WRITE_IMG(dst, src_pixel);
     CPU_LOOP_END;
   }
   else {
     CPU_LOOP_START(dst);
     src_pixel.x = read_buf[src_offset] * norm_mult;  // normalize
-    src_offset += n_buf_chs;
+    src_offset += n_read_buf_chs;
     WRITE_IMG(dst, src_pixel);
     CPU_LOOP_END;
   }
@@ -142,70 +146,71 @@ void PixelsUtil::copyBufferRect(PixelsRect &dst,
 void PixelsUtil::copyBufferRectNChannels(PixelsRect &dst,
                                          unsigned char *read_buf,
                                          int n_channels,
-                                         int dst_buf_chs)
+                                         int n_read_buf_chs)
 {
-  copyBufferRect(dst, read_buf, n_channels, dst_buf_chs);
+  copyBufferRect(dst, read_buf, n_channels, n_read_buf_chs);
 }
 
 void PixelsUtil::copyBufferRectChannel(
-    PixelsRect &dst, int to_ch_idx, unsigned char *read_buf, int from_ch_idx, int dst_buf_chs)
+    PixelsRect &dst, int to_ch_idx, unsigned char *read_buf, int from_ch_idx, int n_read_buf_chs)
 {
   float norm_mult = 1.0 / 255.0;
   PixelsImg dst_img = dst.pixelsImg();
   float *dst_cur = dst_img.start + to_ch_idx;
 
-  size_t buf_brow_chs = dst.tmp_buffer->width * dst_buf_chs;
-  unsigned char *buf_cur = read_buf + dst.ymin * buf_brow_chs + dst.xmin * dst_buf_chs +
-                           from_ch_idx;
+  size_t buf_brow_chs = dst.tmp_buffer->width * n_read_buf_chs;
+  unsigned char *read_buf_cur = read_buf + dst.ymin * buf_brow_chs + dst.xmin * n_read_buf_chs +
+                                from_ch_idx;
 
   float *dst_row_end = dst_img.start + dst_img.row_chs;
   while (dst_cur < dst_img.end) {
     while (dst_cur < dst_row_end) {
-      *dst_cur = *buf_cur * norm_mult;
+      *dst_cur = *read_buf_cur * norm_mult;
 
       dst_cur += dst_img.belem_chs;
-      buf_cur += dst_buf_chs;
+      read_buf_cur += n_read_buf_chs;
     }
     dst_cur += dst_img.row_jump;
     dst_row_end += dst_img.brow_chs_incr;
   }
 }
 
-bool PixelsUtil::copyImBufRect(PixelsRect &dst, ImBuf *imbuf, int n_used_chs, int dst_buf_chs)
+bool PixelsUtil::copyImBufRect(PixelsRect &dst, ImBuf *imbuf, int n_used_chs, int n_read_buf_chs)
 {
   if (!BufferUtil::isImBufAvailable(imbuf)) {
     PixelsUtil::setRectElem(dst, (float *)&CCL::TRANSPARENT_PIXEL);
     return false;
   }
   else if (imbuf->rect_float) {
-    copyBufferRect(dst, imbuf->rect_float, n_used_chs, dst_buf_chs);
+    copyBufferRect(dst, imbuf->rect_float, n_used_chs, n_read_buf_chs);
     return false;
   }
   else {
-    copyBufferRect(dst, (unsigned char *)imbuf->rect, n_used_chs, dst_buf_chs);
+    copyBufferRect(dst, (unsigned char *)imbuf->rect, n_used_chs, n_read_buf_chs);
     return true;
   }
 }
 bool PixelsUtil::copyImBufRectNChannels(PixelsRect &dst,
                                         ImBuf *imbuf,
                                         int n_channels,
-                                        int dst_buf_chs)
+                                        int n_read_buf_chs)
 {
-  return copyImBufRect(dst, imbuf, n_channels, dst_buf_chs);
+  return copyImBufRect(dst, imbuf, n_channels, n_read_buf_chs);
 }
 bool PixelsUtil::copyImBufRectChannel(
-    PixelsRect &dst, int to_ch_idx, ImBuf *imbuf, int from_ch_idx, int dst_buf_chs)
+    PixelsRect &dst, int to_ch_idx, ImBuf *imbuf, int from_ch_idx, int n_read_buf_chs)
 {
   if (!BufferUtil::isImBufAvailable(imbuf)) {
     PixelsUtil::setRectElem(dst, (float *)&CCL::TRANSPARENT_PIXEL);
     return false;
   }
   else if (imbuf->rect_float) {
-    copyBufferRectChannel(dst, to_ch_idx, imbuf->rect_float, from_ch_idx, dst_buf_chs);
+    copyBufferRectChannel(dst, to_ch_idx, imbuf->rect_float, from_ch_idx, n_read_buf_chs);
     return false;
   }
   else {
-    copyBufferRectChannel(dst, to_ch_idx, (unsigned char *)imbuf->rect, from_ch_idx, dst_buf_chs);
+    copyBufferRectChannel(
+        dst, to_ch_idx, (unsigned char *)imbuf->rect, from_ch_idx, n_read_buf_chs);
     return true;
   }
 }
