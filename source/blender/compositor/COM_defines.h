@@ -152,7 +152,7 @@ enum class ResolutionType {
  * release.
  */
 #if defined(COM_DEBUG) || defined(DEBUG)
-#  define COM_CURRENT_THREADING_MODEL COM_TM_QUEUE
+#  define COM_CURRENT_THREADING_MODEL COM_TM_NOTHREAD
 #else
 #  define COM_CURRENT_THREADING_MODEL COM_TM_QUEUE
 #endif
