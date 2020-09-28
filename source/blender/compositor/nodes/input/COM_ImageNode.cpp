@@ -66,7 +66,7 @@ NodeOperation *ImageNode::doMultilayerCheck(NodeConverter &converter,
   operation->setFramenumber(framenumber);
 
   converter.addOperation(operation);
-  converter.mapOutputSocket(outputSocket, operation->getOutputSocket());
+  converter.mapOutputSocket(outputSocket, operation->getOutputSocket(), false);
 
   return operation;
 }
