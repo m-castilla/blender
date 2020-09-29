@@ -82,7 +82,7 @@ void VideoSequencerOperation::assureSequencerRender()
       render = RE_GetSceneRender(scene);
     }
 
-    SeqRenderData seq_data;
+    SeqRenderData seq_context;
     if (render) {
       BKE_sequencer_new_render_data(render->main,
                                     render->pipeline_depsgraph,
@@ -91,7 +91,7 @@ void VideoSequencerOperation::assureSequencerRender()
                                     getHeight(),
                                     100,
                                     m_is_rendering,
-                                    &seq_data);
+                                    &seq_context);
       RE_ReleaseResult(render);
     }
     else {
@@ -102,11 +102,20 @@ void VideoSequencerOperation::assureSequencerRender()
                                     getHeight(),
                                     100,
                                     m_is_rendering,
-                                    &seq_data);
+                                    &seq_context);
     }
-    seq_data.task_id = m_is_rendering ? SEQ_TASK_MAIN_RENDER : SEQ_TASK_PREFETCH_RENDER;
+    seq_context.task_id = m_is_rendering ? SEQ_TASK_MAIN_RENDER : SEQ_TASK_PREFETCH_RENDER;
+    seq_context.skip_scene_strips_renders = true;
 
-    m_seq_frame = BKE_sequencer_give_ibuf(&seq_data, m_n_frame, m_n_channel);
+    if (m_is_rendering) {
+      Editing *ed = BKE_sequencer_editing_get(scene, false);
+      ListBase *seqbasep = ed->seqbasep;
+      m_seq_frame = BKE_sequencer_give_ibuf_seqbase(
+          &seq_context, m_n_frame, m_n_channel, seqbasep);
+    }
+    else {
+      m_seq_frame = BKE_sequencer_give_ibuf(&seq_context, m_n_frame, m_n_channel);
+    }
 
     if (m_seq_frame) {
       if (m_seq_frame->rect_float) {

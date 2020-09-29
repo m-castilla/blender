@@ -659,6 +659,7 @@ void BKE_sequencer_new_render_data(Main *bmain,
   r_context->gpu_offscreen = NULL;
   r_context->task_id = SEQ_TASK_MAIN_RENDER;
   r_context->is_prefetch_render = false;
+  r_context->skip_scene_strips_renders = false;
 }
 
 /* ************************* iterator ************************** */
@@ -3634,11 +3635,7 @@ static ImBuf *seq_render_scene_strip(const SeqRenderData *context,
      * case it's always safe to render scene here
      */
     if (!is_thread_main || is_rendering == false || is_background || context->for_render) {
-      /* It's too costly to request a re-render, makes the UI very slow as it's being called from
-       * the main thread. And furthermore it cause a dead lock when the compositor has a video
-       * sequencer node.
-       * Why it's not just fine to get last renders? */
-      if (!have_comp) {
+      if (!context->skip_scene_strips_renders) {
         if (re == NULL) {
           re = RE_NewSceneRender(scene);
         }

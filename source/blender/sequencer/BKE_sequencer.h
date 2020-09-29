@@ -116,6 +116,10 @@ typedef struct SeqRenderData {
   struct GPUOffScreen *gpu_offscreen;
   // int gpu_samples;
   // bool gpu_full_samples;
+
+  /* option used for compositor "video sequencer node" which should not render scene strips because
+   * it would cause a dead lock as scene strips need pipeline rendering */
+  bool skip_scene_strips_renders;
 } SeqRenderData;
 
 void BKE_sequencer_new_render_data(struct Main *bmain,
