@@ -107,7 +107,7 @@ void VideoSequencerOperation::assureSequencerRender()
     seq_context.task_id = m_is_rendering ? SEQ_TASK_MAIN_RENDER : SEQ_TASK_PREFETCH_RENDER;
     seq_context.skip_scene_strips_renders = true;
 
-    if (m_is_rendering) {
+    if (m_is_rendering && BLI_thread_is_main()) {
       Editing *ed = BKE_sequencer_editing_get(scene, false);
       ListBase *seqbasep = ed->seqbasep;
       m_seq_frame = BKE_sequencer_give_ibuf_seqbase(
@@ -133,26 +133,28 @@ void VideoSequencerOperation::execPixels(ExecutionManager &man)
 
   int n_rects_executed = 0;
   auto cpuWrite = [&](PixelsRect &dst, const WriteRectContext &ctx) {
-    int n_channels = m_seq_frame ? m_seq_frame->channels : 4;
-    if (n_channels == 0) {
-      n_channels = 4;
-    }
-    bool byte_buffer_used = PixelsUtil::copyImBufRect(dst, m_seq_frame, n_channels, n_channels);
-
-    m_rects_mutex.lock();
-    n_rects_executed++;
-    if (n_rects_executed == ctx.n_rects) {
-      // if byte buffer is used, needs colorspace conversion as
-      // "BKE_sequencer_imbuf_from_sequencer_space" which has been called in
-      // "assureSequencerRender" only works for float buffers
-      if (byte_buffer_used) {
-        Scene *scene = GlobalMan->getContext()->getScene();
-        m_seq_frame->rect_float = dst.tmp_buffer->host.buffer;
-        BKE_sequencer_imbuf_from_sequencer_space(scene, m_seq_frame);
-        m_seq_frame->rect_float = nullptr;
+    if (m_seq_frame) {
+      int n_channels = m_seq_frame ? m_seq_frame->channels : 4;
+      if (n_channels == 0) {
+        n_channels = 4;
       }
+      bool byte_buffer_used = PixelsUtil::copyImBufRect(dst, m_seq_frame, n_channels, n_channels);
+
+      m_rects_mutex.lock();
+      n_rects_executed++;
+      if (n_rects_executed == ctx.n_rects) {
+        // if byte buffer is used, needs colorspace conversion as
+        // "BKE_sequencer_imbuf_from_sequencer_space" which has been called in
+        // "assureSequencerRender" only works for float buffers
+        if (byte_buffer_used) {
+          Scene *scene = GlobalMan->getContext()->getScene();
+          m_seq_frame->rect_float = dst.tmp_buffer->host.buffer;
+          BKE_sequencer_imbuf_from_sequencer_space(scene, m_seq_frame);
+          m_seq_frame->rect_float = nullptr;
+        }
+      }
+      m_rects_mutex.unlock();
     }
-    m_rects_mutex.unlock();
   };
   cpuWriteSeek(man, cpuWrite);
 

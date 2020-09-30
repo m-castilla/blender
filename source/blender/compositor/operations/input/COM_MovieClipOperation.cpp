@@ -21,11 +21,13 @@
 #include "BKE_image.h"
 #include "BKE_movieclip.h"
 #include "BLI_listbase.h"
+#include "IMB_colormanagement.h"
+#include "IMB_imbuf.h"
+
 #include "COM_BufferUtil.h"
 #include "COM_ExecutionManager.h"
 #include "COM_MovieClipOperation.h"
 #include "COM_PixelsUtil.h"
-#include "IMB_imbuf.h"
 
 #include "COM_kernel_cpu.h"
 
@@ -44,22 +46,13 @@ void MovieClipBaseOperation::initExecution()
 {
   if (this->m_movieClip) {
     BKE_movieclip_user_set_frame(this->m_movieClipUser, this->m_framenumber);
-    ImBuf *ibuf;
 
     if (this->m_cacheFrame) {
-      ibuf = BKE_movieclip_get_ibuf(this->m_movieClip, this->m_movieClipUser);
+      m_clip_imbuf = BKE_movieclip_get_ibuf(this->m_movieClip, this->m_movieClipUser);
     }
     else {
-      ibuf = BKE_movieclip_get_ibuf_flag(
+      m_clip_imbuf = BKE_movieclip_get_ibuf_flag(
           this->m_movieClip, this->m_movieClipUser, this->m_movieClip->flag, MOVIECLIP_CACHE_SKIP);
-    }
-
-    if (ibuf) {
-      this->m_clip_imbuf = ibuf;
-      if (ibuf->rect_float == NULL || ibuf->userflags & IB_RECT_INVALID) {
-        IMB_float_from_rect(ibuf);
-        ibuf->userflags &= ~IB_RECT_INVALID;
-      }
     }
   }
   NodeOperation::initExecution();
@@ -118,45 +111,40 @@ void MovieClipBaseOperation::hashParams()
 
 void MovieClipOperation::execPixels(ExecutionManager &man)
 {
-  auto cpuWrite = [&](PixelsRect &dst, const WriteRectContext & /*ctx*/) {
-    if (m_clip_imbuf == nullptr ||
-        (m_clip_imbuf->rect == nullptr && m_clip_imbuf->rect_float == nullptr)) {
-      PixelsUtil::setRectElem(dst, (float *)&CCL::TRANSPARENT_PIXEL);
+  m_n_written_rects = 0;
+  auto cpuWrite = [&](PixelsRect &dst, const WriteRectContext &ctx) {
+    if (BufferUtil::isImBufAvailable(m_clip_imbuf)) {
+      int n_channels = m_clip_imbuf->channels == 0 ? COM_NUM_CHANNELS_COLOR :
+                                                     m_clip_imbuf->channels;
+      BLI_assert(n_channels == COM_NUM_CHANNELS_COLOR);
+      PixelsUtil::copyImBufRect(dst, m_clip_imbuf, n_channels, n_channels);
+
+      // if buffer width is the same as rect width, there is no pitch, so we may use the colorspace
+      // method by rect, otherwise it has to be the whole operation rect because it doesn't support
+      // pitch
+      if (dst.getWidth() == dst.tmp_buffer->host.bwidth) {
+        PixelsImg img = dst.pixelsImg();
+        IMB_colormanagement_colorspace_to_scene_linear(img.start,
+                                                       img.row_elems,
+                                                       img.col_elems,
+                                                       n_channels,
+                                                       m_clip_imbuf->rect_colorspace,
+                                                       false);
+      }
+      else {
+        m_mutex.lock();
+        m_n_written_rects++;
+        if (m_n_written_rects == ctx.n_rects) {
+          IMB_colormanagement_colorspace_to_scene_linear(dst.tmp_buffer->host.buffer,
+                                                         dst.tmp_buffer->width,
+                                                         dst.tmp_buffer->height,
+                                                         n_channels,
+                                                         m_clip_imbuf->rect_colorspace,
+                                                         false);
+        }
+        m_mutex.unlock();
+      }
     }
-    else if (m_clip_imbuf->rect_float) {
-      int n_channels = m_clip_imbuf->channels == 0 ? 4 : m_clip_imbuf->channels;
-      auto buf = BufferUtil::createNonStdTmpBuffer(
-          m_clip_imbuf->rect_float, true, m_width, m_height, n_channels);
-      PixelsRect src_rect = PixelsRect(buf.get(), dst);
-      PixelsUtil::copyEqualRectsNChannels(dst, src_rect, n_channels);
-    }
-    else {
-      int n_channels = m_clip_imbuf->channels == 0 ? 4 : m_clip_imbuf->channels;
-      unsigned char *uchar_buf = (unsigned char *)m_clip_imbuf->rect;
-
-      WRITE_DECL(dst);
-      CPU_LOOP_START(dst);
-
-      int src_offset = m_width * dst_coords.y * n_channels + dst_coords.x * n_channels;
-
-      CCL::float4 src_pixel = CCL::make_float4(uchar_buf[src_offset],
-                                               uchar_buf[src_offset + 1],
-                                               uchar_buf[src_offset + 2],
-                                               uchar_buf[src_offset + 3]);
-      // normalize
-      src_pixel /= 255.0f;
-      memcpy(&dst_img.buffer[dst_offset], &src_pixel, sizeof(float) * 4);
-
-      CPU_LOOP_END;
-    }
-
-    // TODO: Proper implementation, but needs proper color space and alpha premultiply conversion:
-    // on initExecution float buffer is assured, so no color space conversion needed
-    // if (BufferUtil::isImBufAvailable(m_clip_imbuf)) {
-    //  int n_channels = m_clip_imbuf->channels == 0 ? COM_NUM_CHANNELS_COLOR :
-    //                                                 m_clip_imbuf->channels;
-    //  PixelsUtil::copyImBufRect(dst, m_clip_imbuf, n_channels, n_channels);
-    //}
   };
   cpuWriteSeek(man, cpuWrite);
 }
@@ -174,31 +162,9 @@ MovieClipAlphaOperation::MovieClipAlphaOperation() : MovieClipBaseOperation()
 void MovieClipAlphaOperation::execPixels(ExecutionManager &man)
 {
   auto cpuWrite = [&](PixelsRect &dst, const WriteRectContext & /*ctx*/) {
-    if (m_clip_imbuf == nullptr ||
-        (m_clip_imbuf->rect == nullptr && m_clip_imbuf->rect_float == nullptr)) {
-      PixelsUtil::setRectElem(dst, 0.0f);
-    }
-    else if (m_clip_imbuf->rect_float) {
-      int n_channels = m_clip_imbuf->channels == 0 ? 4 : m_clip_imbuf->channels;
-      auto buf = BufferUtil::createNonStdTmpBuffer(
-          m_clip_imbuf->rect_float, true, m_width, m_height, n_channels);
-      PixelsRect src_rect = PixelsRect(buf.get(), dst);
-      PixelsUtil::copyEqualRectsChannel(dst, 0, src_rect, 3);
-    }
-    else {
-      int n_channels = m_clip_imbuf->channels == 0 ? 4 : m_clip_imbuf->channels;
-      unsigned char *uchar_buf = (unsigned char *)m_clip_imbuf->rect;
-
-      WRITE_DECL(dst);
-      CPU_LOOP_START(dst);
-
-      int src_offset = m_width * dst_coords.y * n_channels + dst_coords.x * n_channels;
-
-      // normalize to float
-      dst_img.buffer[dst_offset] = uchar_buf[src_offset + 3] / 255.0f;
-
-      CPU_LOOP_END;
-    }
+    int n_channels = m_clip_imbuf->channels == 0 ? COM_NUM_CHANNELS_COLOR : m_clip_imbuf->channels;
+    BLI_assert(n_channels == COM_NUM_CHANNELS_COLOR);
+    PixelsUtil::copyImBufRectChannel(dst, 0, m_clip_imbuf, 3, n_channels);
   };
   cpuWriteSeek(man, cpuWrite);
 }
