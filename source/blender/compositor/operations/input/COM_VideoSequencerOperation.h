@@ -32,6 +32,7 @@
  */
 class VideoSequencerOperation : public NodeOperation {
  private:
+  static std::mutex sequencer_seqbase_mutex;
   /**
    * Reference to the scene object.
    */

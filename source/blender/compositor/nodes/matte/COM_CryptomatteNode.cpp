@@ -22,6 +22,7 @@
 #include <cstring>
 #include <iterator>
 #include <sstream>
+#include <utility>
 
 #include "COM_ConvertOperation.h"
 #include "COM_CryptomatteNode.h"
