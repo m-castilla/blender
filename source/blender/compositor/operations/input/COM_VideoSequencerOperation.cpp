@@ -108,12 +108,10 @@ void VideoSequencerOperation::assureSequencerRender()
     seq_context.skip_scene_strips_renders = true;
 
     if (m_is_rendering) {
-      sequencer_seqbase_mutex.lock();
       Editing *ed = BKE_sequencer_editing_get(scene, false);
       ListBase *seqbasep = ed->seqbasep;
       m_seq_frame = BKE_sequencer_give_ibuf_seqbase(
           &seq_context, m_n_frame, m_n_channel, seqbasep);
-      sequencer_seqbase_mutex.unlock();
     }
     else {
       m_seq_frame = BKE_sequencer_give_ibuf(&seq_context, m_n_frame, m_n_channel);
