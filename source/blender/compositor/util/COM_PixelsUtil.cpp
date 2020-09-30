@@ -16,18 +16,21 @@
  * Copyright 2020, Blender Foundation.
  */
 
-#include "COM_PixelsUtil.h"
 #include "BLI_assert.h"
+#include "IMB_imbuf.h"
+#include "IMB_imbuf_types.h"
+#include <string.h>
+
 #include "COM_Bmp.h"
 #include "COM_Buffer.h"
 #include "COM_BufferUtil.h"
 #include "COM_ExecutionManager.h"
 #include "COM_NodeOperation.h"
+#include "COM_PixelsUtil.h"
 #include "COM_Rect.h"
 #include "COM_defines.h"
+
 #include "COM_kernel_cpu.h"
-#include "IMB_imbuf_types.h"
-#include <string.h>
 
 int PixelsUtil::getNUsedChannels(DataType dataType)
 {
@@ -186,7 +189,19 @@ bool PixelsUtil::copyImBufRect(PixelsRect &dst, ImBuf *imbuf, int n_used_chs, in
     return false;
   }
   else {
+    // if (n_used_chs == 4) {
+    //  int w = dst.getWidth();
+    //  int h = dst.getHeight();
+    //  PixelsImg dst_img = dst.pixelsImg();
+    //  unsigned char *imbuf_start = ((unsigned char *)imbuf->rect) + dst.ymin * w * 4 +
+    //                               dst.xmin * 4;
+    //  IMB_buffer_float_from_byte(
+    //      dst_img.start, imbuf_start, IB_PROFILE_SRGB, IB_PROFILE_SRGB, false, w, h, w, w);
+    //}
+    // else {
     copyBufferRect(dst, (unsigned char *)imbuf->rect, n_used_chs, n_read_buf_chs);
+    //}
+
     return true;
   }
 }
