@@ -1,11 +1,6 @@
 name: C/C++ CI
 
-on:
-  push:
-    branches: [ compositor-up ]
-  workflow_dispatch:
-    branches: [ compositor-up ]
- 
+on: [push, workflow_dispatch]
 
 jobs:
   build:
