@@ -1,15 +1,15 @@
 name: C/C++ CI
 
-on:
-  push:
-    branches: [ compositor-up ]
+on: [push, workflow_dispatch]
 
 jobs:
   build:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
 
-    runs-on: ubuntu-latest, windows-latest, macos-latest
+    runs-on: ${{ matrix.os }}
 
     steps:
-    - uses: actions/checkout@v2
     - name: make release
       run: make release
