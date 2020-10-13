@@ -39,7 +39,7 @@ MovieClipBaseOperation::MovieClipBaseOperation() : NodeOperation()
   this->m_clip_imbuf = NULL;
   this->m_movieClipUser = NULL;
   this->m_framenumber = 0;
-  this->m_cacheFrame = 0;
+  this->m_cacheFrame = false;
 }
 
 void MovieClipBaseOperation::initExecution()
