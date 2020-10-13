@@ -43,7 +43,11 @@ void DirectionalBlurOperation::initExecution()
   const float height = getHeight();
 
   const float a = angle;
-  const float iterations = powf(2.0f, (float)user_iterations);
+
+  // OLD USAGE: Changed to allow finer control to the user
+  // const float iterations = powf(2.0f, (float)user_iterations);
+
+  const float iterations = user_iterations;
   const float itsc = 1.0f / iterations;
 
   this->m_iterations = iterations;
