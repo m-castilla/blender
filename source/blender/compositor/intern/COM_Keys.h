@@ -38,7 +38,11 @@ typedef struct PersistentKey {
   {
     return !operator==(o);
   }
+#ifdef WITH_CXX_GUARDEDALLOC
+  MEM_CXX_CLASS_ALLOC_FUNCS("COM:PersistentKey")
+#endif
 } PersistentKey;
+
 namespace std {
 /* OpKey default hash function. Mainly for being used by default in std::unordermap*/
 template<> struct hash<PersistentKey> {
@@ -46,9 +50,6 @@ template<> struct hash<PersistentKey> {
   {
     return k.hash;
   }
-#ifdef WITH_CXX_GUARDEDALLOC
-  MEM_CXX_CLASS_ALLOC_FUNCS("COM:PersistentKey")
-#endif
 };
 
 }  // namespace std
@@ -69,6 +70,9 @@ typedef struct OpKey {
   {
     return !operator==(o);
   }
+#ifdef WITH_CXX_GUARDEDALLOC
+  MEM_CXX_CLASS_ALLOC_FUNCS("COM:OpKey")
+#endif
 } OpKey;
 
 namespace std {
@@ -78,8 +82,5 @@ template<> struct hash<OpKey> {
   {
     return k.op_hash;
   }
-#ifdef WITH_CXX_GUARDEDALLOC
-  MEM_CXX_CLASS_ALLOC_FUNCS("COM:OpKey")
-#endif
 };
 }  // namespace std

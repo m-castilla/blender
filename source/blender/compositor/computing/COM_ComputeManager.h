@@ -43,7 +43,7 @@ class ComputeManager {
  protected:
   ComputeManager();
 
-  /* Returns {source code, source path}*/
+  /* Returns {source code, source path} */
   std::pair<std::string, std::string> loadKernelsSource();
   virtual std::vector<ComputeDevice *> getDevices() = 0;
 

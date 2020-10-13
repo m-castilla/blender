@@ -190,11 +190,9 @@ void NodeOperation::computeWriteSeek(
   }
 }
 
-// Returns empty when OperationMode is ReadOptimize and when execution has cancelled.
-// To assert that you should have gotten your pixels, Check the condition (!isBreaked() and
-// man.getOperationMode()==OperationMode::Exec) after the call. If true, the pixels must have
-// been returned, if not is an implementation error.
-// reader_op param is only needed during Optimize mode, for Exec mode it may always be nullptr
+// Returns empty when OperationMode is ReadOptimize and when execution has been cancelled.
+// To assert that you should have gotten your pixels, Check the condition "man.canExecPixels()"
+// after the call. If true, the pixels must have been returned, if not is an implementation error.
 std::shared_ptr<PixelsRect> NodeOperation::getPixels(NodeOperation *reader_op,
                                                      ExecutionManager &man)
 {
@@ -262,7 +260,7 @@ float *NodeOperation::getSinglePixel(
             m_single_pixel[0] = raw_buf[0];
             break;
           default:
-            BLI_assert("Unsupported number of channels");
+            BLI_assert(!"Unsupported number of channels");
             break;
         }
       }

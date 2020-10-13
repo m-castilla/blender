@@ -238,7 +238,7 @@ PreviewOperation *NodeOperationBuilder::make_preview_operation() const
     return NULL;
   }
 
-  bNodeInstanceHash *previews = m_context->getPreviewHash();
+  bNodeInstanceHash *previews = m_context->getPreviewsHashTable();
   if (previews) {
     PreviewOperation *operation = new PreviewOperation(m_context->getViewSettings(),
                                                        m_context->getDisplaySettings());

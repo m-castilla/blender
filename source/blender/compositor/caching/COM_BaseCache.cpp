@@ -195,7 +195,7 @@ BaseCache::CacheInfo *BaseCache::getCacheInfo(const OpKey &key)
 {
   auto found_it = m_caches.find(key);
   if (found_it == m_caches.end()) {
-    BLI_assert("Should not happen");
+    BLI_assert(!"Should not happen");
     return nullptr;
   }
   else {

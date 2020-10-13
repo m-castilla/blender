@@ -221,7 +221,7 @@ class CompositorContext {
   /**
    * \brief get the preview image hash table
    */
-  bNodeInstanceHash *getPreviewHash() const
+  bNodeInstanceHash *getPreviewsHashTable() const
   {
     return this->m_previews;
   }

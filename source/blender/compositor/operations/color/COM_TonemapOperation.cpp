@@ -175,7 +175,7 @@ void PhotoreceptorTonemapOperation::execPixels(ExecutionManager &man)
 
       COPY_COORDS(color, dst_coords);
 
-      READ_IMG(color, color_pix);
+      READ_IMG4(color, color_pix);
 
       const float alpha = color_pix.w;
 
