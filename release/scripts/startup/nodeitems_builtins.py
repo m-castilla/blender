@@ -434,6 +434,11 @@ compositor_node_categories = [
         NodeItem("NodeReroute"),
         NodeItem("CompositorNodeSwitch"),
     ]),
+    # Experimental compositor-up
+    CompositorNodeCategory("CMP_EXPERIMENTAL", "Experimental", items=[
+        NodeItem("CompositorNodeExtend"),
+    ]),
+    # END of Experimental compositor-up
 ]
 
 texture_node_categories = [

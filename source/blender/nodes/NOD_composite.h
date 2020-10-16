@@ -138,6 +138,10 @@ void register_node_type_cmp_cornerpin(void);
 void register_node_type_cmp_cache(void);
 void register_node_type_cmp_videoseq(void);
 
+/* Experimental compositor-up */
+void register_node_type_cmp_extend(void);
+/* END of Experimental compositor-up */
+
 void node_cmp_rlayers_outputs(struct bNodeTree *ntree, struct bNode *node);
 void node_cmp_rlayers_register_pass(struct bNodeTree *ntree,
                                     struct bNode *node,

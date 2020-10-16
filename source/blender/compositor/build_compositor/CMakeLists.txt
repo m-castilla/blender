@@ -44,6 +44,7 @@ set(INC
   ${CMP_NODES}/matte
   ${CMP_NODES}/distort
   ${CMP_NODES}/layout
+  ${CMP_NODES}/experimental
 
   ${CMP_OPS}
   ${CMP_OPS}/input
@@ -54,6 +55,7 @@ set(INC
   ${CMP_OPS}/vector
   ${CMP_OPS}/matte
   ${CMP_OPS}/distort
+  ${CMP_OPS}/experimental
 
   ${CMP_BASE}/../blenkernel
   ${CMP_BASE}/../blenlib
@@ -407,6 +409,10 @@ set(SRC
   ${CMP_NODES}/layout/COM_SwitchNode.cpp
   ${CMP_NODES}/layout/COM_SwitchNode.h
 
+  # experimental nodes
+  ${CMP_NODES}/experimental/COM_ExtendNode.cpp
+  ${CMP_NODES}/experimental/COM_ExtendNode.h
+
   # Internal operations
   ${CMP_OPS}/COM_AntiAliasOperation.cpp
   ${CMP_OPS}/COM_AntiAliasOperation.h
@@ -650,6 +656,10 @@ set(SRC
   ${CMP_OPS}/distort/COM_TranslateOperation.h
   ${CMP_OPS}/distort/COM_TransformOperation.cpp
   ${CMP_OPS}/distort/COM_TransformOperation.h
+
+  # experimental operations
+  ${CMP_OPS}/experimental/COM_ExtendOperation.cpp
+  ${CMP_OPS}/experimental/COM_ExtendOperation.h
 
 )
 

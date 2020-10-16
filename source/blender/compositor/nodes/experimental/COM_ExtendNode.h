@@ -13,16 +13,19 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  *
- * Copyright 2020, Blender Foundation.
+ * Copyright 2011, Blender Foundation.
  */
 
 #pragma once
 
-#include "COM_Pixels.h"
+#include "COM_Node.h"
 
-namespace UiConvert {
-
-PixelInterpolation pixelInterpolation(short ui_value);
-PixelExtend extendMode(short extend_mode);
-
-};  // namespace UiConvert
+/**
+ * \brief CropNode
+ * \ingroup Node
+ */
+class ExtendNode : public Node {
+ public:
+  ExtendNode(bNode *editorNode);
+  void convertToOperations(NodeConverter &converter, const CompositorContext &context) const;
+};

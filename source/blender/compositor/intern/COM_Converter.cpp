@@ -79,6 +79,7 @@
 #include "COM_DespeckleNode.h"
 #include "COM_DilateErodeNode.h"
 #include "COM_DirectionalBlurNode.h"
+#include "COM_ExtendNode.h"
 #include "COM_FilterNode.h"
 #include "COM_GammaNode.h"
 #include "COM_GlareNode.h"
@@ -423,6 +424,12 @@ Node *Converter::convert(bNode *b_node)
       break;
     case CMP_NODE_CORNERPIN:
       node = new CornerPinNode(b_node);
+      break;
+      /* */
+
+      /* experimental nodes */
+    case CMP_NODE_EXTEND:
+      node = new ExtendNode(b_node);
       break;
       /* */
 

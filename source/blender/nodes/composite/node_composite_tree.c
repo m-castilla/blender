@@ -73,6 +73,7 @@ static void foreach_nodeclass(Scene *UNUSED(scene), void *calldata, bNodeClassCa
   func(calldata, NODE_CLASS_GROUP, N_("Group"));
   func(calldata, NODE_CLASS_INTERFACE, N_("Interface"));
   func(calldata, NODE_CLASS_LAYOUT, N_("Layout"));
+  func(calldata, NODE_CLASS_SCRIPT, N_("Experimental"));
 }
 
 static void free_node_cache(bNodeTree *UNUSED(ntree), bNode *node)

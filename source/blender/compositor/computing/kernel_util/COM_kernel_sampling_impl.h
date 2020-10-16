@@ -28,99 +28,21 @@
 #  include "COM_Pixels.h"
 #  include "kernel_util/COM_kernel_types.h"
 
-/* Extend macros */
-#  define EXTEND_UNCHECKED_I(img, x__, y__) \
-    kernel_assert(x__ >= img.start_x && x__ < img.end_x && y__ >= img.start_y && y__ < img.end_y);
+/* SAMPLER PRIVATE IMPLEMENTATION MACROS */
 
-#  define EXTEND_UNCHECKED_F(img, x__, y__) \
-    kernel_assert(x__ >= img.start_xf && x__ < img.end_xf && y__ >= img.start_yf && \
-                  y__ < img.end_yf);
-
-#  define EXTEND_CLIP1_I_START(img, dst, x__, y__) \
+#  define EXTEND_CLIP_I_START(img, dst, x__, y__) \
     if (x__ < img.start_x || x__ >= img.end_x || y__ < img.start_y || y__ >= img.end_y) { \
       dst.x = 0.0f; \
     } \
     else {
 
-#  define EXTEND_CLIP1_F_START(img, dst, x__, y) \
+#  define EXTEND_CLIP_F_START(img, dst, x__, y) \
     if (x__ < img.start_xf || x__ >= img.end_xf || y < img.start_yf || y >= img.end_yf) { \
       dst.x = 0.0f; \
     } \
     else {
 
-#  define EXTEND_CLIP3_I_START(img, dst, x__, y__) \
-    if (x__ < img.start_x || x__ >= img.end_x || y__ < img.start_y || y__ >= img.end_y) { \
-      dst.x = dst.y = dst.z = 0.0f; \
-    } \
-    else {
-
-#  define EXTEND_CLIP3_F_START(img, dst, x__, y__) \
-    if (x__ < img.start_xf || x__ >= img.end_xf || y__ < img.start_yf || y__ >= img.end_yf) { \
-      dst.x = dst.y = dst.z = 0.0f; \
-    } \
-    else {
-
-#  define EXTEND_CLIP4_I_START(img, dst, x__, y__) \
-    if (x__ < img.start_x || x__ >= img.end_x || y__ < img.start_y || y__ >= img.end_y) { \
-      dst.x = dst.y = dst.z = dst.w = 0.0f; \
-    } \
-    else {
-
-#  define EXTEND_CLIP4_F_START(img, dst, x__, y__) \
-    if (x__ < img.start_xf || x__ >= img.end_xf || y__ < img.start_yf || y__ >= img.end_yf) { \
-      dst.x = dst.y = dst.z = dst.w = 0.0f; \
-    } \
-    else {
-
 #  define EXTEND_CLIP_END }
-
-#  define EXTEND_EXTEND_I(img, x__, y__) \
-    x__ = x__ < img.start_x ? 0.0f : x__; \
-    x__ = x__ >= img.end_x ? img.end_x - 1 : x__; \
-    y__ = y__ < img.start_y ? 0.0f : y__; \
-    y__ = y__ >= img.end_y ? img.end_y - 1 : y__;
-
-#  define EXTEND_EXTEND_F(img, x__, y__) \
-    x__ = x__ < img.start_xf ? 0.0f : x__; \
-    x__ = x__ >= img.end_xf ? img.end_xf - 1.0f : x__; \
-    y__ = y__ < img.start_yf ? 0.0f : y__; \
-    y__ = y__ >= img.end_yf ? img.end_yf - 1.0f : y__;
-
-#  define EXTEND_REPEAT_I(img, x__, y__) \
-    x__ = (x__ < img.start_x || x__ >= img.end_x) ? \
-              ((x__ - img.start_x) % img.row_elems) + img.start_x : \
-              x__; \
-    y__ = (y__ < img.start_y || y__ >= img.end_y) ? \
-              ((y__ - img.start_y) % img.col_elems) + img.start_y : \
-              y__;
-
-#  define EXTEND_REPEAT_F(img, x__, y__) \
-    x__ = (x__ < img.start_xf || x__ >= img.end_xf) ? \
-              fmodf(x__ - img.start_xf, img.row_elems) + img.start_xf : \
-              x__; \
-    y__ = (y__ < img.start_yf || y__ >= img.end_yf) ? \
-              fmodf(y__ - img.start_yf, img.col_elems) + img.start_yf : \
-              y__;
-
-#  define EXTEND_MIRROR_I(img, x__, y__) \
-    x__ = (x__ < img.start_x || x__ >= img.end_x) ? \
-              (img.end_x - 1) - (((x__ - img.start_x) % img.row_elems) + img.start_x) : \
-              x__; \
-    y__ = (y__ < img.start_y || y__ >= img.end_y) ? \
-              (img.end_y - 1) - (((y__ - img.start_y) % img.col_elems) + img.start_y) : \
-              y__;
-
-#  define EXTEND_MIRROR_F(img, x__, y__) \
-    x__ = (x__ < img.start_xf || x__ >= img.end_xf) ? \
-              (img.end_xf - 1.0f) - (fmodf(x__ - img.start_xf, img.row_elems) + img.start_xf) : \
-              x__; \
-    y__ = (y__ < img.start_yf || y__ >= img.end_yf) ? \
-              (img.end_yf - 1.0f) - (fmodf(y__ - img.start_yf, img.col_elems) + img.start_yf) : \
-              y__;
-
-/* END of Extend macros */
-
-/* SAMPLER PRIVATE IMPLEMENTATION MACROS */
 
 #  define SAMPLER_ASSERT__(sampler, interp_mode, extend_mode) \
     kernel_assert(sampler.filter == PixelInterpolation::interp_mode && \
@@ -151,36 +73,20 @@
 
 #  define SAMPLE_NEAREST_CLIP__(ctx_num, src, sampler, dst_pix, coords, type_letter, n_chs) \
     SAMPLER_ASSERT__(sampler, NEAREST, CLIP); \
-    EXTEND_CLIP##n_chs##_##type_letter##_START(src##_img, dst_pix, coords.x, coords.y); \
+    EXTEND_CLIP_##type_letter##_START(src##_img, dst_pix, coords.x, coords.y); \
     NEAREST_WRITE_F##n_chs##__(src##_nearest_##ctx_num, src##_img, coords, dst_pix); \
     EXTEND_CLIP_END;
-
-#  define SAMPLE_NEAREST_MODE__(ctx_num, src, sampler, dst_pix, coords, type_letter, n_chs, mode) \
-    SAMPLER_ASSERT__(sampler, NEAREST, mode); \
-    JOIN(EXTEND_##mode##_, type_letter)(src##_img, coords.x, coords.y); \
-    NEAREST_WRITE_F##n_chs##__(src##_nearest_##ctx_num, src##_img, coords, dst_pix);
-
-/* END OF PRIVATE IMPLEMENTATION MACROS */
 
 // u and v will never be negative because we are checking extend before, so we can use
 // casting instead of floor and ceil
 #  define BILINEAR_CLIP__(name, img, sampler, dst_pix, u__, v__, n_chs) \
     SAMPLER_ASSERT__(sampler, BILINEAR, CLIP); \
-    EXTEND_CLIP##n_chs##_F_START(img, dst_pix, u__, v__); \
+    EXTEND_CLIP_F_START(img, dst_pix, u__, v__); \
     int name##_x1__ = (int)u__; \
     int name##_x2__ = u__ > (float)name##_x1__ ? name##_x1__ + 1 : name##_x1__; \
     int name##_y1__ = (int)v__; \
     int name##_y2__ = v__ > (float)name##_y1__ ? name##_y1__ + 1 : name##_y1__; \
-    EXTEND_CLIP##n_chs##_F_START(img, dst_pix, name##_x2__, name##_y2__);
-
-#  define BILINEAR_MODE__(name, img, sampler, u__, v__, extend_mode) \
-    SAMPLER_ASSERT__(sampler, BILINEAR, extend_mode); \
-    EXTEND_##extend_mode##_F(src##_img, u__, v__); \
-    int name##_x1__ = (int)u__; \
-    int name##_x2__ = u__ > (float)name##_x1__ ? name##_x1__ + 1 : name##_x1__; \
-    int name##_y1__ = (int)v__; \
-    int name##_y2__ = v__ > (float)name##_y1__ ? name##_y1__ + 1 : name##_y1__; \
-    EXTEND_##extend_mode##_F(src##_img, name##_x2__, name##_y2__);
+    EXTEND_CLIP_F_START(img, dst_pix, name##_x2__, name##_y2__);
 
 #  define BILINEAR_OFFSET__(name, img, u__, v__) \
     float name##_a__ = u__ - name##_x1__; \
@@ -243,6 +149,8 @@
                 name##_a_mb__ * img.buffer[name##_pix3_offset__] + \
                 name##_ma_b__ * img.buffer[name##_pix2_offset__] + \
                 name##_a_b__ * img.buffer[name##_pix4_offset__];
+
+/* END OF PRIVATE IMPLEMENTATION MACROS */
 
 #endif
 

@@ -32,5 +32,21 @@ PixelInterpolation pixelInterpolation(short ui_value)
       return (PixelInterpolation)0;
   }
 }
+PixelExtend extendMode(short extend_mode)
+{
+  switch (extend_mode) {
+    case 0:
+      return PixelExtend::CLIP;
+    case 1:
+      return PixelExtend::EXTEND;
+    case 2:
+      return PixelExtend::REPEAT;
+    case 3:
+      return PixelExtend::MIRROR;
+    default:
+      BLI_assert("Non implemented pixel extend");
+      return (PixelExtend)0;
+  }
+}
 
 }  // namespace UiConvert
