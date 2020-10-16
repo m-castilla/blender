@@ -769,6 +769,15 @@ typedef struct NodeVertexCol {
   char name[64];
 } NodeVertexCol;
 
+/* Experimental compositor-up */
+typedef struct NodeExtend {
+  float add_extend_x, add_extend_y;
+  float scale;
+  short extend_mode;
+  char _pad1[2];
+} NodeExtend;
+/* END of Experimental compositor-up */
+
 /* qdn: Defocus blur node */
 typedef struct NodeDefocus {
   char bktype, _pad0, preview, gamco;

@@ -134,6 +134,9 @@ class CompositorContext {
     return PixelsSampler{PixelInterpolation::NEAREST, PixelExtend::CLIP};
   }
 
+  int getMaxImgW() const;
+  int getMaxImgH() const;
+
   // Is video sequencer activated in the post-processing pipeline
   bool isVseSequencerPassOn() const
   {

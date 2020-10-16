@@ -2737,6 +2737,16 @@ static void node_composit_buts_videoseq(uiLayout *layout, bContext *UNUSED(C), P
   uiItemR(layout, ptr, "channel", DEFAULT_FLAGS, NULL, ICON_NONE);
 }
 
+/*Experimental compositor-up */
+static void node_composit_buts_extend(uiLayout *layout, bContext *UNUSED(C), PointerRNA *ptr)
+{
+  uiItemR(layout, ptr, "extend_mode", DEFAULT_FLAGS, NULL, ICON_NONE);
+  uiItemR(layout, ptr, "add_extend_x", DEFAULT_FLAGS, NULL, ICON_NONE);
+  uiItemR(layout, ptr, "add_extend_y", DEFAULT_FLAGS, NULL, ICON_NONE);
+  uiItemR(layout, ptr, "scale", DEFAULT_FLAGS, NULL, ICON_NONE);
+}
+/* END of Experimental compositor-up */
+
 /* only once called */
 static void node_composit_set_butfunc(bNodeType *ntype)
 {
@@ -2983,6 +2993,11 @@ static void node_composit_set_butfunc(bNodeType *ntype)
     case CMP_NODE_VIDEO_SEQ:
       ntype->draw_buttons = node_composit_buts_videoseq;
       break;
+    /* Experimental compositor-up */
+    case CMP_NODE_EXTEND:
+      ntype->draw_buttons = node_composit_buts_extend;
+      break;
+      /* END of Experimental compositor-up */
   }
 }
 

@@ -4556,6 +4556,10 @@ static void registerCompositNodes(void)
 
   register_node_type_cmp_cache();
   register_node_type_cmp_videoseq();
+
+  /* Experimental compositor-up */
+  register_node_type_cmp_extend();
+  /* END of Experimental compositor-up */
 }
 
 static void registerShaderNodes(void)

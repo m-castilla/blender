@@ -219,7 +219,9 @@
 
 #define COPY_COORDS(to, coords) to##_coords = coords;
 
-#define COPY_SAMPLE_COORDS(to, coords) to##_coordsf = coords;
+#define COPY_SAMPLE_COORDS(to, coords) \
+  to##_coordsf.x = coords.x; \
+  to##_coordsf.y = coords.y;
 
 #define UPDATE_COORDS_X(src, x_) src##_coords.x = x_;
 
@@ -253,13 +255,22 @@
 
 #define INCR_SAMPLE_COORDS_Y(src, incr) src##_coordsf.y += incr;
 
-#include "kernel_util/COM_kernel_sampling.h"
-
 /*src_img must be a image2d_t, sampler must be sampler_t, coords must be float2*/
 #define SAMPLE_IMG(src, sampler, result) \
   result = read_imagef(src, sampler, src##_is_not_single ? src##_coordsf : make_float2(0, 0));
 #define SAMPLE_INT_IMG(src, sampler, result) \
   result = read_imagef(src, sampler, src##_is_not_single ? src##_coords : make_int2(0, 0));
+// Must be only used when using REPEAT or MIRROR extend mode because they need normalized
+// coordinates
+#define SAMPLE_NORM_IMG(src, sampler, result) \
+  result = read_imagef(src, \
+                       sampler, \
+                       src##_is_not_single ? \
+                           make_float2(src##_coordsf.x / (get_image_width(src) - 1), \
+                                       src##_coordsf.y / (get_image_height(src) - 1)) : \
+                           make_float2(0, 0));
+
+#include "kernel_util/COM_kernel_sampling.h"
 
 #include "kernel_util/COM_kernel_filter.h"
 

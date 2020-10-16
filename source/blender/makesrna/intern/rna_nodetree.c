@@ -360,6 +360,16 @@ const EnumPropertyItem rna_enum_node_filter_items[] = {
     {0, NULL, 0, NULL, NULL},
 };
 
+/* Experimental compositor-up */
+static const EnumPropertyItem node_extend_mode_items[] = {
+    {0, "CLIP", 0, "Clip", ""},
+    {1, "EXTEND", 0, "Extend", ""},
+    {2, "REPEAT", 0, "Repeat", ""},
+    {3, "MIRROR", 0, "Mirror", ""},
+    {0, NULL, 0, NULL, NULL},
+};
+/* END of Experimental compositor-up */
+
 #ifndef RNA_RUNTIME
 static const EnumPropertyItem node_sampler_type_items[] = {
     {0, "NEAREST", 0, "Nearest", ""},
@@ -5994,6 +6004,43 @@ static void def_cmp_video_sequencer(StructRNA *srna)
   RNA_def_property_ui_text(prop, "Channel", "Video Sequencer Channel (0 = Combined Output)");
   RNA_def_property_update(prop, NC_NODE | NA_EDITED, "rna_Node_update");
 }
+
+/* Experimental compositor-up */
+static void def_cmp_extend(StructRNA *srna)
+{
+  PropertyRNA *prop;
+
+  RNA_def_struct_sdna_from(srna, "NodeExtend", "storage");
+
+  prop = RNA_def_property(srna, "extend_mode", PROP_ENUM, PROP_NONE);
+  RNA_def_property_enum_sdna(prop, NULL, "extend_mode");
+  RNA_def_property_enum_items(prop, node_extend_mode_items);
+  RNA_def_property_ui_text(prop, "", "Extend mode to use for extended area");
+  RNA_def_property_update(prop, NC_NODE | NA_EDITED, "rna_Node_update");
+
+  prop = RNA_def_property(srna, "add_extend_x", PROP_FLOAT, PROP_NONE);
+  RNA_def_property_float_sdna(prop, NULL, "add_extend_x");
+  RNA_def_property_range(prop, 1.0, 999.99);
+  RNA_def_property_ui_range(prop, 1.0, 999.99, 10, 2);
+  RNA_def_property_ui_text(prop, "Width", "Extend image width");
+  RNA_def_property_update(prop, NC_NODE | NA_EDITED, "rna_Node_update");
+
+  prop = RNA_def_property(srna, "add_extend_y", PROP_FLOAT, PROP_NONE);
+  RNA_def_property_float_sdna(prop, NULL, "add_extend_y");
+  RNA_def_property_range(prop, 1.0, 999.99);
+  RNA_def_property_ui_range(prop, 1.0, 999.99, 10, 2);
+  RNA_def_property_ui_text(prop, "Height", "Extend image height");
+  RNA_def_property_update(prop, NC_NODE | NA_EDITED, "rna_Node_update");
+
+  prop = RNA_def_property(srna, "scale", PROP_FLOAT, PROP_NONE);
+  RNA_def_property_float_sdna(prop, NULL, "scale");
+  RNA_def_property_range(prop, 0.01, 999.99);
+  RNA_def_property_ui_range(prop, 0.01, 999.99, 10, 2);
+  RNA_def_property_ui_text(prop, "Scale", "Scale image");
+  RNA_def_property_update(prop, NC_NODE | NA_EDITED, "rna_Node_update");
+}
+
+/* END of Experimental compositor-up */
 
 static void rna_def_cmp_output_file_slot_file(BlenderRNA *brna)
 {

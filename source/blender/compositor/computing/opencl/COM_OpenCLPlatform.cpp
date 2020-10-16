@@ -97,7 +97,10 @@ void *OpenCLPlatform::createSampler(PixelsSampler pix_sampler)
       BLI_assert(!"Non implemented PixelInterpolation case");
   }
 
-  cl_sampler sampler = clCreateSampler(m_context, CL_FALSE, address, filter, &error);
+  bool norm_coords = pix_sampler.extend == PixelExtend::REPEAT ||
+                     pix_sampler.extend == PixelExtend::MIRROR;
+  cl_sampler sampler = clCreateSampler(
+      m_context, norm_coords ? CL_TRUE : CL_FALSE, address, filter, &error);
   m_man.printIfError(error);
   return sampler;
 }

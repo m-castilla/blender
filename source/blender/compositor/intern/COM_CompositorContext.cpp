@@ -16,17 +16,21 @@
  * Copyright 2011, Blender Foundation.
  */
 
-#include "COM_CompositorContext.h"
 #include "BKE_context.h"
 #include "BKE_global.h"
 #include "BKE_main.h"
 #include "BKE_node.h"
 #include "BKE_scene.h"
 #include "BLI_assert.h"
-#include "COM_defines.h"
 #include "DNA_userdef_types.h"
 #include <stdio.h>
 
+#include "COM_CompositorContext.h"
+#include "COM_ComputeDevice.h"
+#include "COM_GlobalManager.h"
+#include "COM_defines.h"
+
+const int MAX_IMG_DIM_SIZE = 16000;
 CompositorContext::CompositorContext()
 {
   m_scene = nullptr;
@@ -115,6 +119,24 @@ CompositorContext CompositorContext::build(const std::string &execution_id,
   return context;
 }
 
+int CompositorContext::getMaxImgW() const
+{
+  if (GlobalMan->ComputeMan->canCompute()) {
+    return GlobalMan->ComputeMan->getSelectedDevice()->getMaxImgW();
+  }
+  else {
+    return MAX_IMG_DIM_SIZE;
+  }
+}
+int CompositorContext::getMaxImgH() const
+{
+  if (GlobalMan->ComputeMan->canCompute()) {
+    return GlobalMan->ComputeMan->getSelectedDevice()->getMaxImgH();
+  }
+  else {
+    return MAX_IMG_DIM_SIZE;
+  }
+}
 bool CompositorContext::isBreaked() const
 {
   return m_bnodetree->test_break && m_bnodetree->test_break(m_bnodetree->tbh);

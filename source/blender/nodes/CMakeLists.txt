@@ -127,6 +127,10 @@ set(SRC
   composite/nodes/node_composite_viewer.c
   composite/nodes/node_composite_zcombine.c
 
+  #Experimental compositor-up
+  composite/nodes/node_composite_extend.c
+  #END of Experimental compositor-up
+
   composite/node_composite_tree.c
   composite/node_composite_util.c
 
