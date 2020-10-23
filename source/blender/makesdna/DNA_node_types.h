@@ -619,6 +619,12 @@ enum {
   CMP_NODEFLAG_BLUR_EXTEND_BOUNDS = (1 << 1),
 };
 
+/*Experimental compositor-up*/
+enum {
+  CMP_NODEFLAG_RANDOMIZE_SEED = (1 << 0),
+};
+/*END of Experimental compositor-up*/
+
 typedef struct NodeFrame {
   short flag;
   short label_size;
@@ -776,6 +782,14 @@ typedef struct NodeExtend {
   short extend_mode;
   char _pad1[2];
 } NodeExtend;
+typedef struct NodeRandomize {
+  float min, max;
+  float variance_down, variance_up;
+  int variance_steps;
+  int seed;
+  short flag;
+  char _pad[6];
+} NodeRandomize;
 /* END of Experimental compositor-up */
 
 /* qdn: Defocus blur node */

@@ -217,9 +217,9 @@ ccl_device_inline void read_bilinear(
 
   /* sample including outside of edges of image */
   size_t pix1_offset = (size_t)y1 * src_img.brow_chs_incr + (size_t)x1 * src_img.belem_chs_incr;
-  size_t pix2_offset = pix1_offset + (size_t)(y2 - y1) * src_img.brow_chs_incr;
-  size_t pix3_offset = pix1_offset + (size_t)(x2 - x1) * src_img.belem_chs_incr;
-  size_t pix4_offset = pix3_offset + (size_t)(y2 - y1) * src_img.brow_chs_incr;
+  size_t pix2_offset = (size_t)y2 * src_img.brow_chs_incr + (size_t)x1 * src_img.belem_chs_incr;
+  size_t pix3_offset = (size_t)y1 * src_img.brow_chs_incr + (size_t)x2 * src_img.belem_chs_incr;
+  size_t pix4_offset = (size_t)y2 * src_img.brow_chs_incr + (size_t)x2 * src_img.belem_chs_incr;
   if (src_img.elem_chs == 4) {
     float4 pix1 = make_float4(src_img.buffer[pix1_offset],
                               src_img.buffer[pix1_offset + 1],

@@ -226,6 +226,7 @@ DefNode(CompositorNode, CMP_NODE_CACHE,          def_cmp_cache,          "CACHE"
 DefNode(CompositorNode, CMP_NODE_VIDEO_SEQ,      def_cmp_video_sequencer,"VIDEOSEQ",       VideoSeq,         "Video Sequencer",   ""              )
 /* Experimental compositor-up */
 DefNode(CompositorNode, CMP_NODE_EXTEND,         def_cmp_extend,         "EXTEND",         Extend,           "Extend",            ""              )
+DefNode(CompositorNode, CMP_NODE_RANDOMIZE,      def_cmp_randomize,      "RANDOMIZE",      Randomize,         "Randomize",        ""              )
 /* END of Experimental compositor-up */
 
 DefNode(TextureNode,    TEX_NODE_OUTPUT,         def_tex_output,         "OUTPUT",         Output,           "Output",            ""              )

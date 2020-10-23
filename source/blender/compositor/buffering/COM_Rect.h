@@ -73,8 +73,8 @@ class PixelsRect : public rcti {
   // TmpBuffer. If the duplicated PixelsRect is single elem, this
   // single elem will be copied to fill the entire rect and be converted to a full buffer. So this
   // method ensures that the returned buffer is never a single elem buffer.
-  // It ensures that it has no added pitch (row_jump) too, because host recycles should not have it
-  // If use_std_recycle == false, unused chs will be deleted
+  // If use_std_recycle == false, unused chs will be deleted ensuring that it has no paddings (elem
+  // or row paddings)
   PixelsRect duplicate(bool use_std_recycle = false);
   /* */
 

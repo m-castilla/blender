@@ -437,6 +437,7 @@ compositor_node_categories = [
     # Experimental compositor-up
     CompositorNodeCategory("CMP_EXPERIMENTAL", "Experimental", items=[
         NodeItem("CompositorNodeExtend"),
+        NodeItem("CompositorNodeRandomize"),
     ]),
     # END of Experimental compositor-up
 ]

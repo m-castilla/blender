@@ -148,8 +148,6 @@ set(SRC
   # util
   ${CMP_BASE}/util/COM_BaseConverter.cpp
   ${CMP_BASE}/util/COM_BaseConverter.h
-  ${CMP_BASE}/util/COM_Bmp.cpp
-  ${CMP_BASE}/util/COM_Bmp.h
   ${CMP_BASE}/util/COM_PixelsUtil.cpp
   ${CMP_BASE}/util/COM_PixelsUtil.h
   ${CMP_BASE}/util/COM_RectUtil.cpp
@@ -412,6 +410,8 @@ set(SRC
   # experimental nodes
   ${CMP_NODES}/experimental/COM_ExtendNode.cpp
   ${CMP_NODES}/experimental/COM_ExtendNode.h
+  ${CMP_NODES}/experimental/COM_RandomizeNode.cpp
+  ${CMP_NODES}/experimental/COM_RandomizeNode.h
 
   # Internal operations
   ${CMP_OPS}/COM_AntiAliasOperation.cpp
@@ -660,6 +660,8 @@ set(SRC
   # experimental operations
   ${CMP_OPS}/experimental/COM_ExtendOperation.cpp
   ${CMP_OPS}/experimental/COM_ExtendOperation.h
+  ${CMP_OPS}/experimental/COM_RandomizeOperation.cpp
+  ${CMP_OPS}/experimental/COM_RandomizeOperation.h
 
 )
 
