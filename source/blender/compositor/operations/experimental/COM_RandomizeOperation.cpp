@@ -174,8 +174,9 @@ void RandomizeOperation::execPixels(ExecutionManager &man)
       kernel->addUInt64Arg(seed);
       kernel->addFloatArrayArg(steps, m_variance_steps, MemoryAccess::READ);
       kernel->addIntArg(m_variance_steps);
-      kernel->addIntArg(step_value_incr);
+      kernel->addFloatArg(step_value_incr);
     });
+    delete[] steps;
   }
   else {
     auto cpu_write = std::bind(CCL::randomizeOp,
