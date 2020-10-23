@@ -4503,6 +4503,7 @@ static void registerCompositNodes(void)
 
   /* Experimental compositor-up */
   register_node_type_cmp_extend();
+  register_node_type_cmp_randomize();
   /* END of Experimental compositor-up */
 }
 

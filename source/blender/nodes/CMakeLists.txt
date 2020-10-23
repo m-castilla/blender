@@ -129,6 +129,7 @@ set(SRC
 
   #Experimental compositor-up
   composite/nodes/node_composite_extend.c
+  composite/nodes/node_composite_randomize.c
   #END of Experimental compositor-up
 
   composite/node_composite_tree.c

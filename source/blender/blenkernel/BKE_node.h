@@ -1197,6 +1197,7 @@ void ntreeGPUMaterialNodes(struct bNodeTree *localtree,
 #define CMP_NODE_VIDEO_SEQ 326
 /* Experimental compositor-up */
 #define CMP_NODE_EXTEND 327
+#define CMP_NODE_RANDOMIZE 328
 /* END of Experimental compositor-up  */
 
 /* channel toggles */

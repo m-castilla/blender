@@ -16,15 +16,17 @@
  * Copyright 2020, Blender Foundation.
  */
 
+#include "BKE_image.h"
 #include "BLI_assert.h"
 #include "IMB_imbuf.h"
 #include "IMB_imbuf_types.h"
+#include "MEM_guardedalloc.h"
 #include <string.h>
 
-#include "COM_Bmp.h"
 #include "COM_Buffer.h"
 #include "COM_BufferUtil.h"
 #include "COM_ExecutionManager.h"
+#include "COM_GlobalManager.h"
 #include "COM_NodeOperation.h"
 #include "COM_PixelsUtil.h"
 #include "COM_Rect.h"
@@ -165,16 +167,16 @@ void PixelsUtil::copyBufferRectChannel(
   unsigned char *read_buf_cur = read_buf + dst.ymin * buf_brow_chs + dst.xmin * n_read_buf_chs +
                                 from_ch_idx;
 
-  float *dst_row_end = dst_img.start + dst_img.row_chs;
+  float *dst_brow_end = dst_img.start + dst_img.brow_chs;
   while (dst_cur < dst_img.end) {
-    while (dst_cur < dst_row_end) {
+    while (dst_cur < dst_brow_end) {
       *dst_cur = *read_buf_cur * norm_mult;
 
       dst_cur += dst_img.belem_chs;
       read_buf_cur += n_read_buf_chs;
     }
     dst_cur += dst_img.row_jump;
-    dst_row_end += dst_img.brow_chs_incr;
+    dst_brow_end += dst_img.brow_chs_incr;
   }
 }
 
@@ -418,7 +420,6 @@ void PixelsUtil::setRectElem(PixelsRect &wr1, const float *elem, int n_channels)
 }
 
 #if defined(COM_DEBUG) || defined(DEBUG)
-
 void PixelsUtil::saveAsImage(TmpBuffer *buf, std::string filename)
 {
   PixelsRect rect(buf, 0, buf->width, 0, buf->height);
@@ -443,13 +444,33 @@ void PixelsUtil::saveAsImage(PixelsRect &rect, std::string filename)
     ExecutionManager::deviceWaitQueueToFinish();
   }
 
-  return COM_Bmp::generateBitmapImage(rect, filename);
+  // remove any buffer padding
+  PixelsRect no_paddings_rect = rect.duplicate();
+  ImageFormatData *format = (ImageFormatData *)MEM_mallocN(sizeof(ImageFormatData),
+                                                           "PixelsUtil::saveAsImage");
+  BKE_imformat_defaults(format);
+  ImBuf *imbuf = IMB_allocFromBuffer(nullptr,
+                                     no_paddings_rect.tmp_buffer->host.buffer,
+                                     no_paddings_rect.getWidth(),
+                                     no_paddings_rect.getHeight(),
+                                     no_paddings_rect.getElemChs());
+  BKE_imbuf_write(imbuf, (filename + ".png").c_str(), format);
+  MEM_freeN(format);
+  IMB_freeImBuf(imbuf);
+  GlobalMan->BufferMan->recycler()->giveRecycle(no_paddings_rect.tmp_buffer);
 }
 
 void PixelsUtil::saveAsImage(
     const unsigned char *img_buffer, int width, int height, int n_channels, std::string filename)
 {
-  return COM_Bmp::generateBitmapImage(img_buffer, width, height, n_channels, filename);
+  ImageFormatData *format = (ImageFormatData *)MEM_mallocN(sizeof(ImageFormatData),
+                                                           "PixelsUtil::saveAsImage");
+  BKE_imformat_defaults(format);
+  ImBuf *imbuf = IMB_allocFromBuffer(
+      (unsigned int *)img_buffer, nullptr, width, height, n_channels);
+  BKE_imbuf_write(imbuf, (filename + ".png").c_str(), format);
+  MEM_freeN(format);
+  IMB_freeImBuf(imbuf);
 }
 
 #endif

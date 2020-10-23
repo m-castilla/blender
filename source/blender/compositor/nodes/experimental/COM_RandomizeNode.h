@@ -13,20 +13,19 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  *
- * Copyright 2020, Blender Foundation.
+ * Copyright 2011, Blender Foundation.
  */
 
-#ifndef __COM_BMP_H__
-#define __COM_BMP_H__
+#pragma once
 
-#include <string>
-class PixelsRect;
-namespace COM_Bmp {
+#include "COM_Node.h"
 
-void generateBitmapImage(PixelsRect &rect, std::string filename);
-void generateBitmapImage(
-    const unsigned char *img_buffer, int width, int height, int n_channels, std::string filename);
-
-}  // namespace COM_Bmp
-
-#endif
+/**
+ * \brief CropNode
+ * \ingroup Node
+ */
+class RandomizeNode : public Node {
+ public:
+  RandomizeNode(bNode *editorNode);
+  void convertToOperations(NodeConverter &converter, const CompositorContext &context) const;
+};

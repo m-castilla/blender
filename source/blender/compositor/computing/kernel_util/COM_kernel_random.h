@@ -26,15 +26,13 @@ ccl_device_inline uint64_t hash64shift(uint64_t key)
 
 ccl_device_inline int random_int(uint64_t *random_state, int2 dst_coords)
 {
-#ifdef __KERNEL_COMPUTE__
-  // The initial random state is the same for all work items. We hash it with the given item
-  // dst_coords so that the seed is different for all work items. We must hash it always not only
-  // once, otherwise it generates bad random numbers for noise effects
+
+  // The initial random state is the same for all work items or cpu rectangles. We hash it with the
+  // given item dst_coords so that the initial random state varies for all of them. We must hash it
+  // always not only once, otherwise it generates bad random numbers for noise effects
   uint64_t x_hash = hash64shift(*random_state ^ (*random_state * dst_coords.x));
   *random_state = hash64shift(x_hash ^ (*random_state * dst_coords.y));
-#else
-  (void)dst_coords;
-#endif
+
   *random_state = (multiplier * (*random_state) + addend) & mask;
 
   return (int)((*random_state) >> 17);

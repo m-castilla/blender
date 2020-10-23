@@ -2745,6 +2745,21 @@ static void node_composit_buts_extend(uiLayout *layout, bContext *UNUSED(C), Poi
   uiItemR(layout, ptr, "add_extend_y", DEFAULT_FLAGS, NULL, ICON_NONE);
   uiItemR(layout, ptr, "scale", DEFAULT_FLAGS, NULL, ICON_NONE);
 }
+
+static void node_composit_buts_randomize(uiLayout *layout, bContext *UNUSED(C), PointerRNA *ptr)
+{
+  bNode *node = ptr->data;
+  NodeRandomize *data = node->storage;
+  uiItemR(layout, ptr, "use_seed", DEFAULT_FLAGS, NULL, ICON_NONE);
+  if (data->flag & CMP_NODEFLAG_RANDOMIZE_SEED) {
+    uiItemR(layout, ptr, "seed", DEFAULT_FLAGS, NULL, ICON_NONE);
+  }
+  uiItemR(layout, ptr, "min", DEFAULT_FLAGS, NULL, ICON_NONE);
+  uiItemR(layout, ptr, "max", DEFAULT_FLAGS, NULL, ICON_NONE);
+  uiItemR(layout, ptr, "variance_down", DEFAULT_FLAGS, NULL, ICON_NONE);
+  uiItemR(layout, ptr, "variance_up", DEFAULT_FLAGS, NULL, ICON_NONE);
+  uiItemR(layout, ptr, "variance_steps", DEFAULT_FLAGS, NULL, ICON_NONE);
+}
 /* END of Experimental compositor-up */
 
 /* only once called */
@@ -2996,6 +3011,9 @@ static void node_composit_set_butfunc(bNodeType *ntype)
     /* Experimental compositor-up */
     case CMP_NODE_EXTEND:
       ntype->draw_buttons = node_composit_buts_extend;
+      break;
+    case CMP_NODE_RANDOMIZE:
+      ntype->draw_buttons = node_composit_buts_randomize;
       break;
       /* END of Experimental compositor-up */
   }

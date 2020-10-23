@@ -102,6 +102,7 @@
 #include "COM_NormalizeNode.h"
 #include "COM_OutputFileNode.h"
 #include "COM_PixelateNode.h"
+#include "COM_RandomizeNode.h"
 #include "COM_RenderLayersNode.h"
 #include "COM_ScaleNode.h"
 #include "COM_ScaleOperation.h"
@@ -430,6 +431,9 @@ Node *Converter::convert(bNode *b_node)
       /* experimental nodes */
     case CMP_NODE_EXTEND:
       node = new ExtendNode(b_node);
+      break;
+    case CMP_NODE_RANDOMIZE:
+      node = new RandomizeNode(b_node);
       break;
       /* */
 
