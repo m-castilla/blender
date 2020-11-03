@@ -16,12 +16,14 @@
  * Copyright 2011, Blender Foundation.
  */
 
-#include "COM_RandomizeOperation.h"
-#include "COM_ComputeKernel.h"
+#include <algorithm>
+
 #include "COM_ExecutionManager.h"
 #include "COM_GlobalManager.h"
+#include "COM_RandomizeOperation.h"
+
+#include "COM_ComputeKernel.h"
 #include "COM_kernel_cpu.h"
-#include <algorithm>
 
 using namespace std::placeholders;
 RandomizeOperation::RandomizeOperation()

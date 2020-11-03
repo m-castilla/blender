@@ -49,7 +49,7 @@ NodeGraph::~NodeGraph()
   }
 }
 
-void NodeGraph::from_bNodeTree(const CompositorContext &context, bNodeTree *tree)
+void NodeGraph::from_bNodeTree(CompositorContext &context, bNodeTree *tree)
 {
   add_bNodeTree(context, 0, tree, NODE_INSTANCE_KEY_BASE);
 }
@@ -96,7 +96,7 @@ void NodeGraph::add_link(NodeOutput *fromSocket, NodeInput *toSocket)
   toSocket->setLink(fromSocket);
 }
 
-void NodeGraph::add_bNodeTree(const CompositorContext &context,
+void NodeGraph::add_bNodeTree(CompositorContext &context,
                               int nodes_start,
                               bNodeTree *tree,
                               bNodeInstanceKey parent_key)
@@ -119,7 +119,7 @@ void NodeGraph::add_bNodeTree(const CompositorContext &context,
   }
 }
 
-void NodeGraph::add_bNode(const CompositorContext &context,
+void NodeGraph::add_bNode(CompositorContext &context,
                           bNodeTree *b_ntree,
                           bNode *b_node,
                           bNodeInstanceKey key,
@@ -279,9 +279,7 @@ void NodeGraph::add_proxies_group_outputs(bNode *b_node, bNode *b_node_io)
   }
 }
 
-void NodeGraph::add_proxies_group(const CompositorContext &context,
-                                  bNode *b_node,
-                                  bNodeInstanceKey key)
+void NodeGraph::add_proxies_group(CompositorContext &context, bNode *b_node, bNodeInstanceKey key)
 {
   bNodeTree *b_group_tree = (bNodeTree *)b_node->id;
 

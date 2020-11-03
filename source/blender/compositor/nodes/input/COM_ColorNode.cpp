@@ -26,7 +26,7 @@ ColorNode::ColorNode(bNode *editorNode) : Node(editorNode)
 }
 
 void ColorNode::convertToOperations(NodeConverter &converter,
-                                    const CompositorContext & /*context*/) const
+                                    CompositorContext & /*context*/) const
 {
   SetColorOperation *operation = new SetColorOperation();
   NodeOutput *output = this->getOutputSocket(0);

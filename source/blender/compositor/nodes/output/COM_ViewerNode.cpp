@@ -25,8 +25,7 @@ ViewerNode::ViewerNode(bNode *editorNode) : Node(editorNode)
   /* pass */
 }
 
-void ViewerNode::convertToOperations(NodeConverter &converter,
-                                     const CompositorContext &context) const
+void ViewerNode::convertToOperations(NodeConverter &converter, CompositorContext &context) const
 {
   bNode *editorNode = this->getbNode();
   bool do_output = (editorNode->flag & NODE_DO_OUTPUT_RECALC || context.isRendering()) &&

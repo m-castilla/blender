@@ -26,5 +26,5 @@
 class CompositorNode : public Node {
  public:
   CompositorNode(bNode *editorNode);
-  void convertToOperations(NodeConverter &converter, const CompositorContext &context) const;
+  void convertToOperations(NodeConverter &converter, CompositorContext &context) const;
 };

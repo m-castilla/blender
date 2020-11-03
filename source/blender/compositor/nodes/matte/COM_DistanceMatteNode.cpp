@@ -30,7 +30,7 @@ DistanceMatteNode::DistanceMatteNode(bNode *editorNode) : Node(editorNode)
 }
 
 void DistanceMatteNode::convertToOperations(NodeConverter &converter,
-                                            const CompositorContext & /*context*/) const
+                                            CompositorContext & /*context*/) const
 {
   bNode *editorsnode = getbNode();
   NodeChroma *storage = (NodeChroma *)editorsnode->storage;

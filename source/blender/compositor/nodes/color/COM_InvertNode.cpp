@@ -27,7 +27,7 @@ InvertNode::InvertNode(bNode *editorNode) : Node(editorNode)
 }
 
 void InvertNode::convertToOperations(NodeConverter &converter,
-                                     const CompositorContext & /*context*/) const
+                                     CompositorContext & /*context*/) const
 {
   InvertOperation *operation = new InvertOperation();
   bNode *node = this->getbNode();

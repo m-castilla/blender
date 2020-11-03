@@ -25,7 +25,7 @@ CombineColorNode::CombineColorNode(bNode *editorNode) : Node(editorNode)
 }
 
 void CombineColorNode::convertToOperations(NodeConverter &converter,
-                                           const CompositorContext &context) const
+                                           CompositorContext &context) const
 {
   NodeInput *inputRSocket = this->getInputSocket(0);
   NodeInput *inputGSocket = this->getInputSocket(1);
@@ -53,17 +53,17 @@ void CombineColorNode::convertToOperations(NodeConverter &converter,
   }
 }
 
-NodeOperation *CombineRGBANode::getColorConverter(const CompositorContext & /*context*/) const
+NodeOperation *CombineRGBANode::getColorConverter(CompositorContext & /*context*/) const
 {
   return NULL; /* no conversion needed */
 }
 
-NodeOperation *CombineHSVANode::getColorConverter(const CompositorContext & /*context*/) const
+NodeOperation *CombineHSVANode::getColorConverter(CompositorContext & /*context*/) const
 {
   return new ConvertHSVToRGBOperation();
 }
 
-NodeOperation *CombineYCCANode::getColorConverter(const CompositorContext & /*context*/) const
+NodeOperation *CombineYCCANode::getColorConverter(CompositorContext & /*context*/) const
 {
   ConvertYCCToRGBOperation *operation = new ConvertYCCToRGBOperation();
   bNode *editorNode = this->getbNode();
@@ -71,7 +71,7 @@ NodeOperation *CombineYCCANode::getColorConverter(const CompositorContext & /*co
   return operation;
 }
 
-NodeOperation *CombineYUVANode::getColorConverter(const CompositorContext & /*context*/) const
+NodeOperation *CombineYUVANode::getColorConverter(CompositorContext & /*context*/) const
 {
   return new ConvertYUVToRGBOperation();
 }

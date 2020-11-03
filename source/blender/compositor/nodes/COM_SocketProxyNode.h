@@ -30,7 +30,7 @@ class SocketProxyNode : public Node {
                   bNodeSocket *editorInput,
                   bNodeSocket *editorOutput,
                   bool use_conversion);
-  void convertToOperations(NodeConverter &converter, const CompositorContext &context) const;
+  void convertToOperations(NodeConverter &converter, CompositorContext &context) const;
 
   bool getUseConversion() const
   {

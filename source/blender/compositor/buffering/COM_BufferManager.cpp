@@ -52,7 +52,7 @@ BufferManager::~BufferManager()
   deinitialize(false);
 }
 
-void BufferManager::initialize(const CompositorContext &context)
+void BufferManager::initialize(CompositorContext &context)
 {
   if (!m_initialized) {
 

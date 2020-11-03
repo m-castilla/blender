@@ -27,5 +27,5 @@
 class HueSaturationValueNode : public Node {
  public:
   HueSaturationValueNode(bNode *editorNode);
-  void convertToOperations(NodeConverter &converter, const CompositorContext &context) const;
+  void convertToOperations(NodeConverter &converter, CompositorContext &context) const;
 };

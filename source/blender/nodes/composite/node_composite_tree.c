@@ -263,6 +263,10 @@ void ntreeCompositExecTree(Main *main,
               view_settings,
               display_settings,
               view_name);
+  /* disable auto composition by default for next execution, will only be enabled if needed in node area listener. */
+  if (ntree) {
+    ntree->auto_comp = 0;
+  }
 #else
   UNUSED_VARS(main,
               depsgraph,

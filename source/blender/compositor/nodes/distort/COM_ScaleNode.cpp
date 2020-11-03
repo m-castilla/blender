@@ -28,8 +28,7 @@ ScaleNode::ScaleNode(bNode *editorNode) : Node(editorNode)
   /* pass */
 }
 
-void ScaleNode::convertToOperations(NodeConverter &converter,
-                                    const CompositorContext &context) const
+void ScaleNode::convertToOperations(NodeConverter &converter, CompositorContext &context) const
 {
   bNode *bnode = this->getbNode();
 

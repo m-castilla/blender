@@ -60,7 +60,7 @@ class WorkScheduler {
    * for every device a thread is created.
    * \see initialize Initialization and query of the number of devices
    */
-  static void start(const CompositorContext &context);
+  static void start(CompositorContext &context);
 
   /**
    * \brief stop the execution

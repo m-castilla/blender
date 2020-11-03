@@ -26,7 +26,7 @@ NormalizeNode::NormalizeNode(bNode *editorNode) : Node(editorNode)
 }
 
 void NormalizeNode::convertToOperations(NodeConverter &converter,
-                                        const CompositorContext & /*context*/) const
+                                        CompositorContext & /*context*/) const
 {
   NormalizeOperation *operation = new NormalizeOperation();
   converter.addOperation(operation);

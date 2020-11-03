@@ -36,7 +36,7 @@ class KeyingNode : public Node {
                                         NodeOperationOutput *dilateErodeInput,
                                         int distance) const;
   NodeOperationOutput *setupFeather(NodeConverter &converter,
-                                    const CompositorContext &context,
+                                    CompositorContext &context,
                                     NodeOperationOutput *featherInput,
                                     int falloff,
                                     int distance) const;
@@ -55,5 +55,5 @@ class KeyingNode : public Node {
 
  public:
   KeyingNode(bNode *editorNode);
-  void convertToOperations(NodeConverter &converter, const CompositorContext &context) const;
+  void convertToOperations(NodeConverter &converter, CompositorContext &context) const;
 };

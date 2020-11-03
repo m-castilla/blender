@@ -29,7 +29,7 @@ TransformNode::TransformNode(bNode *editorNode) : Node(editorNode)
 }
 
 void TransformNode::convertToOperations(NodeConverter &converter,
-                                        const CompositorContext & /*context*/) const
+                                        CompositorContext & /*context*/) const
 {
   auto sampler = GlobalMan->getContext()->getDefaultSampler();
   sampler.filter = UiConvert::pixelInterpolation(this->getbNode()->custom1);

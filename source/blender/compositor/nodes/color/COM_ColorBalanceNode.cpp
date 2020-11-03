@@ -30,7 +30,7 @@ ColorBalanceNode::ColorBalanceNode(bNode *editorNode) : Node(editorNode)
 }
 
 void ColorBalanceNode::convertToOperations(NodeConverter &converter,
-                                           const CompositorContext & /*context*/) const
+                                           CompositorContext & /*context*/) const
 {
   bNode *node = this->getbNode();
   NodeColorBalance *n = (NodeColorBalance *)node->storage;

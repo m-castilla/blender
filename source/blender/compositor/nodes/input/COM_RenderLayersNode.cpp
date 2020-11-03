@@ -31,19 +31,20 @@ RenderLayersNode::RenderLayersNode(bNode *editorNode) : Node(editorNode)
 }
 
 void RenderLayersNode::testSocketLink(NodeConverter &converter,
-                                      const CompositorContext &context,
+                                      CompositorContext &context,
                                       NodeOutput *output,
                                       RenderLayersProg *operation,
                                       Scene *scene,
-                                      int layerId,
+                                      ViewLayer *view_layer,
                                       bool is_preview) const
 {
   operation->setScene(scene);
-  operation->setLayerId(layerId);
+  operation->setViewLayer(view_layer);
   operation->setRenderData(context.getRenderData());
   operation->setViewName(context.getViewName());
 
-  //We must allow mapping different socket types. For example vector output in node is VECTOR but in Operation is COLOR.
+  // We must allow mapping different socket types. For example vector output in node is VECTOR but
+  // in Operation is COLOR.
   converter.mapOutputSocket(output, operation->getOutputSocket(), false);
   converter.addOperation(operation);
 
@@ -53,17 +54,16 @@ void RenderLayersNode::testSocketLink(NodeConverter &converter,
 }
 
 void RenderLayersNode::testRenderLink(NodeConverter &converter,
-                                      const CompositorContext &context,
-                                      Render *re) const
+                                      CompositorContext &context,
+                                      Render *re,
+                                      ViewLayer *view_layer) const
 {
   Scene *scene = (Scene *)this->getbNode()->id;
-  const short layerId = this->getbNode()->custom1;
   RenderResult *rr = RE_AcquireResultRead(re);
   if (rr == NULL) {
     missingRenderLink(converter);
     return;
   }
-  ViewLayer *view_layer = (ViewLayer *)BLI_findlink(&scene->view_layers, layerId);
   if (view_layer == NULL) {
     missingRenderLink(converter);
     return;
@@ -114,7 +114,7 @@ void RenderLayersNode::testRenderLink(NodeConverter &converter,
       operation = new RenderLayersProg(rpass->name, type, rpass->channels);
       is_preview = STREQ(output->getbNodeSocket()->name, "Image");
     }
-    testSocketLink(converter, context, output, operation, scene, layerId, is_preview);
+    testSocketLink(converter, context, output, operation, scene, view_layer, is_preview);
   }
 }
 
@@ -162,13 +162,15 @@ void RenderLayersNode::missingRenderLink(NodeConverter &converter) const
 }
 
 void RenderLayersNode::convertToOperations(NodeConverter &converter,
-                                           const CompositorContext &context) const
+                                           CompositorContext &context) const
 {
   Scene *scene = (Scene *)this->getbNode()->id;
-  Render *re = (scene) ? RE_GetSceneRender(scene) : NULL;
+  int layer_id = this->getbNode()->custom1;
+  ViewLayer *view_layer = (ViewLayer *)BLI_findlink(&scene->view_layers, layer_id);
+  Render *re = context.renderer()->getRender(&context, scene, view_layer);
 
   if (re != NULL) {
-    testRenderLink(converter, context, re);
+    testRenderLink(converter, context, re, view_layer);
     RE_ReleaseResult(re);
   }
   else {

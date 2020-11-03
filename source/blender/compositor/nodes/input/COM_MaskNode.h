@@ -28,5 +28,5 @@
 class MaskNode : public Node {
  public:
   MaskNode(bNode *editorNode);
-  void convertToOperations(NodeConverter &converter, const CompositorContext &context) const;
+  void convertToOperations(NodeConverter &converter, CompositorContext &context) const;
 };

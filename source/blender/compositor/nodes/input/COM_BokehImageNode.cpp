@@ -26,7 +26,7 @@ BokehImageNode::BokehImageNode(bNode *editorNode) : Node(editorNode)
 }
 
 void BokehImageNode::convertToOperations(NodeConverter &converter,
-                                         const CompositorContext & /*context*/) const
+                                         CompositorContext & /*context*/) const
 {
   BokehImageOperation *operation = new BokehImageOperation();
   operation->setData((NodeBokehImage *)this->getbNode()->storage);

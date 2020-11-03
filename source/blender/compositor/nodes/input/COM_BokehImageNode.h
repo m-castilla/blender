@@ -27,5 +27,5 @@
 class BokehImageNode : public Node {
  public:
   BokehImageNode(bNode *editorNode);
-  void convertToOperations(NodeConverter &converter, const CompositorContext &context) const;
+  void convertToOperations(NodeConverter &converter, CompositorContext &context) const;
 };

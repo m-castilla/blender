@@ -26,7 +26,7 @@ CacheNode::CacheNode(bNode *editorNode) : Node(editorNode)
 }
 
 void CacheNode::convertToOperations(NodeConverter &converter,
-                                    const CompositorContext & /*context*/) const
+                                    CompositorContext & /*context*/) const
 {
   NodeInput *input = this->getInputSocket(0);
   bNode *editorNode = this->getbNode();

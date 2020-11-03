@@ -31,7 +31,7 @@ PlaneTrackDeformNode::PlaneTrackDeformNode(bNode *editorNode) : Node(editorNode)
 }
 
 void PlaneTrackDeformNode::convertToOperations(NodeConverter &converter,
-                                               const CompositorContext &context) const
+                                               CompositorContext &context) const
 {
   bNode *editorNode = this->getbNode();
   MovieClip *clip = (MovieClip *)editorNode->id;

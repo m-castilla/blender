@@ -26,7 +26,7 @@ ExtendNode::ExtendNode(bNode *editorNode) : Node(editorNode)
 }
 
 void ExtendNode::convertToOperations(NodeConverter &converter,
-                                     const CompositorContext & /*context*/) const
+                                     CompositorContext & /*context*/) const
 {
   bNode *node = getbNode();
   NodeExtend *data = (NodeExtend *)node->storage;

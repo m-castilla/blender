@@ -28,7 +28,7 @@ KeyingScreenNode::KeyingScreenNode(bNode *editorNode) : Node(editorNode)
 }
 
 void KeyingScreenNode::convertToOperations(NodeConverter &converter,
-                                           const CompositorContext &context) const
+                                           CompositorContext &context) const
 {
   bNode *editorNode = this->getbNode();
   MovieClip *clip = (MovieClip *)editorNode->id;

@@ -26,7 +26,7 @@ RandomizeNode::RandomizeNode(bNode *editorNode) : Node(editorNode)
 }
 
 void RandomizeNode::convertToOperations(NodeConverter &converter,
-                                        const CompositorContext & /*context*/) const
+                                        CompositorContext & /*context*/) const
 {
   bNode *node = getbNode();
   NodeRandomize *data = (NodeRandomize *)node->storage;

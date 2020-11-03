@@ -27,5 +27,5 @@
 class MapValueNode : public Node {
  public:
   MapValueNode(bNode *editorNode);
-  void convertToOperations(NodeConverter &converter, const CompositorContext &context) const;
+  void convertToOperations(NodeConverter &converter, CompositorContext &context) const;
 };

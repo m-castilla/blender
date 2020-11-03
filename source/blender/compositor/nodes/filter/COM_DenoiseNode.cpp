@@ -27,7 +27,7 @@ DenoiseNode::DenoiseNode(bNode *editorNode) : Node(editorNode)
 }
 
 void DenoiseNode::convertToOperations(NodeConverter &converter,
-                                      const CompositorContext & /*context*/) const
+                                      CompositorContext & /*context*/) const
 {
   bNode *node = this->getbNode();
   NodeDenoise *denoise = (NodeDenoise *)node->storage;

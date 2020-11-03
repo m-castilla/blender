@@ -80,7 +80,7 @@ class NodeGraph {
     return m_links;
   }
 
-  void from_bNodeTree(const CompositorContext &context, bNodeTree *tree);
+  void from_bNodeTree(CompositorContext &context, bNodeTree *tree);
 
  protected:
   typedef std::pair<NodeIterator, NodeIterator> NodeRange;
@@ -92,12 +92,12 @@ class NodeGraph {
   void add_node(Node *node, bNodeTree *b_ntree, bNodeInstanceKey key, bool is_active_group);
   void add_link(NodeOutput *fromSocket, NodeInput *toSocket);
 
-  void add_bNodeTree(const CompositorContext &context,
+  void add_bNodeTree(CompositorContext &context,
                      int nodes_start,
                      bNodeTree *tree,
                      bNodeInstanceKey parent_key);
 
-  void add_bNode(const CompositorContext &context,
+  void add_bNode(CompositorContext &context,
                  bNodeTree *b_ntree,
                  bNode *b_node,
                  bNodeInstanceKey key,
@@ -123,7 +123,7 @@ class NodeGraph {
 
   void add_proxies_group_inputs(bNode *b_node, bNode *b_node_io);
   void add_proxies_group_outputs(bNode *b_node, bNode *b_node_io);
-  void add_proxies_group(const CompositorContext &context, bNode *b_node, bNodeInstanceKey key);
+  void add_proxies_group(CompositorContext &context, bNode *b_node, bNodeInstanceKey key);
 
   void add_proxies_reroute(bNodeTree *b_ntree,
                            bNode *b_node,

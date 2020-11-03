@@ -44,7 +44,7 @@ class ExecutionSystem {
   /**
    * \brief the context used during execution
    */
-  const CompositorContext &m_context;
+  CompositorContext &m_context;
 
   /**
    * \brief vector of operations
@@ -78,7 +78,7 @@ class ExecutionSystem {
    * \param editingtree: [bNodeTree *]
    * \param rendering: [true false]
    */
-  ExecutionSystem(const CompositorContext &context);
+  ExecutionSystem(CompositorContext &context);
 
   /**
    * Destructor
@@ -111,7 +111,7 @@ class ExecutionSystem {
   /**
    * \brief get the reference to the compositor context
    */
-  const CompositorContext &getContext() const
+  CompositorContext &getContext() const
   {
     return this->m_context;
   }

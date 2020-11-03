@@ -483,6 +483,27 @@ static void node_area_listener(wmWindow *UNUSED(win),
       }
       break;
   }
+
+  /* compositor auto composite */
+  if (ED_node_is_compositor(snode) && (snode->flag & SNODE_AUTO_COMP) && snode->edittree) {
+    bool auto_comp = (wmn->category == NC_SCENE &&
+                      (wmn->data == ND_FRAME || wmn->data == ND_TRANSFORM_DONE ||
+                       wmn->data == ND_OB_VISIBLE)) ||
+                     (wmn->category == NC_MATERIAL &&
+                      (wmn->data == ND_SHADING || wmn->data == ND_SHADING_DRAW ||
+                       wmn->data == ND_SHADING_LINKS)) ||
+                     (wmn->category == NC_TEXTURE && (wmn->data == ND_NODES)) ||
+                     (wmn->category == NC_OBJECT &&
+                      (wmn->data == ND_POSE || wmn->data == ND_MODIFIER || wmn->data == ND_DRAW ||
+                       wmn->data == ND_PARTICLE)) ||
+                     (wmn->category == NC_LAMP &&
+                      (wmn->data == ND_LIGHTING || wmn->data == ND_LIGHTING_DRAW)) ||
+                     (wmn->category == NC_WORLD && (wmn->data == ND_WORLD_DRAW));
+    if (auto_comp) {
+      snode->edittree->auto_comp = 1;
+      ED_area_tag_refresh(area);
+    }
+  }
 }
 
 static void node_area_refresh(const struct bContext *C, ScrArea *area)

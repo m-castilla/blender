@@ -53,7 +53,7 @@ static inline float hash_to_float(uint32_t hash)
 }
 
 void CryptomatteNode::convertToOperations(NodeConverter &converter,
-                                          const CompositorContext & /*context*/) const
+                                          CompositorContext & /*context*/) const
 {
   NodeInput *inputSocketImage = this->getInputSocket(0);
   NodeOutput *outputSocketImage = this->getOutputSocket(0);

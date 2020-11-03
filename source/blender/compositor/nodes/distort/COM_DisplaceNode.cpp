@@ -26,8 +26,7 @@ DisplaceNode::DisplaceNode(bNode *editorNode) : Node(editorNode)
   /* pass */
 }
 
-void DisplaceNode::convertToOperations(NodeConverter &converter,
-                                       const CompositorContext &context) const
+void DisplaceNode::convertToOperations(NodeConverter &converter, CompositorContext &context) const
 {
   NodeOperation *operation;
   if (context.getQuality() == CompositorQuality::LOW) {

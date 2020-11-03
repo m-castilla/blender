@@ -33,8 +33,7 @@ MovieClipNode::MovieClipNode(bNode *editorNode) : Node(editorNode)
   /* pass */
 }
 
-void MovieClipNode::convertToOperations(NodeConverter &converter,
-                                        const CompositorContext &context) const
+void MovieClipNode::convertToOperations(NodeConverter &converter, CompositorContext &context) const
 {
   NodeOutput *outputMovieClip = this->getOutputSocket(0);
   NodeOutput *alphaMovieClip = this->getOutputSocket(1);

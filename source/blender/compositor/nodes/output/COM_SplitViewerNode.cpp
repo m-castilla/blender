@@ -28,7 +28,7 @@ SplitViewerNode::SplitViewerNode(bNode *editorNode) : Node(editorNode)
 }
 
 void SplitViewerNode::convertToOperations(NodeConverter &converter,
-                                          const CompositorContext &context) const
+                                          CompositorContext &context) const
 {
   bNode *editorNode = this->getbNode();
   bool do_output = (editorNode->flag & NODE_DO_OUTPUT_RECALC || context.isRendering()) &&

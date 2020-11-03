@@ -18,17 +18,19 @@
 
 #pragma once
 
+#include <string>
+#include <vector>
+
+#include "DNA_color_types.h"
+#include "DNA_node_types.h"
+#include "DNA_scene_types.h"
 #ifdef WITH_CXX_GUARDEDALLOC
 #  include "MEM_guardedalloc.h"
 #endif
 
 #include "COM_Pixels.h"
+#include "COM_Renderer.h"
 #include "COM_defines.h"
-#include "DNA_color_types.h"
-#include "DNA_node_types.h"
-#include "DNA_scene_types.h"
-#include <string>
-#include <vector>
 
 /**
  * \brief Overall context of the compositor
@@ -53,6 +55,7 @@ class CompositorContext {
   struct Depsgraph *m_depsgraph;
   ViewLayer *m_view_layer;
   Scene *m_scene;
+  Renderer m_renderer;
 
   /**
    * \brief Reference to the render data that is being composited.
@@ -111,6 +114,11 @@ class CompositorContext {
                                  const ColorManagedViewSettings *viewSettings,
                                  const ColorManagedDisplaySettings *displaySettings,
                                  const char *viewName);
+
+  Renderer *renderer()
+  {
+    return &m_renderer;
+  }
 
   struct Main *getMain() const
   {

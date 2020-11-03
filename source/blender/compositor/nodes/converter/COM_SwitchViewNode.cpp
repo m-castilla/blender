@@ -26,7 +26,7 @@ SwitchViewNode::SwitchViewNode(bNode *editorNode) : Node(editorNode)
 }
 
 void SwitchViewNode::convertToOperations(NodeConverter &converter,
-                                         const CompositorContext &context) const
+                                         CompositorContext &context) const
 {
   NodeOperationOutput *result;
   const char *viewName = context.getViewName();

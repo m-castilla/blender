@@ -23,7 +23,8 @@
 #include "DNA_node_types.h"
 
 struct Render;
-
+struct Scene;
+struct ViewLayer;
 /**
  * \brief RenderLayersNode
  * \ingroup Node
@@ -31,19 +32,20 @@ struct Render;
 class RenderLayersNode : public Node {
  public:
   RenderLayersNode(bNode *editorNode);
-  void convertToOperations(NodeConverter &converter, const CompositorContext &context) const;
+  void convertToOperations(NodeConverter &converter, CompositorContext &context) const;
 
  private:
   void testSocketLink(NodeConverter &converter,
-                      const CompositorContext &context,
+                      CompositorContext &context,
                       NodeOutput *output,
                       RenderLayersProg *operation,
                       Scene *scene,
-                      int layerId,
+                      ViewLayer *view_layer,
                       bool is_preview) const;
   void testRenderLink(NodeConverter &converter,
-                      const CompositorContext &context,
-                      Render *re) const;
+                      CompositorContext &context,
+                      Render *re,
+                      ViewLayer *view_layer) const;
 
   void missingSocketLink(NodeConverter &converter, NodeOutput *output) const;
   void missingRenderLink(NodeConverter &converter) const;

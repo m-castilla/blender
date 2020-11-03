@@ -26,6 +26,7 @@
 
 #include "RE_pipeline.h"
 
+struct ViewLayer;
 /**
  * Base class for all renderlayeroperations
  */
@@ -39,7 +40,8 @@ class RenderLayersProg : public NodeOperation {
   /**
    * layerId of the layer where this operation needs to get its data from
    */
-  short m_layerId;
+  ViewLayer *m_view_layer;
+  int m_layer_id;
 
   /**
    * viewName of the view to use (unless another view is specified by the node
@@ -105,35 +107,30 @@ class RenderLayersProg : public NodeOperation {
   {
     this->m_scene = scene;
   }
-  Scene *getScene()
-  {
-    return this->m_scene;
-  }
   void setRenderData(const RenderData *rd)
   {
     this->m_rd = rd;
   }
-  void setLayerId(short layerId)
+  void setViewLayer(ViewLayer *view_layer)
   {
-    this->m_layerId = layerId;
+    this->m_view_layer = view_layer;
   }
-  short getLayerId()
+  void setLayerId(int layer_id)
   {
-    return this->m_layerId;
+    m_layer_id = layer_id;
   }
   void setViewName(const char *viewName)
   {
     this->m_viewName = viewName;
-  }
-  const char *getViewName()
-  {
-    return this->m_viewName;
   }
   void initExecution();
   void deinitExecution();
 
  protected:
   virtual void hashParams();
+
+ private:
+  ViewLayer *getViewLayer();
 };
 
 class RenderLayersAlphaProg : public RenderLayersProg {

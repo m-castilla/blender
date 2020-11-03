@@ -34,8 +34,7 @@ BlurNode::BlurNode(bNode *editorNode) : Node(editorNode)
   /* pass */
 }
 
-void BlurNode::convertToOperations(NodeConverter &converter,
-                                   const CompositorContext &context) const
+void BlurNode::convertToOperations(NodeConverter &converter, CompositorContext &context) const
 {
   bNode *editorNode = this->getbNode();
   NodeBlurData *data = (NodeBlurData *)editorNode->storage;

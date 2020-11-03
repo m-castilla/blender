@@ -34,12 +34,12 @@ class GlobalManager {
   ComputeManager *ComputeMan;
   CacheManager *CacheMan;
 
-  const CompositorContext *m_context;
+  CompositorContext *m_context;
 
-  void initialize(const CompositorContext &ctx);
-  void deinitialize(const CompositorContext &ctx);
+  void initialize(CompositorContext &ctx);
+  void deinitialize(CompositorContext &ctx);
 
-  const CompositorContext *getContext()
+  CompositorContext *getContext()
   {
     return m_context;
   }

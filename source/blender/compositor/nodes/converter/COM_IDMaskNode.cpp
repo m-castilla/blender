@@ -24,8 +24,7 @@ IDMaskNode::IDMaskNode(bNode *editorNode) : Node(editorNode)
 {
   /* pass */
 }
-void IDMaskNode::convertToOperations(NodeConverter &converter,
-                                     const CompositorContext &context) const
+void IDMaskNode::convertToOperations(NodeConverter &converter, CompositorContext &context) const
 {
   bNode *bnode = this->getbNode();
 

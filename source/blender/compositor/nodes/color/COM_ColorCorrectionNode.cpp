@@ -26,7 +26,7 @@ ColorCorrectionNode::ColorCorrectionNode(bNode *editorNode) : Node(editorNode)
 }
 
 void ColorCorrectionNode::convertToOperations(NodeConverter &converter,
-                                              const CompositorContext & /*context*/) const
+                                              CompositorContext & /*context*/) const
 {
   bNode *editorNode = getbNode();
 

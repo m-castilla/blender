@@ -20,8 +20,7 @@
 #include "COM_ExecutionSystem.h"
 #include "COM_MathBaseOperation.h"
 
-void MathNode::convertToOperations(NodeConverter &converter,
-                                   const CompositorContext & /*context*/) const
+void MathNode::convertToOperations(NodeConverter &converter, CompositorContext & /*context*/) const
 {
   MathBaseOperation *operation = NULL;
 

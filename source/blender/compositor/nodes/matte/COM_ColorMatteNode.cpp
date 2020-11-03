@@ -28,7 +28,7 @@ ColorMatteNode::ColorMatteNode(bNode *editorNode) : Node(editorNode)
 }
 
 void ColorMatteNode::convertToOperations(NodeConverter &converter,
-                                         const CompositorContext & /*context*/) const
+                                         CompositorContext & /*context*/) const
 {
   bNode *editorsnode = getbNode();
 

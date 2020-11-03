@@ -26,7 +26,7 @@ CompositorNode::CompositorNode(bNode *editorNode) : Node(editorNode)
 }
 
 void CompositorNode::convertToOperations(NodeConverter &converter,
-                                         const CompositorContext &context) const
+                                         CompositorContext &context) const
 {
   bNode *editorNode = this->getbNode();
   bool is_active = (editorNode->flag & NODE_DO_OUTPUT_RECALC) || context.isRendering();
