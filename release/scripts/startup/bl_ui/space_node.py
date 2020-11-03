@@ -671,6 +671,7 @@ class NODE_PT_quality(bpy.types.Panel):
         col.prop(tree, "use_viewer_border")
         col.separator()
         col.prop(snode, "use_auto_render")
+        col.prop(snode, "use_auto_comp")
         col.separator()
 
 

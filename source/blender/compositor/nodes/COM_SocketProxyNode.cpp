@@ -53,7 +53,7 @@ SocketProxyNode::SocketProxyNode(bNode *editorNode,
 }
 
 void SocketProxyNode::convertToOperations(NodeConverter &converter,
-                                          const CompositorContext & /*context*/) const
+                                          CompositorContext & /*context*/) const
 {
   NodeOperationOutput *proxy_output = converter.addInputProxy(getInputSocket(0));
   converter.mapOutputSocket(getOutputSocket(), proxy_output);

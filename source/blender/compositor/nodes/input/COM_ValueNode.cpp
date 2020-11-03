@@ -26,7 +26,7 @@ ValueNode::ValueNode(bNode *editorNode) : Node(editorNode)
 }
 
 void ValueNode::convertToOperations(NodeConverter &converter,
-                                    const CompositorContext & /*context*/) const
+                                    CompositorContext & /*context*/) const
 {
   SetValueOperation *operation = new SetValueOperation();
   NodeOutput *output = this->getOutputSocket(0);

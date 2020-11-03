@@ -89,7 +89,7 @@ class BaseCache {
 
  private:
   void deleteCacheInfo(CacheInfo *info);
-  void prefetchNextCache();
+  void prefetchNextCache(const OpKey *last_prefetch_op_key);
 
  public:
   virtual void initialize(const CompositorContext *ctx);

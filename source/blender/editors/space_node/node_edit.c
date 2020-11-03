@@ -229,6 +229,16 @@ static void compo_updatejob(void *UNUSED(cjv))
   WM_main_add_notifier(NC_SCENE | ND_COMPO_RESULT, NULL);
 }
 
+static void compo_endjob(void *cjv)
+{
+  CompoJob *cj = cjv;
+  /* disable auto composition by default for next execution, will only be enabled if needed in node
+   * area listener. */
+  if (cj->ntree) {
+    cj->ntree->auto_comp = 0;
+  }
+}
+
 static void compo_progressjob(void *cjv, float progress)
 {
   CompoJob *cj = cjv;
@@ -350,7 +360,7 @@ void ED_node_composite_job(const bContext *C, struct bNodeTree *nodetree, Scene 
   /* setup job */
   WM_jobs_customdata_set(wm_job, cj, compo_freejob);
   WM_jobs_timer(wm_job, 0.1, NC_SCENE | ND_COMPO_RESULT, NC_SCENE | ND_COMPO_RESULT);
-  WM_jobs_callbacks(wm_job, compo_startjob, compo_initjob, compo_updatejob, NULL);
+  WM_jobs_callbacks(wm_job, compo_startjob, compo_initjob, compo_updatejob, compo_endjob);
 
   WM_jobs_start(CTX_wm_manager(C), wm_job);
 }

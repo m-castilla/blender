@@ -26,7 +26,7 @@ MapUVNode::MapUVNode(bNode *editorNode) : Node(editorNode)
 }
 
 void MapUVNode::convertToOperations(NodeConverter &converter,
-                                    const CompositorContext & /*context*/) const
+                                    CompositorContext & /*context*/) const
 {
   bNode *node = this->getbNode();
 

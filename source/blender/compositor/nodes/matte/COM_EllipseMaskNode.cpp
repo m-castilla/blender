@@ -29,7 +29,7 @@ EllipseMaskNode::EllipseMaskNode(bNode *editorNode) : Node(editorNode)
 }
 
 void EllipseMaskNode::convertToOperations(NodeConverter &converter,
-                                          const CompositorContext &context) const
+                                          CompositorContext &context) const
 {
   NodeInput *inputSocket = this->getInputSocket(0);
   NodeOutput *outputSocket = this->getOutputSocket(0);

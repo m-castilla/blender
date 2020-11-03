@@ -27,5 +27,5 @@
 class BlurNode : public Node {
  public:
   BlurNode(bNode *editorNode);
-  void convertToOperations(NodeConverter &converter, const CompositorContext &context) const;
+  void convertToOperations(NodeConverter &converter, CompositorContext &context) const;
 };

@@ -156,6 +156,8 @@ set(SRC
   ${CMP_BASE}/util/COM_MathUtil.h
   ${CMP_BASE}/util/COM_TimeUtil.cpp
   ${CMP_BASE}/util/COM_TimeUtil.h
+  ${CMP_BASE}/util/COM_Renderer.cpp
+  ${CMP_BASE}/util/COM_Renderer.h
   ${CMP_BASE}/util/COM_StringUtil.cpp
   ${CMP_BASE}/util/COM_StringUtil.h
   ${CMP_BASE}/util/COM_BufferUtil.cpp

@@ -29,7 +29,7 @@ RotateNode::RotateNode(bNode *editorNode) : Node(editorNode)
 }
 
 void RotateNode::convertToOperations(NodeConverter &converter,
-                                     const CompositorContext & /*context*/) const
+                                     CompositorContext & /*context*/) const
 {
   NodeInput *inputSocket = this->getInputSocket(0);
   NodeInput *inputDegreeSocket = this->getInputSocket(1);

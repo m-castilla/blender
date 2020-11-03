@@ -28,7 +28,7 @@ ChannelMatteNode::ChannelMatteNode(bNode *editorNode) : Node(editorNode)
 }
 
 void ChannelMatteNode::convertToOperations(NodeConverter &converter,
-                                           const CompositorContext & /*context*/) const
+                                           CompositorContext & /*context*/) const
 {
   bNode *node = this->getbNode();
 

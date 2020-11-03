@@ -30,8 +30,7 @@ TimeNode::TimeNode(bNode *editorNode) : Node(editorNode)
   /* pass */
 }
 
-void TimeNode::convertToOperations(NodeConverter &converter,
-                                   const CompositorContext &context) const
+void TimeNode::convertToOperations(NodeConverter &converter, CompositorContext &context) const
 {
   SetValueOperation *operation = new SetValueOperation();
   bNode *node = this->getbNode();

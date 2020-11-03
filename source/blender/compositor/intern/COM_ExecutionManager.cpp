@@ -29,7 +29,7 @@
 #include "COM_WorkScheduler.h"
 
 const int MAXIMUM_IMAGE_PIXELS_PER_WORK = 320 * 320;
-ExecutionManager::ExecutionManager(const CompositorContext &context,
+ExecutionManager::ExecutionManager(CompositorContext &context,
                                    std::vector<ExecutionGroup *> &exec_groups)
     : m_context(context),
       m_exec_groups(exec_groups),

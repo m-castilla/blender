@@ -20,7 +20,7 @@
 #include "COM_ConvertOperation.h"
 
 void ConvertAlphaNode::convertToOperations(NodeConverter &converter,
-                                           const CompositorContext & /*context*/) const
+                                           CompositorContext & /*context*/) const
 {
   NodeOperation *operation = NULL;
   bNode *node = this->getbNode();

@@ -16,32 +16,19 @@
  * Copyright 2020, Blender Foundation.
  */
 
-<<<<<<< HEAD
-<<<<<<< HEAD:source/blender/compositor/util/COM_MemBufferUtil.cpp
-=======
->>>>>>> f7ffde26628... First commmit
-#include "COM_MemBufferUtil.h"
-#include "BLI_Rect.h"
-#include "BLI_assert.h"
-#include <algorithm>
-#include <utility>
+#pragma once
 
-namespace MemBufferUtil {
+#include "BLI_Map.hh"
 
-}  // namespace MemBufferUtil
+struct Scene;
+struct ViewLayer;
+struct Render;
+class CompositorContext;
+class Renderer {
+ private:
+  blender::Map<unsigned int, blender::Map<std::string, Render *>> m_renders;
 
-<<<<<<< HEAD
-=======
-#include "COM_ComputeDevice.h"
-#include "BLI_assert.h"
-#include "COM_ExecutionManager.h"
-
-ComputeDevice::ComputeDevice() : m_initialized(false)
-{
-}
-ComputeDevice::~ComputeDevice()
-{
-}
->>>>>>> f7ffde26628... First commmit:source/blender/compositor/computing/COM_ComputeDevice.cpp
-=======
->>>>>>> f7ffde26628... First commmit
+ public:
+  Renderer();
+  Render *getRender(CompositorContext *ctx, Scene *scene, ViewLayer *layer);
+};

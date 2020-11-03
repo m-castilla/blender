@@ -137,7 +137,7 @@ NodeOperationOutput *KeyingNode::setupDilateErode(NodeConverter &converter,
 }
 
 NodeOperationOutput *KeyingNode::setupFeather(NodeConverter &converter,
-                                              const CompositorContext &context,
+                                              CompositorContext &context,
                                               NodeOperationOutput *featherInput,
                                               int falloff,
                                               int distance) const
@@ -216,8 +216,7 @@ NodeOperationOutput *KeyingNode::setupClip(NodeConverter &converter,
   return clipOperation->getOutputSocket(0);
 }
 
-void KeyingNode::convertToOperations(NodeConverter &converter,
-                                     const CompositorContext &context) const
+void KeyingNode::convertToOperations(NodeConverter &converter, CompositorContext &context) const
 {
   bNode *editorNode = this->getbNode();
   NodeKeyingData *keying_data = (NodeKeyingData *)editorNode->storage;

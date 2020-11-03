@@ -33,7 +33,7 @@ GlareNode::GlareNode(bNode *editorNode) : Node(editorNode)
 }
 
 void GlareNode::convertToOperations(NodeConverter &converter,
-                                    const CompositorContext & /*context*/) const
+                                    CompositorContext & /*context*/) const
 {
   bNode *node = this->getbNode();
   NodeGlare *glare = (NodeGlare *)node->storage;

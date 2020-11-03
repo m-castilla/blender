@@ -28,5 +28,5 @@
 class TransformNode : public Node {
  public:
   TransformNode(bNode *editorNode);
-  void convertToOperations(NodeConverter &converter, const CompositorContext &context) const;
+  void convertToOperations(NodeConverter &converter, CompositorContext &context) const;
 };

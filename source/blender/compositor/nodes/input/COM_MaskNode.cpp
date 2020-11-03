@@ -28,8 +28,7 @@ MaskNode::MaskNode(bNode *editorNode) : Node(editorNode)
   /* pass */
 }
 
-void MaskNode::convertToOperations(NodeConverter &converter,
-                                   const CompositorContext &context) const
+void MaskNode::convertToOperations(NodeConverter &converter, CompositorContext &context) const
 {
   const RenderData *rd = context.getRenderData();
 

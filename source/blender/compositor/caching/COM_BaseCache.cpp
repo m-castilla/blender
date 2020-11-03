@@ -60,7 +60,7 @@ void BaseCache::setOperationMode(OperationMode mode)
   m_op_mode = mode;
   if (mode == OperationMode::Exec) {
     // on exec mode start let's prefecth next cache if there is any
-    prefetchNextCache();
+    prefetchNextCache(nullptr);
   }
 }
 
@@ -157,17 +157,23 @@ float *BaseCache::getCacheAndPrefetchNext(const OpKey &op_key)
   // check cache info and remove it from prefetch queue
   BLI_assert(getCacheInfo(op_key)->op_key == op_key);
   BLI_assert(m_prefetch_queue.front() == op_key);
-  m_prefetch_queue.pop_front();
 
-  prefetchNextCache();
+  prefetchNextCache(&op_key);
 
   auto info = getCacheInfo(op_key);
   return info ? getCache(info) : nullptr;
 }
 
-void BaseCache::prefetchNextCache()
+/**
+ *
+ *
+ * \param last_prefetch_op_key null when there is no previous prefetch
+ */
+void BaseCache::prefetchNextCache(const OpKey *last_prefetch_op_key)
 {
   if (m_prefetch_queue.size() > 0) {
+    // delete all previous pretches until last_prefetch_op_key included
+
     const auto &prefetch_key = m_prefetch_queue.front();
     BLI_assert(hasCache(prefetch_key));
     auto info = getCacheInfo(prefetch_key);

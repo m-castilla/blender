@@ -23,10 +23,10 @@
 class CombineColorNode : public Node {
  public:
   CombineColorNode(bNode *editorNode);
-  void convertToOperations(NodeConverter &converter, const CompositorContext &context) const;
+  void convertToOperations(NodeConverter &converter, CompositorContext &context) const;
 
  protected:
-  virtual NodeOperation *getColorConverter(const CompositorContext &context) const = 0;
+  virtual NodeOperation *getColorConverter(CompositorContext &context) const = 0;
 };
 
 class CombineRGBANode : public CombineColorNode {
@@ -35,7 +35,7 @@ class CombineRGBANode : public CombineColorNode {
   {
   }
 
-  NodeOperation *getColorConverter(const CompositorContext &context) const;
+  NodeOperation *getColorConverter(CompositorContext &context) const;
 };
 
 class CombineHSVANode : public CombineColorNode {
@@ -44,7 +44,7 @@ class CombineHSVANode : public CombineColorNode {
   {
   }
 
-  NodeOperation *getColorConverter(const CompositorContext &context) const;
+  NodeOperation *getColorConverter(CompositorContext &context) const;
 };
 
 class CombineYCCANode : public CombineColorNode {
@@ -53,7 +53,7 @@ class CombineYCCANode : public CombineColorNode {
   {
   }
 
-  NodeOperation *getColorConverter(const CompositorContext &context) const;
+  NodeOperation *getColorConverter(CompositorContext &context) const;
 };
 
 class CombineYUVANode : public CombineColorNode {
@@ -62,5 +62,5 @@ class CombineYUVANode : public CombineColorNode {
   {
   }
 
-  NodeOperation *getColorConverter(const CompositorContext &context) const;
+  NodeOperation *getColorConverter(CompositorContext &context) const;
 };

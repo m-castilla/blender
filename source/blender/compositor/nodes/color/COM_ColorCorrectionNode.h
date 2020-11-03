@@ -27,5 +27,5 @@
 class ColorCorrectionNode : public Node {
  public:
   ColorCorrectionNode(bNode *editorNode);
-  void convertToOperations(NodeConverter &converter, const CompositorContext &context) const;
+  void convertToOperations(NodeConverter &converter, CompositorContext &context) const;
 };

@@ -26,7 +26,7 @@ TonemapNode::TonemapNode(bNode *editorNode) : Node(editorNode)
 }
 
 void TonemapNode::convertToOperations(NodeConverter &converter,
-                                      const CompositorContext & /*context*/) const
+                                      CompositorContext & /*context*/) const
 {
   NodeTonemap *data = (NodeTonemap *)this->getbNode()->storage;
 

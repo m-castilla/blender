@@ -40,7 +40,7 @@ DilateErodeNode::DilateErodeNode(bNode *editorNode) : Node(editorNode), m_alpha_
 }
 
 void DilateErodeNode::convertToOperations(NodeConverter &converter,
-                                          const CompositorContext &context) const
+                                          CompositorContext &context) const
 {
 
   bNode *editorNode = this->getbNode();

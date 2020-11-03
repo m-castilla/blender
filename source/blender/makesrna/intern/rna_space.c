@@ -6321,6 +6321,11 @@ static void rna_def_space_node(BlenderRNA *brna)
       prop, "Auto Render", "Re-render and composite changed layers on 3D edits");
   RNA_def_property_update(prop, NC_SPACE | ND_SPACE_NODE_VIEW, NULL);
 
+  prop = RNA_def_property(srna, "use_auto_comp", PROP_BOOLEAN, PROP_NONE);
+  RNA_def_property_boolean_sdna(prop, NULL, "flag", SNODE_AUTO_COMP);
+  RNA_def_property_ui_text(prop, "Auto Composite", "Auto composite . Re-renders scene.");
+  RNA_def_property_update(prop, NC_SPACE | ND_SPACE_NODE_VIEW, NULL);
+
   prop = RNA_def_property(srna, "backdrop_zoom", PROP_FLOAT, PROP_NONE);
   RNA_def_property_float_sdna(prop, NULL, "zoom");
   RNA_def_property_float_default(prop, 1.0f);

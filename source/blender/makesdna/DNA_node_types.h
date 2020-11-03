@@ -482,7 +482,8 @@ typedef struct bNodeTree {
   /* Enum setting for choosing a predefined preview size (Small, Medium, Big). Compositor only */
   short preview_size;
 
-  char _pad[2];
+  /* Auto-composite option for compositor */
+  short auto_comp;
 
   /** Execution data.
    *

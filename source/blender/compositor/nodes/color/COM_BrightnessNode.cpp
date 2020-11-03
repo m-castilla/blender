@@ -26,7 +26,7 @@ BrightnessNode::BrightnessNode(bNode *editorNode) : Node(editorNode)
 }
 
 void BrightnessNode::convertToOperations(NodeConverter &converter,
-                                         const CompositorContext & /*context*/) const
+                                         CompositorContext & /*context*/) const
 {
   bNode *bnode = this->getbNode();
   BrightnessOperation *operation = new BrightnessOperation();

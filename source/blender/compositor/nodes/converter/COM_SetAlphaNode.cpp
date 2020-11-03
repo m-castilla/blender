@@ -21,7 +21,7 @@
 #include "COM_SetAlphaOperation.h"
 
 void SetAlphaNode::convertToOperations(NodeConverter &converter,
-                                       const CompositorContext & /*context*/) const
+                                       CompositorContext & /*context*/) const
 {
   SetAlphaOperation *operation = new SetAlphaOperation();
 

@@ -28,8 +28,7 @@
 
 #include "DNA_material_types.h"  // the ramp types
 
-void ZCombineNode::convertToOperations(NodeConverter &converter,
-                                       const CompositorContext &context) const
+void ZCombineNode::convertToOperations(NodeConverter &converter, CompositorContext &context) const
 {
   if ((context.getRenderData()->scemode & R_FULL_SAMPLE) || this->getbNode()->custom2) {
     ZCombineOperation *operation = NULL;

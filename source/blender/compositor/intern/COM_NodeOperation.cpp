@@ -199,7 +199,7 @@ std::shared_ptr<PixelsRect> NodeOperation::getPixels(NodeOperation *reader_op,
   if (!man.isBreaked()) {
     if (man.getOperationMode() == OperationMode::Optimize) {
       if (!m_exec_pixels_optimized) {
-        if (!GlobalMan->CacheMan->hasAnyKindOfCache(this) && !isFinalOperation()) {
+        if (!isFinalOperation()) {
           execPixels(man);
         }
         m_exec_pixels_optimized = true;

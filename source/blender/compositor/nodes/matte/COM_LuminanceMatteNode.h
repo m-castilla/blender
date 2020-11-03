@@ -27,5 +27,5 @@
 class LuminanceMatteNode : public Node {
  public:
   LuminanceMatteNode(bNode *editorNode);
-  void convertToOperations(NodeConverter &converter, const CompositorContext &context) const;
+  void convertToOperations(NodeConverter &converter, CompositorContext &context) const;
 };

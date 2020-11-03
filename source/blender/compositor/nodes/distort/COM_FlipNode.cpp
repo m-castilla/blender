@@ -26,8 +26,7 @@ FlipNode::FlipNode(bNode *editorNode) : Node(editorNode)
   /* pass */
 }
 
-void FlipNode::convertToOperations(NodeConverter &converter,
-                                   const CompositorContext & /*context*/) const
+void FlipNode::convertToOperations(NodeConverter &converter, CompositorContext & /*context*/) const
 {
   NodeInput *inputSocket = this->getInputSocket(0);
   NodeOutput *outputSocket = this->getOutputSocket(0);

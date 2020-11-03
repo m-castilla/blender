@@ -71,8 +71,7 @@ NodeOperation *ImageNode::doMultilayerCheck(NodeConverter &converter,
   return operation;
 }
 
-void ImageNode::convertToOperations(NodeConverter &converter,
-                                    const CompositorContext &context) const
+void ImageNode::convertToOperations(NodeConverter &converter, CompositorContext &context) const
 {
   /** Image output */
   NodeOutput *outputImage = this->getOutputSocket(0);

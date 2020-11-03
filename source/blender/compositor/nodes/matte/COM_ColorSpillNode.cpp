@@ -26,7 +26,7 @@ ColorSpillNode::ColorSpillNode(bNode *editorNode) : Node(editorNode)
 }
 
 void ColorSpillNode::convertToOperations(NodeConverter &converter,
-                                         const CompositorContext & /*context*/) const
+                                         CompositorContext & /*context*/) const
 {
   bNode *editorsnode = getbNode();
 

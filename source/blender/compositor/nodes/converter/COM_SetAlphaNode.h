@@ -29,5 +29,5 @@ class SetAlphaNode : public Node {
   SetAlphaNode(bNode *editorNode) : Node(editorNode)
   {
   }
-  void convertToOperations(NodeConverter &converter, const CompositorContext &context) const;
+  void convertToOperations(NodeConverter &converter, CompositorContext &context) const;
 };

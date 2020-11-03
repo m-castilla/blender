@@ -26,7 +26,7 @@ TranslateNode::TranslateNode(bNode *editorNode) : Node(editorNode)
 }
 
 void TranslateNode::convertToOperations(NodeConverter &converter,
-                                        const CompositorContext & /*context*/) const
+                                        CompositorContext & /*context*/) const
 {
   bNode *bnode = this->getbNode();
   NodeTranslateData *data = (NodeTranslateData *)bnode->storage;

@@ -28,8 +28,7 @@ BoxMaskNode::BoxMaskNode(bNode *editorNode) : Node(editorNode)
   /* pass */
 }
 
-void BoxMaskNode::convertToOperations(NodeConverter &converter,
-                                      const CompositorContext &context) const
+void BoxMaskNode::convertToOperations(NodeConverter &converter, CompositorContext &context) const
 {
   NodeInput *inputSocket = this->getInputSocket(0);
   NodeOutput *outputSocket = this->getOutputSocket(0);

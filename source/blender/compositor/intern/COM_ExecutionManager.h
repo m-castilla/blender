@@ -50,7 +50,7 @@ class ExecutionManager {
   std::mutex mutex;
 
  public:
-  ExecutionManager(const CompositorContext &context, std::vector<ExecutionGroup *> &exec_groups);
+  ExecutionManager(CompositorContext &context, std::vector<ExecutionGroup *> &exec_groups);
   bool isBreaked() const;
 
   void setOperationMode(OperationMode mode);

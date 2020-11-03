@@ -40,7 +40,7 @@ GlobalManager::~GlobalManager()
   }
 }
 
-void GlobalManager::initialize(const CompositorContext &ctx)
+void GlobalManager::initialize(CompositorContext &ctx)
 {
   m_context = &ctx;
   if (CacheMan == nullptr) {
@@ -83,7 +83,7 @@ void GlobalManager::initialize(const CompositorContext &ctx)
   }
 }
 
-void GlobalManager::deinitialize(const CompositorContext &ctx)
+void GlobalManager::deinitialize(CompositorContext &ctx)
 {
   BufferMan->deinitialize(ctx.isBreaked());
   CacheMan->deinitialize(&ctx);

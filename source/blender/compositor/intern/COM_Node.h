@@ -216,8 +216,7 @@ class Node {
    * \param system: the ExecutionSystem where the operations need to be added
    * \param context: reference to the CompositorContext
    */
-  virtual void convertToOperations(NodeConverter &converter,
-                                   const CompositorContext &context) const = 0;
+  virtual void convertToOperations(NodeConverter &converter, CompositorContext &context) const = 0;
 
   void setInstanceKey(bNodeInstanceKey instance_key)
   {
