@@ -1404,19 +1404,25 @@ static void do_render_composite(Render *re)
 
         RenderView *rv;
         ViewLayer *view_layer = BLI_findlink(&re->view_layers, re->active_view_layer);
+        Scene *scene = re->pipeline_scene_eval;
+        CompositTreeExec *exec_data = (CompositTreeExec *)MEM_callocN(sizeof(CompositTreeExec),
+                                                                      "CompositTreeExec");
+        exec_data->depsgraph = re->pipeline_depsgraph;
+        exec_data->main = re->main;
+        exec_data->display_settings = &scene->display_settings;
+        exec_data->rendering = true;
+        exec_data->do_previews = G.background == 0;
+        exec_data->ntree = ntree;
+        exec_data->view_layer = view_layer;
+        exec_data->scene = scene;
+        exec_data->rd = &scene->r;
+        exec_data->view_settings = &scene->view_settings;
         for (rv = re->result->views.first; rv; rv = rv->next) {
-          ntreeCompositExecTree(re->main,
-                                re->pipeline_depsgraph,
-                                re->pipeline_scene_eval,
-                                view_layer,
-                                ntree,
-                                &re->r,
-                                true,
-                                G.background == 0,
-                                &re->scene->view_settings,
-                                &re->scene->display_settings,
-                                rv->name);
+          exec_data->viewname = rv->name;
+          ntreeCompositExecTree(exec_data);
         }
+
+        MEM_freeN(exec_data);
         ntree->stats_draw = NULL;
         ntree->test_break = NULL;
         ntree->progress = NULL;

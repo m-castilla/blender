@@ -224,6 +224,7 @@ DefNode(CompositorNode, CMP_NODE_CRYPTOMATTE,    def_cmp_cryptomatte,    "CRYPTO
 DefNode(CompositorNode, CMP_NODE_DENOISE,        def_cmp_denoise,        "DENOISE",        Denoise,          "Denoise",           ""              )
 DefNode(CompositorNode, CMP_NODE_CACHE,          def_cmp_cache,          "CACHE",          Cache,            "Cache",             ""              )
 DefNode(CompositorNode, CMP_NODE_VIDEO_SEQ,      def_cmp_video_sequencer,"VIDEOSEQ",       VideoSeq,         "Video Sequencer",   ""              )
+DefNode(CompositorNode, CMP_NODE_CAMERA,         def_cmp_camera,         "CAMERA",         Camera,           "Camera View",            ""              )
 /* Experimental compositor-up */
 DefNode(CompositorNode, CMP_NODE_EXTEND,         def_cmp_extend,         "EXTEND",         Extend,           "Extend",            ""              )
 DefNode(CompositorNode, CMP_NODE_RANDOMIZE,      def_cmp_randomize,      "RANDOMIZE",      Randomize,         "Randomize",        ""              )

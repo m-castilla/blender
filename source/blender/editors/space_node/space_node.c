@@ -33,8 +33,10 @@
 #include "BLI_math.h"
 
 #include "BKE_context.h"
+#include "BKE_global.h"
 #include "BKE_lib_id.h"
 #include "BKE_node.h"
+#include "BKE_node_offscreen.h"
 #include "BKE_scene.h"
 #include "BKE_screen.h"
 
@@ -42,6 +44,7 @@
 #include "ED_render.h"
 #include "ED_screen.h"
 #include "ED_space_api.h"
+#include "ED_view3d_offscreen.h"
 
 #include "UI_resources.h"
 #include "UI_view2d.h"
@@ -54,6 +57,8 @@
 #include "WM_types.h"
 
 #include "node_intern.h" /* own include */
+
+NodeDrawView node_view3d_fn = NULL; /* NULL in background mode */
 
 /* ******************** tree path ********************* */
 
@@ -487,8 +492,9 @@ static void node_area_listener(wmWindow *UNUSED(win),
   /* compositor auto composite */
   if (ED_node_is_compositor(snode) && (snode->flag & SNODE_AUTO_COMP) && snode->edittree) {
     bool auto_comp = (wmn->category == NC_SCENE &&
-                      (wmn->data == ND_FRAME || wmn->data == ND_TRANSFORM_DONE ||
-                       wmn->data == ND_OB_VISIBLE)) ||
+                      (wmn->data == ND_FRAME || wmn->data == ND_TRANSFORM ||
+                       wmn->data == ND_OB_VISIBLE || wmn->data == ND_WORLD ||
+                       wmn->data == ND_LAYER_CONTENT)) ||
                      (wmn->category == NC_MATERIAL &&
                       (wmn->data == ND_SHADING || wmn->data == ND_SHADING_DRAW ||
                        wmn->data == ND_SHADING_LINKS)) ||
@@ -498,7 +504,8 @@ static void node_area_listener(wmWindow *UNUSED(win),
                        wmn->data == ND_PARTICLE)) ||
                      (wmn->category == NC_LAMP &&
                       (wmn->data == ND_LIGHTING || wmn->data == ND_LIGHTING_DRAW)) ||
-                     (wmn->category == NC_WORLD && (wmn->data == ND_WORLD_DRAW));
+                     (wmn->category == NC_WORLD && (wmn->data == ND_WORLD_DRAW) ||
+                      (wmn->category == NC_WM && (wmn->data == ND_UNDO)));
     if (auto_comp) {
       snode->edittree->auto_comp = 1;
       ED_area_tag_refresh(area);
@@ -1046,4 +1053,8 @@ void ED_spacetype_node(void)
   node_toolbar_register(art);
 
   BKE_spacetype_register(st);
+
+  if (G.background == 0) {
+    node_view3d_fn = ED_view3d_draw_offscreen_imbuf_simple;
+  }
 }

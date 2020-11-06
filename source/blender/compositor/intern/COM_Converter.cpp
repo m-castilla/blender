@@ -63,6 +63,7 @@
 #include "COM_BokehImageNode.h"
 #include "COM_BrightnessNode.h"
 #include "COM_CacheNode.h"
+#include "COM_CameraNode.h"
 #include "COM_ColorBalanceNode.h"
 #include "COM_ColorCorrectionNode.h"
 #include "COM_ColorCurveNode.h"
@@ -192,6 +193,9 @@ Node *Converter::convert(bNode *b_node)
       break;
     case CMP_NODE_VIDEO_SEQ:
       node = new VideoSequencerNode(b_node);
+      break;
+    case CMP_NODE_CAMERA:
+      node = new CameraNode(b_node);
       break;
       /* */
 

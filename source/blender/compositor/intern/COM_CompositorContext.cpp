@@ -19,7 +19,6 @@
 #include "BKE_context.h"
 #include "BKE_global.h"
 #include "BKE_main.h"
-#include "BKE_node.h"
 #include "BKE_scene.h"
 #include "BLI_assert.h"
 #include "DNA_userdef_types.h"
@@ -33,11 +32,8 @@
 const int MAX_IMG_DIM_SIZE = 16000;
 CompositorContext::CompositorContext()
 {
-  m_scene = nullptr;
-  m_rd = nullptr;
+  m_exec_data = nullptr;
   m_quality = CompositorQuality::HIGH;
-  m_viewSettings = nullptr;
-  m_displaySettings = nullptr;
   m_cpu_work_threads = 0;
   m_previews = nullptr;
   m_inputs_scale = 0.2f;
@@ -45,32 +41,24 @@ CompositorContext::CompositorContext()
   m_max_disk_cache_bytes = 0;
   m_use_disk_cache = false;
   m_disk_cache_dir = "";
-  m_bnodetree = nullptr;
-  m_rendering = false;
-  m_viewName = nullptr;
-  m_main = nullptr;
-  m_depsgraph = nullptr;
-  m_view_layer = nullptr;
+}
+
+void CompositorContext::initialize()
+{
+}
+
+void CompositorContext::deinitialize()
+{
 }
 
 CompositorContext CompositorContext::build(const std::string &execution_id,
-                                           struct Main *main,
-                                           struct Depsgraph *depsgraph,
-                                           RenderData *rd,
-                                           Scene *scene,
-                                           ViewLayer *view_layer,
-                                           bNodeTree *editingtree,
-                                           bool rendering,
-                                           const ColorManagedViewSettings *viewSettings,
-                                           const ColorManagedDisplaySettings *displaySettings,
-                                           const char *viewName)
+                                           CompositTreeExec *exec_data)
 {
-  CompositorContext context;
-  context.m_main = main;
-  context.m_depsgraph = depsgraph;
-  context.m_bnodetree = editingtree;
-  context.m_view_layer = view_layer;
 
+  CompositorContext context;
+  context.m_exec_data = exec_data;
+
+  auto rd = exec_data->rd;
   /* Make sure node tree has previews.
    * Don't create previews in advance, this is done when adding preview operations.
    * Reserved preview size is determined by render output for now.
@@ -89,24 +77,18 @@ CompositorContext CompositorContext::build(const std::string &execution_id,
     preview_width = (int)(preview_size / aspect);
     preview_height = preview_size;
   }
-  BKE_node_preview_init_tree(editingtree, preview_width, preview_height, false);
+  BKE_node_preview_init_tree(exec_data->ntree, preview_width, preview_height, false);
 
   context.m_execution_id = execution_id;
-  context.m_viewName = viewName;
-  context.m_scene = scene;
-  context.m_previews = editingtree->previews;
+  context.m_previews = exec_data->ntree->previews;
 
   /* initialize the CompositorContext */
-  if (rendering) {
-    context.m_quality = static_cast<CompositorQuality>(editingtree->render_quality);
+  if (exec_data->rendering) {
+    context.m_quality = static_cast<CompositorQuality>(exec_data->ntree->render_quality);
   }
   else {
-    context.m_quality = static_cast<CompositorQuality>(editingtree->edit_quality);
+    context.m_quality = static_cast<CompositorQuality>(exec_data->ntree->edit_quality);
   }
-  context.m_rendering = rendering;
-  context.m_rd = rd;
-  context.m_viewSettings = viewSettings;
-  context.m_displaySettings = displaySettings;
 
   context.m_max_mem_cache_bytes = (size_t)U.compositor_mem_cache_limit * 1024 * 1024;  // MB
   context.m_max_disk_cache_bytes = (size_t)U.compositor_disk_cache_limit * 1024 * 1024 *
@@ -139,19 +121,19 @@ int CompositorContext::getMaxImgH() const
 }
 bool CompositorContext::isBreaked() const
 {
-  return m_bnodetree->test_break && m_bnodetree->test_break(m_bnodetree->tbh);
+  return m_exec_data->ntree->test_break && m_exec_data->ntree->test_break(m_exec_data->ntree->tbh);
 }
 
 void CompositorContext::updateDraw() const
 {
-  if (m_bnodetree->update_draw) {
-    m_bnodetree->update_draw(this->m_bnodetree->udh);
+  if (m_exec_data->ntree->update_draw) {
+    m_exec_data->ntree->update_draw(this->m_exec_data->ntree->udh);
   }
 }
 
 int CompositorContext::getPreviewSize() const
 {
-  switch (m_bnodetree->preview_size) {
+  switch (m_exec_data->ntree->preview_size) {
     case NTREE_PREVIEW_SIZE_SMALL:
       return 150;
     case NTREE_PREVIEW_SIZE_MEDIUM:
@@ -166,8 +148,8 @@ int CompositorContext::getPreviewSize() const
 
 int CompositorContext::getCurrentFrame() const
 {
-  if (this->m_rd) {
-    return this->m_rd->cfra;
+  if (m_exec_data->rd) {
+    return m_exec_data->rd->cfra;
   }
   else {
     BLI_assert(!"Unavailable frame number");

@@ -18,9 +18,6 @@
 
 #pragma once
 
-#include "DNA_color_types.h"
-#include "DNA_node_types.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -338,17 +335,8 @@ extern "C" {
  *            generation in display space
  */
 /* clang-format off */
-
-void COM_execute(struct Main *main,
-                 struct Depsgraph *depsgrah,
-                 RenderData *rd,
-                 Scene *scene,
-             ViewLayer *view_layer,
-                 bNodeTree *editingtree,
-                 int rendering,
-                 const ColorManagedViewSettings *viewSettings,
-                 const ColorManagedDisplaySettings *displaySettings,
-                 const char *viewName);
+struct CompositTreeExec;
+void COM_execute(struct CompositTreeExec *exec_data);
 
 /**
  * \brief Deinitialize the compositor caches and allocated memory.
@@ -361,6 +349,10 @@ void COM_deinitialize(void);
  * To deinitialize the compositor use the COM_deinitialize method.
  */
 // void COM_clearCaches(void); // NOT YET WRITTEN
+/* OpenGL cameras nodes renders handling functions */
+bool COM_hasCameraNodeGlRender(bNode *camera_node);
+struct CompositGlRender *COM_getCameraNodeGlRender(bNode *camera_node);
+void COM_setCameraNodeGlRender(bNode *camera_node, struct CompositGlRender *render);
 
 #ifdef __cplusplus
 }

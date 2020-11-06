@@ -25,6 +25,8 @@ std::unique_ptr<GlobalManager> GlobalMan;
 GlobalManager::GlobalManager()
     : BufferMan(nullptr), ComputeMan(nullptr), CacheMan(nullptr), m_context(nullptr)
 {
+  // renderer must be created from program start as it's accessed from node editor
+  m_renderer = new Renderer();
 }
 
 GlobalManager::~GlobalManager()
@@ -43,6 +45,9 @@ GlobalManager::~GlobalManager()
 void GlobalManager::initialize(CompositorContext &ctx)
 {
   m_context = &ctx;
+  m_context->initialize();
+  m_renderer->initialize(m_context);
+
   if (CacheMan == nullptr) {
     CacheMan = new CacheManager();
   }
@@ -85,7 +90,10 @@ void GlobalManager::initialize(CompositorContext &ctx)
 
 void GlobalManager::deinitialize(CompositorContext &ctx)
 {
+  BLI_assert(&ctx == m_context);
   BufferMan->deinitialize(ctx.isBreaked());
   CacheMan->deinitialize(&ctx);
+  m_context->deinitialize();
+  m_renderer->deinitialize();
   m_context = nullptr;
 }

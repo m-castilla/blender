@@ -1195,9 +1195,10 @@ void ntreeGPUMaterialNodes(struct bNodeTree *localtree,
 #define CMP_NODE_DENOISE 324
 #define CMP_NODE_CACHE 325
 #define CMP_NODE_VIDEO_SEQ 326
+#define CMP_NODE_CAMERA 327
 /* Experimental compositor-up */
-#define CMP_NODE_EXTEND 327
-#define CMP_NODE_RANDOMIZE 328
+#define CMP_NODE_EXTEND 360
+#define CMP_NODE_RANDOMIZE 361
 /* END of Experimental compositor-up  */
 
 /* channel toggles */
@@ -1229,17 +1230,36 @@ void ntreeGPUMaterialNodes(struct bNodeTree *localtree,
 #define CMP_TRACKPOS_ABSOLUTE_FRAME 3
 
 /* API */
-void ntreeCompositExecTree(struct Main *main,
-                           struct Depsgraph *depsgraph,
-                           struct Scene *scene,
-                           ViewLayer *view_layer,
-                           struct bNodeTree *ntree,
-                           struct RenderData *rd,
-                           int rendering,
-                           int do_previews,
-                           const struct ColorManagedViewSettings *view_settings,
-                           const struct ColorManagedDisplaySettings *display_settings,
-                           const char *view_name);
+typedef struct CompositTreeExec {
+  struct Main *main;
+  struct Depsgraph *depsgraph;
+  struct Scene *scene;
+  ViewLayer *view_layer;
+  struct bNodeTree *ntree;
+  struct RenderData *rd;
+  int rendering;
+  int do_previews;
+  const struct ColorManagedViewSettings *view_settings;
+  const struct ColorManagedDisplaySettings *display_settings;
+  /* active rendering view name */
+  const char *viewname;
+} CompositTreeExec;
+typedef struct CompositGlRender {
+  unsigned int ssid;
+  int draw_mode;
+  int frame_offset;
+  struct ImBuf *result;
+} CompositGlRender;
+/* TODO: Do it per view */
+// typedef struct CompositGlRender {
+//   unsigned int ssid;
+//   ListBase views; /* CompositGlRenderView views renders*/
+// } CompositGlRender;
+// typedef struct CompositGlRenderView {
+//   const char *viewname;
+//   struct ImBuf *result;
+// } CompositGlRender;
+void ntreeCompositExecTree(struct CompositTreeExec *exec_data);
 void ntreeCompositTagRender(struct Scene *scene);
 void ntreeCompositUpdateRLayers(struct bNodeTree *ntree);
 void ntreeCompositRegisterPass(struct bNodeTree *ntree,
@@ -1248,6 +1268,13 @@ void ntreeCompositRegisterPass(struct bNodeTree *ntree,
                                const char *name,
                                eNodeSocketDatatype type);
 void ntreeCompositClearTags(struct bNodeTree *ntree);
+void ntreeCompositGlRender(struct Main *main,
+                           struct Scene *scene,
+                           struct ViewLayer *view_layer,
+                           const char *viewname,
+                           bNodeTree *ntree,
+                           bool is_rendering,
+                           struct Depsgraph *rendering_depsgraph);
 
 struct bNodeSocket *ntreeCompositOutputFileAddSocket(struct bNodeTree *ntree,
                                                      struct bNode *node,

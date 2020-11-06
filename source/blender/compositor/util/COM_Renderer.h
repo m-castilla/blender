@@ -19,16 +19,30 @@
 #pragma once
 
 #include "BLI_Map.hh"
+#include "BLI_set.hh"
+#include "DNA_object_enums.h"
 
 struct Scene;
 struct ViewLayer;
 struct Render;
+struct GPUOffScreen;
+struct Main;
+struct CompositGlRender;
 class CompositorContext;
 class Renderer {
  private:
-  blender::Map<unsigned int, blender::Map<std::string, Render *>> m_renders;
+  blender::Map<unsigned int, blender::Map<std::string, Render *>> m_sc_renders;
+  blender::Map<std::string, CompositGlRender *> m_cam_gl_renders;
+  blender::Set<std::string> m_used_cam_nodes;
+  CompositorContext *m_ctx;
 
  public:
   Renderer();
-  Render *getRender(CompositorContext *ctx, Scene *scene, ViewLayer *layer);
+  ~Renderer();
+  void initialize(CompositorContext *ctx);
+  void deinitialize();
+  Render *getSceneRender(Scene *scene, ViewLayer *layer);
+  bool hasCameraNodeGlRender(bNode *camera_node);
+  CompositGlRender *getCameraNodeGlRender(bNode *camera_node);
+  void setCameraNodeGlRender(bNode *camera_node, CompositGlRender *render);
 };

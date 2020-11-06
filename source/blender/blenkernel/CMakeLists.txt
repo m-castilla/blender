@@ -354,6 +354,7 @@ set(SRC
   BKE_movieclip.h
   BKE_multires.h
   BKE_nla.h
+  BKE_node_offscreen.h
   BKE_node.h
   BKE_object.h
   BKE_object_deform.h

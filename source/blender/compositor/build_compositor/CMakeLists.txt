@@ -62,6 +62,8 @@ set(INC
   ${CMP_BASE}/../blentranslation
   ${CMP_BASE}/../depsgraph
   ${CMP_BASE}/../imbuf
+  ${CMP_BASE}/../draw
+  ${CMP_BASE}/../gpu
   ${CMP_BASE}/../makesdna
   ${CMP_BASE}/../makesrna
   ${CMP_BASE}/../nodes
@@ -226,6 +228,8 @@ set(SRC
   # input nodes
   ${CMP_NODES}/input/COM_BokehImageNode.cpp
   ${CMP_NODES}/input/COM_BokehImageNode.h
+  ${CMP_NODES}/input/COM_CameraNode.cpp
+  ${CMP_NODES}/input/COM_CameraNode.h
   ${CMP_NODES}/input/COM_ColorNode.cpp
   ${CMP_NODES}/input/COM_ColorNode.h
   ${CMP_NODES}/input/COM_ImageNode.cpp
@@ -442,6 +446,8 @@ set(SRC
   ${CMP_OPS}/input/COM_MaskOperation.h
   ${CMP_OPS}/input/COM_CacheOperation.cpp
   ${CMP_OPS}/input/COM_CacheOperation.h
+  ${CMP_OPS}/input/COM_CameraOperation.cpp
+  ${CMP_OPS}/input/COM_CameraOperation.h
   ${CMP_OPS}/input/COM_MovieClipOperation.cpp
   ${CMP_OPS}/input/COM_MovieClipOperation.h
   ${CMP_OPS}/input/COM_MultilayerImageOperation.cpp

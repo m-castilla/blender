@@ -16,24 +16,76 @@
  * Copyright 2020, Blender Foundation.
  */
 
-#include "COM_Renderer.h"
 #include "BKE_global.h"
+#include "BKE_node_offscreen.h"
+#include "BKE_scene.h"
 #include "BLI_assert.h"
-#include "COM_CompositorContext.h"
 #include "DNA_layer_types.h"
 #include "DNA_scene_types.h"
+#include "DRW_engine.h"
+#include "GPU_framebuffer.h"
+#include "IMB_imbuf.h"
+#include "IMB_imbuf_types.h"
 #include "RE_pipeline.h"
+
+#include "COM_BufferUtil.h"
+#include "COM_CompositorContext.h"
+#include "COM_PixelsUtil.h"
+#include "COM_Renderer.h"
+
+static void freeGlRender(CompositGlRender *render)
+{
+  if (render) {
+    if (render->result) {
+      IMB_freeImBuf(render->result);
+    }
+    MEM_freeN(render);
+  }
+}
 
 Renderer::Renderer()
 {
+  m_ctx = nullptr;
 }
 
-Render *Renderer::getRender(CompositorContext *ctx, Scene *selected_scene, ViewLayer *layer)
+Renderer::~Renderer()
 {
-  auto node_tree = ctx->getbNodeTree();
+  deinitialize();
+  for (auto render : m_cam_gl_renders.values()) {
+    freeGlRender(render);
+  }
+}
 
+void Renderer::initialize(CompositorContext *ctx)
+{
+  m_ctx = ctx;
+}
+
+void Renderer::deinitialize()
+{
+  m_sc_renders.clear();
+
+  if (!m_ctx->isBreaked()) {
+    /* Free non used cameras gl renders on this execution (because that means nodes where
+     * deleted)*/
+    blender::Vector<std::string> deleted_renders;
+    for (auto item : m_cam_gl_renders.items()) {
+      if (!m_used_cam_nodes.contains(item.key)) {
+        freeGlRender(item.value);
+        deleted_renders.append(item.key);
+      }
+    }
+    for (auto name : deleted_renders) {
+      m_cam_gl_renders.remove(name);
+    }
+  }
+  m_used_cam_nodes.clear();
+}
+
+Render *Renderer::getSceneRender(Scene *selected_scene, ViewLayer *layer)
+{
   bool is_current_scene = false;
-  auto scene = ctx->getScene();
+  auto scene = m_ctx->getScene();
   if (scene && selected_scene) {
     auto selected_scene_uuid = selected_scene->id.orig_id ?
                                    selected_scene->id.orig_id->session_uuid :
@@ -43,11 +95,12 @@ Render *Renderer::getRender(CompositorContext *ctx, Scene *selected_scene, ViewL
     }
   }
 
-  if (is_current_scene && !ctx->isRendering() && layer && node_tree->auto_comp) {
+  if (is_current_scene && !m_ctx->isRendering() && layer && m_ctx->getbNodeTree()->auto_comp) {
     auto layer_name = std::string(layer->name);
     auto scene_uuid = scene->id.session_uuid;
-    if (m_renders.contains(scene_uuid) && m_renders.lookup(scene_uuid).contains(layer_name)) {
-      return m_renders.lookup(scene_uuid).lookup(layer_name);
+    if (m_sc_renders.contains(scene_uuid) &&
+        m_sc_renders.lookup(scene_uuid).contains(layer_name)) {
+      return m_sc_renders.lookup(scene_uuid).lookup(layer_name);
     }
     else {
       /* save original state */
@@ -59,17 +112,20 @@ Render *Renderer::getRender(CompositorContext *ctx, Scene *selected_scene, ViewL
       scene->r.scemode &= ~R_DOSEQ;
       scene->r.scemode &= ~R_DOCOMP;
 
+      // scene->r.scemode &= R_BG_RENDER;
+      scene->r.mode &= R_PERSISTENT_DATA;
+
       Render *re = RE_GetSceneRender(scene);
       if (re == NULL) {
         re = RE_NewSceneRender(scene);
       }
 
-      RE_RenderFrame(re, ctx->getMain(), scene, layer, NULL, scene->r.cfra, false);
+      RE_RenderFrame(re, m_ctx->getMain(), scene, layer, NULL, scene->r.cfra, false);
 
-      if (!m_renders.contains(scene_uuid)) {
-        m_renders.add(scene_uuid, {});
+      if (!m_sc_renders.contains(scene_uuid)) {
+        m_sc_renders.add(scene_uuid, {});
       }
-      m_renders.lookup(scene_uuid).add(layer_name, re);
+      m_sc_renders.lookup(scene_uuid).add(layer_name, re);
 
       /* restore previous state */
       G.is_rendering = orig_is_rendering;
@@ -82,4 +138,33 @@ Render *Renderer::getRender(CompositorContext *ctx, Scene *selected_scene, ViewL
   else {
     return (selected_scene) ? RE_GetSceneRender(selected_scene) : NULL;
   }
+}
+
+/* Node name is unique */
+static std::string getNodeName(bNode *camera_node)
+{
+  return std::string(camera_node->name);
+}
+
+bool Renderer::hasCameraNodeGlRender(bNode *camera_node)
+{
+  return m_cam_gl_renders.contains(getNodeName(camera_node));
+}
+
+CompositGlRender *Renderer::getCameraNodeGlRender(bNode *camera_node)
+{
+  auto name = getNodeName(camera_node);
+  m_used_cam_nodes.add(name);
+  return m_cam_gl_renders.lookup(getNodeName(camera_node));
+}
+
+void Renderer::setCameraNodeGlRender(bNode *camera_node, CompositGlRender *render)
+{
+  std::string name = getNodeName(camera_node);
+  if (m_cam_gl_renders.contains(name)) {
+    auto prev_render = m_cam_gl_renders.lookup(name);
+    freeGlRender(prev_render);
+    m_cam_gl_renders.remove(name);
+  }
+  m_cam_gl_renders.add_new(name, render);
 }

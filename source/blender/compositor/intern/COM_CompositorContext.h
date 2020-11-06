@@ -21,6 +21,7 @@
 #include <string>
 #include <vector>
 
+#include "BKE_node.h"
 #include "DNA_color_types.h"
 #include "DNA_node_types.h"
 #include "DNA_scene_types.h"
@@ -37,12 +38,7 @@
  */
 class CompositorContext {
  private:
-  /**
-   * \brief The rendering field describes if we are rendering (F12) or if we are editing (Node
-   * editor) This field is initialized in ExecutionSystem and must only be read from that point on.
-   * \see ExecutionSystem
-   */
-  bool m_rendering;
+  struct CompositTreeExec *m_exec_data;
 
   /**
    * \brief The quality of the composite.
@@ -51,40 +47,11 @@ class CompositorContext {
    */
   CompositorQuality m_quality;
 
-  struct Main *m_main;
-  struct Depsgraph *m_depsgraph;
-  ViewLayer *m_view_layer;
-  Scene *m_scene;
-  Renderer m_renderer;
-
-  /**
-   * \brief Reference to the render data that is being composited.
-   * This field is initialized in ExecutionSystem and must only be read from that point on.
-   * \see ExecutionSystem
-   */
-  RenderData *m_rd;
-
-  /**
-   * \brief reference to the bNodeTree
-   * This field is initialized in ExecutionSystem and must only be read from that point on.
-   * \see ExecutionSystem
-   */
-  bNodeTree *m_bnodetree;
-
   /**
    * \brief Preview image hash table
    * This field is initialized in ExecutionSystem and must only be read from that point on.
    */
   bNodeInstanceHash *m_previews;
-
-  /* \brief color management settings */
-  const ColorManagedViewSettings *m_viewSettings;
-  const ColorManagedDisplaySettings *m_displaySettings;
-
-  /**
-   * \brief active rendering view name
-   */
-  const char *m_viewName;
 
   std::string m_execution_id;
 
@@ -104,33 +71,22 @@ class CompositorContext {
    * \brief constructor initializes the context with default values.
    */
   static CompositorContext build(const std::string &execution_id,
-                                 struct Main *main,
-                                 struct Depsgraph *depsgraph,
-                                 RenderData *rd,
-                                 Scene *scene,
-                                 ViewLayer *view_layer,
-                                 bNodeTree *editingtree,
-                                 bool rendering,
-                                 const ColorManagedViewSettings *viewSettings,
-                                 const ColorManagedDisplaySettings *displaySettings,
-                                 const char *viewName);
+                                 struct CompositTreeExec *exec_data);
 
-  Renderer *renderer()
-  {
-    return &m_renderer;
-  }
+  void initialize();
+  void deinitialize();
 
   struct Main *getMain() const
   {
-    return m_main;
+    return m_exec_data->main;
   }
   struct Depsgraph *getDepsgraph() const
   {
-    return m_depsgraph;
+    return m_exec_data->depsgraph;
   }
   ViewLayer *getViewLayer() const
   {
-    return m_view_layer;
+    return m_exec_data->view_layer;
   }
   PixelsSampler getDefaultSampler() const
   {
@@ -148,7 +104,7 @@ class CompositorContext {
   // Is video sequencer activated in the post-processing pipeline
   bool isVseSequencerPassOn() const
   {
-    return (m_scene->r.scemode & R_DOSEQ);
+    return (m_exec_data->scene->r.scemode & R_DOSEQ);
   }
 
   bool isBreaked() const;
@@ -158,7 +114,7 @@ class CompositorContext {
 
   float getInputsScale() const
   {
-    return m_bnodetree->inputs_scale;
+    return m_exec_data->ntree->inputs_scale;
   }
 
   int getNCpuWorkThreads() const
@@ -202,31 +158,31 @@ class CompositorContext {
 
   bool isRendering() const
   {
-    return this->m_rendering;
+    return m_exec_data->rendering;
   }
 
   const RenderData *getRenderData() const
   {
-    return this->m_rd;
+    return m_exec_data->rd;
   }
 
   int getRenderWidth() const
   {
-    return m_rd->xsch;
+    return m_exec_data->rd->xsch;
   }
   int getRenderHeight() const
   {
-    return m_rd->ysch;
+    return m_exec_data->rd->ysch;
   }
 
   bNodeTree *getbNodeTree() const
   {
-    return this->m_bnodetree;
+    return this->m_exec_data->ntree;
   }
 
   Scene *getScene() const
   {
-    return m_scene;
+    return m_exec_data->scene;
   }
 
   /**
@@ -242,7 +198,7 @@ class CompositorContext {
    */
   const ColorManagedViewSettings *getViewSettings() const
   {
-    return this->m_viewSettings;
+    return m_exec_data->view_settings;
   }
 
   /**
@@ -250,7 +206,7 @@ class CompositorContext {
    */
   const ColorManagedDisplaySettings *getDisplaySettings() const
   {
-    return this->m_displaySettings;
+    return m_exec_data->display_settings;
   }
 
   /**
@@ -271,7 +227,7 @@ class CompositorContext {
    */
   const char *getViewName() const
   {
-    return this->m_viewName;
+    return m_exec_data->viewname;
   }
 
 #ifdef WITH_CXX_GUARDEDALLOC

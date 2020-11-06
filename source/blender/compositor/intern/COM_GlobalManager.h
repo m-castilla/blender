@@ -33,8 +33,8 @@ class GlobalManager {
   BufferManager *BufferMan;
   ComputeManager *ComputeMan;
   CacheManager *CacheMan;
-
   CompositorContext *m_context;
+  Renderer *m_renderer;
 
   void initialize(CompositorContext &ctx);
   void deinitialize(CompositorContext &ctx);
@@ -42,6 +42,10 @@ class GlobalManager {
   CompositorContext *getContext()
   {
     return m_context;
+  }
+  Renderer *renderer()
+  {
+    return m_renderer;
   }
 
   GlobalManager();

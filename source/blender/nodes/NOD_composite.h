@@ -137,6 +137,7 @@ void register_node_type_cmp_cornerpin(void);
 
 void register_node_type_cmp_cache(void);
 void register_node_type_cmp_videoseq(void);
+void register_node_type_cmp_camera(void);
 
 /* Experimental compositor-up */
 void register_node_type_cmp_extend(void);

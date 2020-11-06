@@ -1559,6 +1559,9 @@ void DepsgraphNodeBuilder::build_nodetree(bNodeTree *ntree)
     else if (id_type == ID_MC) {
       build_movieclip((MovieClip *)id);
     }
+    else if (id_type == ID_CA) {
+      build_camera((Camera *)id);
+    }
     else if (ELEM(bnode->type, NODE_GROUP, NODE_CUSTOM_GROUP)) {
       bNodeTree *group_ntree = (bNodeTree *)id;
       build_nodetree(group_ntree);
