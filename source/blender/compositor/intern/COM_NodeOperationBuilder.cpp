@@ -412,8 +412,12 @@ void NodeOperationBuilder::add_input_constant_value(NodeOperationInput *input,
 
   auto input_op = input->getOperation();
   if (input_op->isResolutionSet()) {
+    // BLI_assert(input_op->getWidth() >= 0 && input_op->getHeight() >= 0);
     constant_op->setResolution(
         input_op->getWidth(), input_op->getHeight(), ResolutionType::Determined);
+  }
+  else {
+    BLI_assert(!"Shouldn't happen");
   }
   addOperation(constant_op);
   addLink(constant_op->getOutputSocket(), input);

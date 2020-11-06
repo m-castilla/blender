@@ -106,6 +106,7 @@ void MaskOperation::deinitExecution()
       this->m_rasterMaskHandles[i] = NULL;
     }
   }
+  NodeOperation::deinitExecution();
 }
 
 ResolutionType MaskOperation::determineResolution(int resolution[2],

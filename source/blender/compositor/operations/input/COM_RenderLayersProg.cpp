@@ -46,8 +46,7 @@ RenderLayersProg::RenderLayersProg(const char *passName, DataType type, int elem
 
 void RenderLayersProg::initExecution()
 {
-  auto ctx = GlobalMan->getContext();
-  Render *re = ctx->renderer()->getRender(ctx, m_scene, m_view_layer);
+  Render *re = GlobalMan->renderer()->getSceneRender(m_scene, m_view_layer);
   RenderResult *rr = NULL;
 
   if (re) {
@@ -105,8 +104,7 @@ ResolutionType RenderLayersProg::determineResolution(int resolution[2],
                                                      int /*preferredResolution*/[2],
                                                      bool /*setResolution*/)
 {
-  auto ctx = GlobalMan->getContext();
-  Render *re = ctx->renderer()->getRender(ctx, m_scene, m_view_layer);
+  Render *re = GlobalMan->renderer()->getSceneRender(m_scene, m_view_layer);
   RenderResult *rr = NULL;
 
   resolution[0] = 0;

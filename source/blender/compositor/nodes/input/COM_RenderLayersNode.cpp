@@ -18,6 +18,7 @@
 
 #include <cstring>
 
+#include "COM_GlobalManager.h"
 #include "COM_RenderLayersNode.h"
 #include "COM_RenderLayersProg.h"
 #include "COM_ScaleOperation.h"
@@ -167,7 +168,7 @@ void RenderLayersNode::convertToOperations(NodeConverter &converter,
   Scene *scene = (Scene *)this->getbNode()->id;
   int layer_id = this->getbNode()->custom1;
   ViewLayer *view_layer = (ViewLayer *)BLI_findlink(&scene->view_layers, layer_id);
-  Render *re = context.renderer()->getRender(&context, scene, view_layer);
+  Render *re = GlobalMan->renderer()->getSceneRender(scene, view_layer);
 
   if (re != NULL) {
     testRenderLink(converter, context, re, view_layer);

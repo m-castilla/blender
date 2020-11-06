@@ -2737,6 +2737,15 @@ static void node_composit_buts_videoseq(uiLayout *layout, bContext *UNUSED(C), P
   uiItemR(layout, ptr, "channel", DEFAULT_FLAGS, NULL, ICON_NONE);
 }
 
+static void node_composit_buts_camera(uiLayout *layout, bContext *C, PointerRNA *ptr)
+{
+  uiTemplateID(
+      layout, C, ptr, "camera", NULL, NULL, NULL, UI_TEMPLATE_ID_FILTER_AVAILABLE, false, NULL);
+  uiLayout *col = uiLayoutColumn(layout, true);
+  uiItemR(col, ptr, "draw_mode", DEFAULT_FLAGS, NULL, ICON_NONE);
+  uiItemR(col, ptr, "frame_offset", DEFAULT_FLAGS, NULL, ICON_NONE);
+}
+
 /*Experimental compositor-up */
 static void node_composit_buts_extend(uiLayout *layout, bContext *UNUSED(C), PointerRNA *ptr)
 {
@@ -3007,6 +3016,9 @@ static void node_composit_set_butfunc(bNodeType *ntype)
       break;
     case CMP_NODE_VIDEO_SEQ:
       ntype->draw_buttons = node_composit_buts_videoseq;
+      break;
+    case CMP_NODE_CAMERA:
+      ntype->draw_buttons = node_composit_buts_camera;
       break;
     /* Experimental compositor-up */
     case CMP_NODE_EXTEND:

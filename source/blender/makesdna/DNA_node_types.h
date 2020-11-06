@@ -1086,6 +1086,11 @@ typedef struct NodeDenoise {
   char _pad[7];
 } NodeDenoise;
 
+typedef struct NodeCamera {
+  int draw_mode;
+  int frame_offset;
+} NodeCamera;
+
 /* script node mode */
 #define NODE_SCRIPT_INTERNAL 0
 #define NODE_SCRIPT_EXTERNAL 1

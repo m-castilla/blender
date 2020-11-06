@@ -334,6 +334,7 @@ compositor_node_categories = [
         NodeItem("CompositorNodeTrackPos"),
         NodeItem("CompositorNodeCache"),
         NodeItem("CompositorNodeVideoSeq"),
+        NodeItem("CompositorNodeCamera"),
         NodeItem("NodeGroupInput", poll=group_input_output_item_poll),
     ]),
     CompositorNodeCategory("CMP_OUTPUT", "Output", items=[

@@ -1435,7 +1435,7 @@ typedef enum eSpaceNode_Flag {
   SNODE_SHOW_G = (1 << 8),
   SNODE_SHOW_B = (1 << 9),
   SNODE_AUTO_RENDER = (1 << 5),
-  SNODE_FLAG_UNUSED_6 = (1 << 6),
+  SNODE_FLAG_UNUSED_6 = (1 << 6),   /* cleared */
   SNODE_FLAG_UNUSED_10 = (1 << 10), /* cleared */
   SNODE_FLAG_UNUSED_11 = (1 << 11), /* cleared */
   SNODE_PIN = (1 << 12),

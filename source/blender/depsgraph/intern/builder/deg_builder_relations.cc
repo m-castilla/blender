@@ -2333,6 +2333,9 @@ void DepsgraphRelationBuilder::build_nodetree(bNodeTree *ntree)
       ComponentKey image_key(id, NodeType::GENERIC_DATABLOCK);
       add_relation(image_key, shading_key, "Image -> Node");
     }
+    else if (id_type == ID_CA) {
+      build_camera((Camera *)bnode->id);
+    }
     else if (id_type == ID_OB) {
       build_object((Object *)id);
       ComponentKey object_transform_key(id, NodeType::TRANSFORM);

@@ -50,6 +50,7 @@
 #include "RE_pipeline.h"
 
 #include "ED_node.h" /* own include */
+#include "ED_object.h"
 #include "ED_render.h"
 #include "ED_screen.h"
 #include "ED_select_utils.h"
@@ -83,6 +84,9 @@ enum {
 };
 
 typedef struct CompoJob {
+  /* Do not use in compositor thread. Only for job initialization and finalization */
+  const bContext *C;
+
   /* Input parameters. */
   Main *bmain;
   Scene *scene;
@@ -197,6 +201,10 @@ static void compo_freejob(void *cjv)
   MEM_freeN(cj);
 }
 
+typedef struct OrigObjMode {
+  Object *obj;
+  eObjectMode orig_mode;
+} OrigObjMode;
 /* only now we copy the nodetree, so adding many jobs while
  * sliding buttons doesn't frustrate */
 static void compo_initjob(void *cjv)
@@ -217,6 +225,28 @@ static void compo_initjob(void *cjv)
                                                             &cj->ntree->id);
 
   cj->localtree = ntreeLocalize(ntree_eval);
+
+  /* Assure objects are in OBJECT_MODE so that cameras nodes OpenGL rendering is done corretly */
+  ListBase objs_orig_modes = {0};
+  ReportList *reports = CTX_wm_reports(cj->C);
+  LISTBASE_FOREACH (Object *, obj, &bmain->objects) {
+    OrigObjMode *orig = MEM_callocN(sizeof(OrigObjMode), "OrigObjMode");
+    orig->obj = obj;
+    orig->orig_mode = obj->mode;
+    BLI_addtail(&objs_orig_modes, BLI_genericNodeN(orig));
+    if (obj->mode != OB_MODE_OBJECT) {
+      ED_object_mode_set_ex(cj->C, OB_MODE_OBJECT, false, reports);
+    }
+  }
+  ntreeCompositGlRender(bmain, scene, view_layer, "", cj->localtree, false, NULL);
+  LISTBASE_FOREACH (LinkData *, link, &objs_orig_modes) {
+    OrigObjMode *orig = link->data;
+    if (orig->orig_mode != OB_MODE_OBJECT) {
+      ED_object_mode_set_ex(cj->C, orig->orig_mode, false, reports);
+    }
+    MEM_freeN(link);
+    MEM_freeN(orig);
+  }
 
   if (cj->recalc_flags) {
     compo_tag_output_nodes(cj->localtree, cj->recalc_flags);
@@ -246,6 +276,25 @@ static void compo_progressjob(void *cjv, float progress)
   *(cj->progress) = progress;
 }
 
+static CompositTreeExec *build_composit_exec(CompoJob *cj)
+{
+  bNodeTree *ntree = cj->localtree;
+  Scene *scene = cj->scene;
+  CompositTreeExec *exec_data = (CompositTreeExec *)MEM_callocN(sizeof(CompositTreeExec),
+                                                                "CompositTreeExec");
+  exec_data->depsgraph = cj->compositor_depsgraph;
+  exec_data->main = cj->bmain;
+  exec_data->display_settings = &scene->display_settings;
+  exec_data->rendering = false;
+  exec_data->do_previews = true;
+  exec_data->ntree = ntree;
+  exec_data->view_layer = cj->view_layer;
+  exec_data->scene = cj->scene;
+  exec_data->rd = &cj->scene->r;
+  exec_data->view_settings = &scene->view_settings;
+  return exec_data;
+}
+
 /* only this runs inside thread */
 static void compo_startjob(void *cjv,
                            /* Cannot be const, this function implements wm_jobs_start_callback.
@@ -255,9 +304,9 @@ static void compo_startjob(void *cjv,
                            float *progress)
 {
   CompoJob *cj = cjv;
-  bNodeTree *ntree = cj->localtree;
-  Scene *scene = cj->scene;
   SceneRenderView *srv;
+  Scene *scene = cj->scene;
+  bNodeTree *ntree = cj->localtree;
 
   if (scene->use_nodes == false) {
     return;
@@ -276,39 +325,23 @@ static void compo_startjob(void *cjv,
   ntree->update_draw = compo_redrawjob;
   ntree->udh = cj;
 
+  CompositTreeExec *exec_data = build_composit_exec(cj);
   // XXX BIF_store_spare();
   /* 1 is do_previews */
   if ((cj->scene->r.scemode & R_MULTIVIEW) == 0) {
-    ntreeCompositExecTree(cj->bmain,
-                          cj->compositor_depsgraph,
-                          cj->scene,
-                          cj->view_layer,
-                          ntree,
-                          &cj->scene->r,
-                          false,
-                          true,
-                          &scene->view_settings,
-                          &scene->display_settings,
-                          "");
+    exec_data->viewname = "";
+    ntreeCompositExecTree(exec_data);
   }
   else {
-    for (srv = scene->r.views.first; srv; srv = srv->next) {
+    for (srv = cj->scene->r.views.first; srv; srv = srv->next) {
       if (BKE_scene_multiview_is_render_view_active(&scene->r, srv) == false) {
         continue;
       }
-      ntreeCompositExecTree(cj->bmain,
-                            cj->compositor_depsgraph,
-                            cj->scene,
-                            cj->view_layer,
-                            ntree,
-                            &cj->scene->r,
-                            false,
-                            true,
-                            &scene->view_settings,
-                            &scene->display_settings,
-                            srv->name);
+      exec_data->viewname = srv->name;
+      ntreeCompositExecTree(exec_data);
     }
   }
+  MEM_freeN(exec_data);
 
   ntree->test_break = NULL;
   ntree->stats_draw = NULL;
@@ -349,6 +382,7 @@ void ED_node_composite_job(const bContext *C, struct bNodeTree *nodetree, Scene 
                        WM_JOB_EXCL_RENDER | WM_JOB_PROGRESS,
                        WM_JOB_TYPE_COMPOSITE);
   cj = MEM_callocN(sizeof(CompoJob), "compo job");
+  cj->C = C;
 
   /* customdata for preview thread */
   cj->bmain = bmain;

@@ -28,6 +28,7 @@ set(INC
   texture
   ../blenkernel
   ../blenlib
+  ../draw
   ../blentranslation
   ../depsgraph
   ../functions
@@ -50,6 +51,7 @@ set(SRC
   composite/nodes/node_composite_bokehimage.c
   composite/nodes/node_composite_boxmask.c
   composite/nodes/node_composite_brightness.c
+  composite/nodes/node_composite_camera.c
   composite/nodes/node_composite_channelMatte.c
   composite/nodes/node_composite_chromaMatte.c
   composite/nodes/node_composite_colorMatte.c

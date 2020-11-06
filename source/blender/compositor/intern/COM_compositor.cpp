@@ -39,16 +39,14 @@ static ThreadMutex s_compositorMutex;
 static bool is_compositorMutex_init = false;
 static boost::uuids::random_generator uuid_generator;
 
-void COM_execute(struct Main *main,
-                 struct Depsgraph *depsgraph,
-                 RenderData *rd,
-                 Scene *scene,
-                 ViewLayer *view_layer,
-                 bNodeTree *editingtree,
-                 int rendering,
-                 const ColorManagedViewSettings *viewSettings,
-                 const ColorManagedDisplaySettings *displaySettings,
-                 const char *viewName)
+static void assureGlobalMan()
+{
+  if (!GlobalMan) {
+    GlobalMan.reset(new GlobalManager());
+  }
+}
+
+void COM_execute(CompositTreeExec *exec_data)
 {
   /* initialize mutex, TODO this mutex init is actually not thread safe and
    * should be done somewhere as part of blender startup, all the other
@@ -60,32 +58,20 @@ void COM_execute(struct Main *main,
 
   BLI_mutex_lock(&s_compositorMutex);
 
-  if (editingtree->test_break && editingtree->test_break(editingtree->tbh)) {
+  if (exec_data->ntree->test_break && exec_data->ntree->test_break(exec_data->ntree->tbh)) {
     // during editing multiple calls to this method can be triggered.
     // make sure one the last one will be doing the work.
     BLI_mutex_unlock(&s_compositorMutex);
     return;
   }
 
-  if (!GlobalMan) {
-    GlobalMan.reset(new GlobalManager());
-  }
+  assureGlobalMan();
 
   DebugInfo::start_benchmark();
 
   /* build context */
   const std::string execution_id = boost::lexical_cast<std::string>(uuid_generator());
-  CompositorContext context = CompositorContext::build(execution_id,
-                                                       main,
-                                                       depsgraph,
-                                                       rd,
-                                                       scene,
-                                                       view_layer,
-                                                       editingtree,
-                                                       rendering,
-                                                       viewSettings,
-                                                       displaySettings,
-                                                       viewName);
+  CompositorContext context = CompositorContext::build(execution_id, exec_data);
 #if COM_CURRENT_THREADING_MODEL == COM_TM_NOTHREAD
   int m_cpu_work_threads = 1;
 #else
@@ -94,8 +80,8 @@ void COM_execute(struct Main *main,
   context.setNCpuWorkThreads(m_cpu_work_threads);
 
   /* set progress bar to 0% and status to init compositing */
-  editingtree->progress(editingtree->prh, 0.0);
-  editingtree->stats_draw(editingtree->sdh, IFACE_("Compositing"));
+  exec_data->ntree->progress(exec_data->ntree->prh, 0.0);
+  exec_data->ntree->stats_draw(exec_data->ntree->sdh, IFACE_("Compositing"));
 
   GlobalMan->initialize(context);
 
@@ -124,4 +110,21 @@ void COM_deinitialize()
     BLI_mutex_unlock(&s_compositorMutex);
     BLI_mutex_end(&s_compositorMutex);
   }
+}
+
+bool COM_hasCameraNodeGlRender(bNode *camera_node)
+{
+  assureGlobalMan();
+  return GlobalMan->renderer()->hasCameraNodeGlRender(camera_node);
+}
+
+CompositGlRender *COM_getCameraNodeGlRender(bNode *camera_node)
+{
+  assureGlobalMan();
+  return GlobalMan->renderer()->getCameraNodeGlRender(camera_node);
+}
+void COM_setCameraNodeGlRender(bNode *camera_node, CompositGlRender *render)
+{
+  assureGlobalMan();
+  return GlobalMan->renderer()->setCameraNodeGlRender(camera_node, render);
 }

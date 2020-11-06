@@ -4556,6 +4556,7 @@ static void registerCompositNodes(void)
 
   register_node_type_cmp_cache();
   register_node_type_cmp_videoseq();
+  register_node_type_cmp_camera();
 
   /* Experimental compositor-up */
   register_node_type_cmp_extend();
