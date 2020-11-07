@@ -87,8 +87,8 @@ void BufferManager::deinitialize(bool isBreaked)
         auto reads_list = entry.second;
         for (auto reader_reads : reads_list) {
           auto reads = reader_reads->reads;
-          // BLI_assert(reads->current_cpu_reads == reads->total_cpu_reads);
-          // BLI_assert(reads->current_compute_reads == reads->total_compute_reads);
+          BLI_assert(reads->current_cpu_reads == reads->total_cpu_reads);
+          BLI_assert(reads->current_compute_reads == reads->total_compute_reads);
         }
       }
     }

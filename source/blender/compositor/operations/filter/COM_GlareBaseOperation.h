@@ -18,8 +18,9 @@
 
 #pragma once
 
-#include "COM_NodeOperation.h"
 #include "DNA_node_types.h"
+
+#include "COM_NodeOperation.h"
 
 class GlareBaseOperation : public NodeOperation {
  private:

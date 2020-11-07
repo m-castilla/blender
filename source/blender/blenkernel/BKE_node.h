@@ -1246,6 +1246,7 @@ typedef struct CompositTreeExec {
 } CompositTreeExec;
 typedef struct CompositGlRender {
   unsigned int ssid;
+  const char *camera_name;
   int draw_mode;
   int frame_offset;
   struct ImBuf *result;

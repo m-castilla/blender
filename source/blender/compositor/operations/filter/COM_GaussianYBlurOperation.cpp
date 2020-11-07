@@ -16,12 +16,14 @@
  * Copyright 2011, Blender Foundation.
  */
 
-#include "COM_GaussianYBlurOperation.h"
+#include "MEM_guardedalloc.h"
+
 #include "COM_ComputeKernel.h"
 #include "COM_ExecutionManager.h"
+#include "COM_GaussianYBlurOperation.h"
 #include "COM_GlobalManager.h"
+
 #include "COM_kernel_cpu.h"
-#include "MEM_guardedalloc.h"
 
 GaussianYBlurOperation::GaussianYBlurOperation() : GaussianBlurBaseOperation(SocketType::COLOR)
 {

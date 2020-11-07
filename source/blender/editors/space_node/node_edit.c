@@ -85,7 +85,7 @@ enum {
 
 typedef struct CompoJob {
   /* Do not use in compositor thread. Only for job initialization and finalization */
-  const bContext *C;
+  bContext *C;
 
   /* Input parameters. */
   Main *bmain;
@@ -202,6 +202,7 @@ static void compo_freejob(void *cjv)
 }
 
 typedef struct OrigObjMode {
+  struct OrigObjMode *prev, *next;
   Object *obj;
   eObjectMode orig_mode;
 } OrigObjMode;
@@ -233,20 +234,18 @@ static void compo_initjob(void *cjv)
     OrigObjMode *orig = MEM_callocN(sizeof(OrigObjMode), "OrigObjMode");
     orig->obj = obj;
     orig->orig_mode = obj->mode;
-    BLI_addtail(&objs_orig_modes, BLI_genericNodeN(orig));
+    BLI_addtail(&objs_orig_modes, orig);
     if (obj->mode != OB_MODE_OBJECT) {
       ED_object_mode_set_ex(cj->C, OB_MODE_OBJECT, false, reports);
     }
   }
   ntreeCompositGlRender(bmain, scene, view_layer, "", cj->localtree, false, NULL);
-  LISTBASE_FOREACH (LinkData *, link, &objs_orig_modes) {
-    OrigObjMode *orig = link->data;
+  LISTBASE_FOREACH (OrigObjMode *, orig, &objs_orig_modes) {
     if (orig->orig_mode != OB_MODE_OBJECT) {
       ED_object_mode_set_ex(cj->C, orig->orig_mode, false, reports);
     }
-    MEM_freeN(link);
-    MEM_freeN(orig);
   }
+  BLI_freelistN(&objs_orig_modes);
 
   if (cj->recalc_flags) {
     compo_tag_output_nodes(cj->localtree, cj->recalc_flags);

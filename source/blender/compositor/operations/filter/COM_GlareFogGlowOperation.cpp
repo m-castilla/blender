@@ -16,15 +16,16 @@
  * Copyright 2011, Blender Foundation.
  */
 
-#include "COM_GlareFogGlowOperation.h"
+#include <math.h>
+
 #include "BLI_math.h"
-#include "COM_GlobalManager.h"
-#include "COM_PixelsUtil.h"
 #include "MEM_guardedalloc.h"
 
-#include "COM_kernel_cpu.h"
+#include "COM_GlareFogGlowOperation.h"
+#include "COM_GlobalManager.h"
+#include "COM_PixelsUtil.h"
 
-#include <math.h>
+#include "COM_kernel_cpu.h"
 
 /*
  *  2D Fast Hartley Transform, used for convolution

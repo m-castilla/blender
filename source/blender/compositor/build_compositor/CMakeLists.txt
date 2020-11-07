@@ -60,6 +60,7 @@ set(INC
   ${CMP_BASE}/../blenkernel
   ${CMP_BASE}/../blenlib
   ${CMP_BASE}/../blentranslation
+  ${CMP_BASE}/../sequencer
   ${CMP_BASE}/../depsgraph
   ${CMP_BASE}/../imbuf
   ${CMP_BASE}/../draw
@@ -670,7 +671,6 @@ set(SRC
   ${CMP_OPS}/experimental/COM_ExtendOperation.h
   ${CMP_OPS}/experimental/COM_RandomizeOperation.cpp
   ${CMP_OPS}/experimental/COM_RandomizeOperation.h
-
 )
 
 source_group(TREE ${CMP_BASE} FILES ${SRC})
@@ -680,6 +680,7 @@ set(LIB
   bf_blenkernel
   bf_blenlib
   bf_depsgraph
+  bf_sequencer
   cycles_util
   extern_clew
   ${BOOST_LIBRARIES}

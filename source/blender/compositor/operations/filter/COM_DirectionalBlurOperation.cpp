@@ -20,6 +20,7 @@
 #include "COM_ComputeKernel.h"
 #include "COM_ExecutionManager.h"
 #include "COM_GlobalManager.h"
+
 #include "COM_kernel_cpu.h"
 
 using namespace std::placeholders;

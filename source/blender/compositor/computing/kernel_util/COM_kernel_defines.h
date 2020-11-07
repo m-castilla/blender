@@ -73,15 +73,11 @@
 #    define TYPEOF(x) __typeof__(x)
 #endif
 
-#undef CHECK_TYPE
-#undef CHECK_TYPE_PAIR
-#undef CHECK_TYPE_INLINE
-
 /* Causes warning:
  * incompatible types when assigning to type 'Foo' from type 'Bar'
  * ... the compiler optimizes away the temp var */
 #if defined(__GNUC__) && !defined(__KERNEL_COMPUTE__)
-#  define CHECK_TYPE(var, type) \
+#  define CCL_CHECK_TYPE(var, type) \
     { \
       TYPEOF(var) * __tmp; \
       __tmp = (type *)NULL; \
@@ -89,7 +85,7 @@
     } \
     (void)0
 
-#  define CHECK_TYPE_PAIR(var_a, var_b) \
+#  define CCL_CHECK_TYPE_PAIR(var_a, var_b) \
     { \
       TYPEOF(var_a) * __tmp; \
       __tmp = (__typeof__(var_b) *)NULL; \
@@ -97,23 +93,22 @@
     } \
     (void)0
 #else
-#  define CHECK_TYPE(var, type)
-#  define CHECK_TYPE_PAIR(var_a, var_b)
+#  define CCL_CHECK_TYPE(var, type)
+#  define CCL_CHECK_TYPE_PAIR(var_a, var_b)
 #endif
 
 /* can be used in simple macros */
 #if !defined(__KERNEL_COMPUTE__)
-#define CHECK_TYPE_INLINE(val, type) ((void)(((type)0) != (val)))
+#define CCL_CHECK_TYPE_INLINE(val, type) ((void)(((type)0) != (val)))
 #else
-#  define CHECK_TYPE_INLINE(val, type)
+#  define CCL_CHECK_TYPE_INLINE(val, type)
 #endif
 
-#undef SWAP
-#define SWAP(type, a, b) \
+#define CCL_SWAP(type, a, b) \
   { \
     type sw_ap; \
-    CHECK_TYPE(a, type); \
-    CHECK_TYPE(b, type); \
+    CCL_CHECK_TYPE(a, type); \
+    CCL_CHECK_TYPE(b, type); \
     sw_ap = (a); \
     (a) = (b); \
     (b) = sw_ap; \

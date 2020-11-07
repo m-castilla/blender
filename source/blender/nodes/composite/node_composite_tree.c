@@ -401,11 +401,13 @@ void ntreeCompositGlRender(Main *main,
       NodeCamera *node_data = (NodeCamera *)node->storage;
       int draw_mode = node_data->draw_mode;
       int frame_offset = node_data->frame_offset;
+      const char *camera_name = camera->id.name;
       CompositGlRender *prev_render = COM_hasCameraNodeGlRender(node) ?
                                           COM_getCameraNodeGlRender(node) :
                                           NULL;
       if (ntree->auto_comp || prev_render == NULL || prev_render->result == NULL ||
-          prev_render->draw_mode != draw_mode || prev_render->frame_offset != frame_offset) {
+          prev_render->draw_mode != draw_mode || prev_render->frame_offset != frame_offset ||
+          !STREQ(prev_render->camera_name, camera_name)) {
         Object *camera_obj = NULL;
         if (!camera) {
           camera_obj = scene->camera;
@@ -469,6 +471,7 @@ void ntreeCompositGlRender(Main *main,
               new_render->ssid = id_counter;
               new_render->frame_offset = frame_offset;
               new_render->draw_mode = draw_mode;
+              new_render->camera_name = camera_name;
               COM_setCameraNodeGlRender(node, new_render);
               id_counter++;
             }

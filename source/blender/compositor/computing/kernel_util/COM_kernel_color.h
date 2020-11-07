@@ -183,12 +183,12 @@ ccl_device_inline float4 rgb_to_hsv(float4 rgb)
   float min_gb;
 
   if (rgb.y < rgb.z) {
-    SWAP(float, rgb.y, rgb.z);
+    CCL_SWAP(float, rgb.y, rgb.z);
     k = -1.0f;
   }
   min_gb = rgb.z;
   if (rgb.x < rgb.y) {
-    SWAP(float, rgb.x, rgb.y);
+    CCL_SWAP(float, rgb.x, rgb.y);
     k = -2.0f / 6.0f - k;
     min_gb = fminf(rgb.y, rgb.z);
   }

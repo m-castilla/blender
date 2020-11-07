@@ -17,8 +17,9 @@
  */
 
 #include "COM_TransformOperation.h"
-#include "COM_ComputeKernel.h"
 #include "COM_GlobalManager.h"
+
+#include "COM_ComputeKernel.h"
 #include "COM_kernel_cpu.h"
 
 #define OPENCL_CODE
