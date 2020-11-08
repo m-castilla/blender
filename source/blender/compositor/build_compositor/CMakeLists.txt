@@ -23,8 +23,6 @@ get_filename_component(CMP_BASE ${CMAKE_CURRENT_SOURCE_DIR}/.. ABSOLUTE)
 set(CMP_NODES ${CMP_BASE}/nodes)
 set(CMP_OPS ${CMP_BASE}/operations)
 
-
-
 set(INC
   ${CMP_BASE}
   ${CMP_BASE}/buffering
@@ -721,6 +719,8 @@ data_to_c(
   ${CMP_BASE}/computing/COM_OpenCLKernels.cl.h
   SRC
 )
+#set(BOOST_DEFINITIONS "-DBOOST_ALL_NO_LIB")
+add_definitions(${BOOST_DEFINITIONS} -DBOOST_UUID_RANDOM_PROVIDER_FORCE_WINCRYPT)
 
 blender_add_lib(bf_compositor "${SRC}" "${INC}" "${INC_SYS}" "${LIB}")
 

@@ -24,6 +24,7 @@ set(INC
   ../../depsgraph
   ../../gpu
   ../../imbuf
+  ../../draw
   ../../makesdna
   ../../makesrna
   ../../nodes

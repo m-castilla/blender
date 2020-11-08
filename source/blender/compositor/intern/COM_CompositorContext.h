@@ -88,6 +88,10 @@ class CompositorContext {
   {
     return m_exec_data->view_layer;
   }
+  CompositTreeExec *getTreeExecData()
+  {
+    return m_exec_data;
+  }
   PixelsSampler getDefaultSampler() const
   {
     return PixelsSampler{PixelInterpolation::BILINEAR, PixelExtend::CLIP};

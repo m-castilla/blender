@@ -17,10 +17,14 @@
  */
 
 #include "BKE_global.h"
-#include "BKE_node_offscreen.h"
+#include "BKE_node.h"
+#include "BKE_node_camera_view.h"
 #include "BKE_scene.h"
 #include "BLI_assert.h"
+#include "BLI_threads.h"
+#include "DNA_camera_types.h"
 #include "DNA_layer_types.h"
+#include "DNA_object_types.h"
 #include "DNA_scene_types.h"
 #include "DRW_engine.h"
 #include "GPU_framebuffer.h"
@@ -33,13 +37,13 @@
 #include "COM_PixelsUtil.h"
 #include "COM_Renderer.h"
 
-static void freeGlRender(CompositGlRender *render)
+static void freeGlRender(CameraGlRender *render)
 {
   if (render) {
     if (render->result) {
       IMB_freeImBuf(render->result);
     }
-    MEM_freeN(render);
+    delete render;
   }
 }
 
@@ -146,19 +150,70 @@ static std::string getNodeName(bNode *camera_node)
   return std::string(camera_node->name);
 }
 
-bool Renderer::hasCameraNodeGlRender(bNode *camera_node)
+/* may renturn null when rendering failed by any reason */
+CameraGlRender *Renderer::getCameraNodeGlRender(bNode *camera_node)
 {
-  return m_cam_gl_renders.contains(getNodeName(camera_node));
+  static int gl_render_counter = 0;
+
+  auto node_name = getNodeName(camera_node);
+  m_used_cam_nodes.add(node_name);
+
+  CameraGlRender *prev_render = nullptr;
+  if (m_cam_gl_renders.contains(node_name)) {
+    prev_render = m_cam_gl_renders.lookup(node_name);
+  }
+  if (!prev_render && m_ctx->isRendering()) {
+    /* Opengl rendering fails when called from rendering pipeline. By returning null an empty image
+     * will be drawn. */
+    return nullptr;
+  }
+
+  Camera *camera = (Camera *)camera_node->id;
+  NodeCamera *node_data = (NodeCamera *)camera_node->storage;
+  Scene *scene = m_ctx->getScene();
+
+  int draw_mode = node_data->draw_mode;
+  int frame_offset = node_data->frame_offset;
+
+  // copy used camera name
+  std::string camera_name = std::string(
+      camera ? camera->id.name + 2 : (scene->camera ? scene->camera->id.name + 2 : ""));
+
+  auto ntree = m_ctx->getbNodeTree();
+  auto tree_exec = m_ctx->getTreeExecData();
+  if (ntree->auto_comp || !prev_render || !prev_render->result ||
+      prev_render->draw_mode != draw_mode || prev_render->frame_offset != frame_offset ||
+      prev_render->camera_name != camera_name) {
+    freeGlRender(prev_render);
+    m_cam_gl_renders.remove(node_name);
+
+    ImBuf *render_result = tree_exec->camera_draw_fn(m_ctx->getScene(),
+                                                     m_ctx->getViewLayer(),
+                                                     m_ctx->getViewName(),
+                                                     camera,
+                                                     frame_offset,
+                                                     (eDrawType)draw_mode,
+                                                     tree_exec->job_context);
+    CameraGlRender *new_render = nullptr;
+    if (render_result) {
+      new_render = new CameraGlRender();
+      new_render->camera_name = camera_name;
+      new_render->draw_mode = draw_mode;
+      new_render->frame_offset = frame_offset;
+      new_render->result = render_result;
+      new_render->ssid = gl_render_counter;
+      gl_render_counter++;
+
+      setCameraNodeGlRender(camera_node, new_render);
+    }
+    return new_render;
+  }
+  else {
+    return prev_render;
+  }
 }
 
-CompositGlRender *Renderer::getCameraNodeGlRender(bNode *camera_node)
-{
-  auto name = getNodeName(camera_node);
-  m_used_cam_nodes.add(name);
-  return m_cam_gl_renders.lookup(getNodeName(camera_node));
-}
-
-void Renderer::setCameraNodeGlRender(bNode *camera_node, CompositGlRender *render)
+void Renderer::setCameraNodeGlRender(bNode *camera_node, CameraGlRender *render)
 {
   std::string name = getNodeName(camera_node);
   if (m_cam_gl_renders.contains(name)) {

@@ -23,7 +23,6 @@
 
 #include <stdio.h>
 
-#include "DNA_camera_types.h"
 #include "DNA_color_types.h"
 #include "DNA_node_types.h"
 #include "DNA_object_types.h"
@@ -36,12 +35,8 @@
 #include "BKE_global.h"
 #include "BKE_main.h"
 #include "BKE_node.h"
-#include "BKE_node_offscreen.h"
 #include "BKE_scene.h"
 #include "BKE_tracking.h"
-#include "DRW_engine.h"
-#include "GPU_framebuffer.h"
-#include "IMB_imbuf_types.h"
 
 #include "node_common.h"
 #include "node_util.h"
@@ -250,18 +245,6 @@ void *COM_linker_hack = NULL;
 void ntreeCompositExecTree(CompositTreeExec *exec_data)
 {
 #ifdef WITH_COMPOSITOR
-  /* For render engine (not composite job) we need to do the camera nodes opengl renders. For
-   * composite jobs is done before launching the job that calls this function */
-  if (exec_data->rendering) {
-    ntreeCompositGlRender(exec_data->main,
-                          exec_data->scene,
-                          exec_data->view_layer,
-                          "",
-                          exec_data->ntree,
-                          true,
-                          exec_data->depsgraph);
-  }
-
   COM_execute(exec_data);
   /* disable auto composition by default for next execution, will only be enabled if needed in node
    * area listener. */
@@ -358,133 +341,6 @@ void ntreeCompositClearTags(bNodeTree *ntree)
     node->need_exec = 0;
     if (node->type == NODE_GROUP) {
       ntreeCompositClearTags((bNodeTree *)node->id);
-    }
-  }
-}
-
-void ntreeCompositGlRender(Main *main,
-                           Scene *scene,
-                           ViewLayer *view_layer,
-                           const char *viewname,
-                           bNodeTree *ntree,
-                           bool is_rendering,
-                           Depsgraph *rendering_depsgraph)
-{
-  static unsigned int id_counter = 0;
-  ImBuf *ibuf = NULL;
-
-  int w = (scene->r.size * scene->r.xsch) / 100;
-  int h = (scene->r.size * scene->r.ysch) / 100;
-
-  /*TODO: do it per view */
-  // if ((scene->r.scemode & R_MULTIVIEW) == 0) {
-  //   exec_data->viewname = "";
-  //   ntreeCompositExecTree(exec_data);
-  // }
-  // else {
-  //   for (srv = cj->scene->r.views.first; srv; srv = srv->next) {
-  //     if (BKE_scene_multiview_is_render_view_active(&scene->r, srv) == false) {
-  //       continue;
-  //     }
-  //     exec_data->viewname = srv->name;
-  //     ntreeCompositExecTree(exec_data);
-  //   }
-  // }
-  if ((scene->r.scemode & R_MULTIVIEW) == 1) {
-    /* Not implemented */
-    return;
-  }
-
-  LISTBASE_FOREACH (bNode *, node, &ntree->nodes) {
-    if (node->type == CMP_NODE_CAMERA && node->storage) {
-      Camera *camera = (Camera *)node->id;
-      NodeCamera *node_data = (NodeCamera *)node->storage;
-      int draw_mode = node_data->draw_mode;
-      int frame_offset = node_data->frame_offset;
-      const char *camera_name = camera->id.name;
-      CompositGlRender *prev_render = COM_hasCameraNodeGlRender(node) ?
-                                          COM_getCameraNodeGlRender(node) :
-                                          NULL;
-      if (ntree->auto_comp || prev_render == NULL || prev_render->result == NULL ||
-          prev_render->draw_mode != draw_mode || prev_render->frame_offset != frame_offset ||
-          !STREQ(prev_render->camera_name, camera_name)) {
-        Object *camera_obj = NULL;
-        if (!camera) {
-          camera_obj = scene->camera;
-        }
-        else if (camera->id.orig_id) {
-          LISTBASE_FOREACH (Object *, obj, &main->objects) {
-            if (STREQ(obj->id.name + 2, camera->id.name + 2)) {
-              camera_obj = obj;
-              break;
-            }
-          }
-        }
-
-        if (camera_obj) {
-          char error[256];
-          /* corrects render size with actual size, not every card supports non-power-of-two
-           * dimensions
-           */
-          DRW_opengl_context_enable(); /* Offscreen creation needs to be done in DRW context. */
-          GPUOffScreen *gpu_buf = GPU_offscreen_create(w, h, true, true, error);
-          DRW_opengl_context_disable();
-
-          if (gpu_buf) {
-            short orig_r_mode = scene->r.mode;
-            short orig_r_scemode = scene->r.scemode;
-            short orig_r_frame = scene->r.cfra;
-
-            scene->r.mode |= R_NO_CAMERA_SWITCH;
-            scene->r.cfra += frame_offset;
-
-            unsigned int draw_flags = V3D_OFSDRAW_OVERRIDE_SCENE_SETTINGS;
-
-            Depsgraph *scene_dg = NULL;
-            if (!is_rendering) {
-              scene_dg = BKE_scene_ensure_depsgraph(main, scene, view_layer);
-              BKE_scene_graph_update_for_newframe(scene_dg);
-            }
-            else {
-              scene_dg = BKE_scene_ensure_depsgraph(main, scene, view_layer);
-            }
-            ibuf = node_view3d_fn(scene_dg,
-                                  scene,
-                                  &scene->display.shading,
-                                  (eDrawType)draw_mode,
-                                  camera_obj,
-                                  w,
-                                  h,
-                                  IB_rectfloat,
-                                  (eV3DOffscreenDrawFlag)draw_flags,
-                                  scene->r.alphamode,
-                                  viewname,
-                                  gpu_buf,
-                                  error);
-
-            GPU_offscreen_free(gpu_buf);
-
-            if (ibuf) {
-              CompositGlRender *new_render = (CompositGlRender *)MEM_callocN(
-                  sizeof(CompositGlRender), "CompositGlRender");
-              new_render->result = ibuf;
-              new_render->ssid = id_counter;
-              new_render->frame_offset = frame_offset;
-              new_render->draw_mode = draw_mode;
-              new_render->camera_name = camera_name;
-              COM_setCameraNodeGlRender(node, new_render);
-              id_counter++;
-            }
-            else {
-              fprintf(stderr, "opengl camera render failed in compositor: %s\n", error);
-            }
-
-            scene->r.scemode = orig_r_scemode;
-            scene->r.mode = orig_r_mode;
-            scene->r.cfra = orig_r_frame;
-          }
-        }
-      }
     }
   }
 }

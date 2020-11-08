@@ -32,9 +32,7 @@ CameraNode::CameraNode(bNode *editorNode) : Node(editorNode)
 void CameraNode::convertToOperations(NodeConverter &converter, CompositorContext &context) const
 {
   auto node = getbNode();
-  CompositGlRender *gl_render = GlobalMan->renderer()->hasCameraNodeGlRender(node) ?
-                                    GlobalMan->renderer()->getCameraNodeGlRender(node) :
-                                    nullptr;
+  CameraGlRender *gl_render = GlobalMan->renderer()->getCameraNodeGlRender(node);
 
   CameraOperation *op = new CameraOperation();
   NodeOutput *output = this->getOutputSocket(0);

@@ -27,12 +27,20 @@ struct ViewLayer;
 struct Render;
 struct GPUOffScreen;
 struct Main;
-struct CompositGlRender;
 class CompositorContext;
+
+typedef struct CameraGlRender {
+  unsigned int ssid;
+  std::string camera_name;
+  int draw_mode;
+  int frame_offset;
+  struct ImBuf *result;
+} CameraGlRender;
+
 class Renderer {
  private:
   blender::Map<unsigned int, blender::Map<std::string, Render *>> m_sc_renders;
-  blender::Map<std::string, CompositGlRender *> m_cam_gl_renders;
+  blender::Map<std::string, CameraGlRender *> m_cam_gl_renders;
   blender::Set<std::string> m_used_cam_nodes;
   CompositorContext *m_ctx;
 
@@ -42,7 +50,9 @@ class Renderer {
   void initialize(CompositorContext *ctx);
   void deinitialize();
   Render *getSceneRender(Scene *scene, ViewLayer *layer);
-  bool hasCameraNodeGlRender(bNode *camera_node);
-  CompositGlRender *getCameraNodeGlRender(bNode *camera_node);
-  void setCameraNodeGlRender(bNode *camera_node, CompositGlRender *render);
+
+  CameraGlRender *getCameraNodeGlRender(bNode *camera_node);
+
+ private:
+  void setCameraNodeGlRender(bNode *camera_node, CameraGlRender *render);
 };

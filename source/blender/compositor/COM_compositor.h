@@ -344,15 +344,6 @@ void COM_execute(struct CompositTreeExec *exec_data);
  */
 void COM_deinitialize(void);
 
-/**
- * \brief Clear all compositor caches. (Compositor system will still remain available).
- * To deinitialize the compositor use the COM_deinitialize method.
- */
-// void COM_clearCaches(void); // NOT YET WRITTEN
-/* OpenGL cameras nodes renders handling functions */
-bool COM_hasCameraNodeGlRender(bNode *camera_node);
-struct CompositGlRender *COM_getCameraNodeGlRender(bNode *camera_node);
-void COM_setCameraNodeGlRender(bNode *camera_node, struct CompositGlRender *render);
 
 #ifdef __cplusplus
 }

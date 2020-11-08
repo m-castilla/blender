@@ -25,28 +25,20 @@
 
 #include "DNA_object_enums.h"
 
-#include "DNA_view3d_types.h"
-
-#include "IMB_imbuf_types.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-typedef struct ImBuf *(*NodeDrawView)(struct Depsgraph *depsgraph,
-                                      struct Scene *scene,
-                                      struct View3DShading *shading_override,
-                                      eDrawType drawtype,
-                                      struct Object *camera,
-                                      int width,
-                                      int height,
-                                      eImBufFlags flag,
-                                      eV3DOffscreenDrawFlag draw_flags,
-                                      int alpha_mode,
-                                      const char *viewname,
-                                      struct GPUOffScreen *ofs,
-                                      char err_out[256]);
-extern NodeDrawView node_view3d_fn;
+struct Camera;
+typedef struct NodeCameraJobContext NodeCameraJobContext;
+typedef struct ImBuf *(*NodeCameraDrawView)(
+    struct Scene *scene,
+    struct ViewLayer *view_layer,
+    const char *viewname,
+    struct Camera *camera, /* if NULL scene camera will be used */
+    int frame_offset,
+    eDrawType draw_mode,
+    struct NodeCameraJobContext *job_context);
 
 #ifdef __cplusplus
 }

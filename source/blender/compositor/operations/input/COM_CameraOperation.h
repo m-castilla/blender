@@ -27,13 +27,13 @@
 #include "RE_pipeline.h"
 
 struct Camera;
-struct CompositGlRender;
+struct CameraGlRender;
 /**
  * Base class for all renderlayeroperations
  */
 class CameraOperation : public NodeOperation {
  private:
-  CompositGlRender *m_gl_render;
+  CameraGlRender *m_gl_render;
 
  public:
   CameraOperation();
@@ -43,7 +43,7 @@ class CameraOperation : public NodeOperation {
     return false;
   }
 
-  void setCameraGlRender(CompositGlRender *camera_render)
+  void setCameraGlRender(CameraGlRender *camera_render)
   {
     this->m_gl_render = camera_render;
   }

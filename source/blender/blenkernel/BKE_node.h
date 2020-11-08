@@ -31,6 +31,7 @@
 /* for FOREACH_NODETREE_BEGIN */
 #include "DNA_node_types.h"
 
+#include "BKE_node_camera_view.h"
 #include "RNA_types.h"
 
 #ifdef __cplusplus
@@ -1243,23 +1244,12 @@ typedef struct CompositTreeExec {
   const struct ColorManagedDisplaySettings *display_settings;
   /* active rendering view name */
   const char *viewname;
+
+  NodeCameraDrawView camera_draw_fn;
+  /* Only used for node camera view draw function */
+  struct NodeCameraJobContext *job_context;
+
 } CompositTreeExec;
-typedef struct CompositGlRender {
-  unsigned int ssid;
-  const char *camera_name;
-  int draw_mode;
-  int frame_offset;
-  struct ImBuf *result;
-} CompositGlRender;
-/* TODO: Do it per view */
-// typedef struct CompositGlRender {
-//   unsigned int ssid;
-//   ListBase views; /* CompositGlRenderView views renders*/
-// } CompositGlRender;
-// typedef struct CompositGlRenderView {
-//   const char *viewname;
-//   struct ImBuf *result;
-// } CompositGlRender;
 void ntreeCompositExecTree(struct CompositTreeExec *exec_data);
 void ntreeCompositTagRender(struct Scene *scene);
 void ntreeCompositUpdateRLayers(struct bNodeTree *ntree);
@@ -1269,13 +1259,6 @@ void ntreeCompositRegisterPass(struct bNodeTree *ntree,
                                const char *name,
                                eNodeSocketDatatype type);
 void ntreeCompositClearTags(struct bNodeTree *ntree);
-void ntreeCompositGlRender(struct Main *main,
-                           struct Scene *scene,
-                           struct ViewLayer *view_layer,
-                           const char *viewname,
-                           bNodeTree *ntree,
-                           bool is_rendering,
-                           struct Depsgraph *rendering_depsgraph);
 
 struct bNodeSocket *ntreeCompositOutputFileAddSocket(struct bNodeTree *ntree,
                                                      struct bNode *node,

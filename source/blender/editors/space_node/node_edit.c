@@ -23,6 +23,7 @@
 
 #include "MEM_guardedalloc.h"
 
+#include "DNA_camera_types.h"
 #include "DNA_light_types.h"
 #include "DNA_material_types.h"
 #include "DNA_node_types.h"
@@ -31,6 +32,8 @@
 
 #include "BLI_blenlib.h"
 #include "BLI_math.h"
+#include "BLI_session_uuid.h"
+#include "BLI_timer.h"
 
 #include "BKE_context.h"
 #include "BKE_global.h"
@@ -39,6 +42,7 @@
 #include "BKE_main.h"
 #include "BKE_material.h"
 #include "BKE_node.h"
+#include "BKE_node_camera_view.h"
 #include "BKE_report.h"
 #include "BKE_scene.h"
 
@@ -54,6 +58,7 @@
 #include "ED_render.h"
 #include "ED_screen.h"
 #include "ED_select_utils.h"
+#include "ED_view3d_offscreen.h"
 
 #include "RNA_access.h"
 #include "RNA_define.h"
@@ -64,7 +69,10 @@
 
 #include "UI_view2d.h"
 
+#include "GPU_framebuffer.h"
 #include "GPU_material.h"
+
+#include "DRW_engine.h"
 
 #include "IMB_imbuf_types.h"
 
@@ -74,7 +82,180 @@
 #include "NOD_texture.h"
 #include "node_intern.h" /* own include */
 
+#include "PIL_time.h"
+
 #define USE_ESC_COMPO
+
+/* ******************** Node camera draw functions ********************************* */
+
+typedef struct NodeCameraJobContext {
+  const bContext *C;
+  wmJob *wm_job;
+} NodeCameraJobContext;
+typedef struct NodeCameraJobTimer {
+  const bContext *C;
+  Scene *scene;
+  ViewLayer *view_layer;
+  const char *viewname;
+  Camera *camera;
+  int frame_offset;
+  eDrawType draw_mode;
+  ImBuf *result;
+  ThreadMutex mutex;
+  ThreadCondition cond;
+} NodeCameraJobTimer;
+typedef struct OrigObjMode {
+  struct OrigObjMode *prev, *next;
+  Object *obj;
+  eObjectMode orig_mode;
+} OrigObjMode;
+static double node_camera_gl_draw_timer(uintptr_t UNUSED(uuid), void *user_data)
+{
+  BLI_assert(BLI_thread_is_main());
+
+  NodeCameraJobTimer *job = user_data;
+
+  /* Assure OBJECT mode so that objects are drawn correctly (when in EDIT or SCULPT they might not)
+   */
+  Object *active_obj = CTX_data_active_object(job->C);
+  int orig_obj_mode = OB_MODE_OBJECT;
+  if (active_obj) {
+    orig_obj_mode = active_obj->mode;
+    if (orig_obj_mode != OB_MODE_OBJECT) {
+      ED_object_mode_set_ex(job->C, OB_MODE_OBJECT, false, NULL);
+    }
+  }
+
+  Scene *scene = job->scene;
+  Camera *camera = job->camera;
+
+  Main *main = CTX_data_main(job->C);
+
+  int w = (scene->r.size * scene->r.xsch) / 100;
+  int h = (scene->r.size * scene->r.ysch) / 100;
+
+  Object *camera_obj = NULL;
+  if (!camera) {
+    camera_obj = scene->camera;
+  }
+  else if (camera->id.orig_id) {
+    LISTBASE_FOREACH (Object *, obj, &main->objects) {
+      if (STREQ(obj->id.name + 2, camera->id.name + 2)) {
+        camera_obj = obj;
+        break;
+      }
+    }
+  }
+
+  if (camera_obj) {
+
+    char error[256];
+    /* corrects render size with actual size, not every card supports non-power-of-two
+     * dimensions
+     */
+    DRW_opengl_context_enable(); /* Offscreen creation needs to be done in DRW context. */
+    GPUOffScreen *gpu_buf = GPU_offscreen_create(w, h, true, true, error);
+    DRW_opengl_context_disable();
+
+    if (gpu_buf) {
+      short orig_r_mode = scene->r.mode;
+      short orig_r_scemode = scene->r.scemode;
+      short orig_r_frame = scene->r.cfra;
+
+      scene->r.mode |= R_NO_CAMERA_SWITCH;
+      scene->r.cfra += job->frame_offset;
+
+      unsigned int draw_flags = V3D_OFSDRAW_OVERRIDE_SCENE_SETTINGS;
+
+      Depsgraph *scene_dg = scene_dg = BKE_scene_ensure_depsgraph(main, scene, job->view_layer);
+      BKE_scene_graph_update_for_newframe(scene_dg);
+
+      job->result = ED_view3d_draw_offscreen_imbuf_simple(scene_dg,
+                                                          scene,
+                                                          &scene->display.shading,
+                                                          job->draw_mode,
+                                                          camera_obj,
+                                                          w,
+                                                          h,
+                                                          IB_rectfloat,
+                                                          (eV3DOffscreenDrawFlag)draw_flags,
+                                                          scene->r.alphamode,
+                                                          job->viewname,
+                                                          gpu_buf,
+                                                          error);
+
+      GPU_offscreen_free(gpu_buf);
+
+      if (!job->result) {
+        fprintf(stderr, "opengl camera render failed in a node space job: %s\n", error);
+      }
+
+      scene->r.scemode = orig_r_scemode;
+      scene->r.mode = orig_r_mode;
+      scene->r.cfra = orig_r_frame;
+    }
+  }
+
+  /* reestablish original object mode */
+  if (orig_obj_mode != OB_MODE_OBJECT) {
+    ED_object_mode_set_ex(job->C, orig_obj_mode, false, NULL);
+  }
+
+  BLI_mutex_lock(&job->mutex);
+  BLI_condition_notify_one(&job->cond);
+  BLI_mutex_unlock(&job->mutex);
+
+  /* remove timer */
+  return -1;
+}
+
+/* if camera is NULL, scene camera will be used */
+ImBuf *node_camera_gl_draw(Scene *scene,
+                           ViewLayer *view_layer,
+                           const char *viewname,
+                           Camera *camera,
+                           int frame_offset,
+                           eDrawType draw_mode,
+                           NodeCameraJobContext *job_context)
+{
+  /* Should only be called from a job thread */
+  BLI_assert(!BLI_thread_is_main());
+
+  WM_job_main_thread_lock_acquire(job_context->wm_job);
+
+  NodeCameraJobTimer timer_data = {0};
+  timer_data.scene = scene;
+  timer_data.C = job_context->C;
+  timer_data.camera = camera;
+  timer_data.draw_mode = draw_mode;
+  timer_data.frame_offset = frame_offset;
+  timer_data.view_layer = view_layer;
+  timer_data.viewname = viewname;
+  BLI_mutex_init(&timer_data.mutex);
+  BLI_condition_init(&timer_data.cond);
+
+  /* Execute the draw function as a timer so that is launched in main thread. Only in main thread
+   * we may access UI elements or draw with OpenGL */
+  SessionUUID timer_uuid = BLI_session_uuid_generate();
+  BLI_timer_register(timer_uuid.uuid_, node_camera_gl_draw_timer, &timer_data, NULL, 0, false);
+
+  WM_job_main_thread_lock_release(job_context->wm_job);
+
+  BLI_condition_wait(&timer_data.cond, &timer_data.mutex);
+
+  WM_job_main_thread_lock_acquire(job_context->wm_job);
+
+  BLI_timer_unregister(timer_uuid.uuid_);
+
+  BLI_mutex_end(&timer_data.mutex);
+  BLI_condition_end(&timer_data.cond);
+
+  WM_job_main_thread_lock_release(job_context->wm_job);
+
+  return timer_data.result;
+}
+
+/* ***************************************** */
 
 /* ***************** composite job manager ********************** */
 
@@ -85,7 +266,8 @@ enum {
 
 typedef struct CompoJob {
   /* Do not use in compositor thread. Only for job initialization and finalization */
-  bContext *C;
+  const bContext *C;
+  wmJob *wm_job;
 
   /* Input parameters. */
   Main *bmain;
@@ -100,6 +282,7 @@ typedef struct CompoJob {
   const short *stop;
   short *do_update;
   float *progress;
+
 } CompoJob;
 
 static void compo_tag_output_nodes(bNodeTree *nodetree, int recalc_flags)
@@ -201,11 +384,6 @@ static void compo_freejob(void *cjv)
   MEM_freeN(cj);
 }
 
-typedef struct OrigObjMode {
-  struct OrigObjMode *prev, *next;
-  Object *obj;
-  eObjectMode orig_mode;
-} OrigObjMode;
 /* only now we copy the nodetree, so adding many jobs while
  * sliding buttons doesn't frustrate */
 static void compo_initjob(void *cjv)
@@ -226,26 +404,6 @@ static void compo_initjob(void *cjv)
                                                             &cj->ntree->id);
 
   cj->localtree = ntreeLocalize(ntree_eval);
-
-  /* Assure objects are in OBJECT_MODE so that cameras nodes OpenGL rendering is done corretly */
-  ListBase objs_orig_modes = {0};
-  ReportList *reports = CTX_wm_reports(cj->C);
-  LISTBASE_FOREACH (Object *, obj, &bmain->objects) {
-    OrigObjMode *orig = MEM_callocN(sizeof(OrigObjMode), "OrigObjMode");
-    orig->obj = obj;
-    orig->orig_mode = obj->mode;
-    BLI_addtail(&objs_orig_modes, orig);
-    if (obj->mode != OB_MODE_OBJECT) {
-      ED_object_mode_set_ex(cj->C, OB_MODE_OBJECT, false, reports);
-    }
-  }
-  ntreeCompositGlRender(bmain, scene, view_layer, "", cj->localtree, false, NULL);
-  LISTBASE_FOREACH (OrigObjMode *, orig, &objs_orig_modes) {
-    if (orig->orig_mode != OB_MODE_OBJECT) {
-      ED_object_mode_set_ex(cj->C, orig->orig_mode, false, reports);
-    }
-  }
-  BLI_freelistN(&objs_orig_modes);
 
   if (cj->recalc_flags) {
     compo_tag_output_nodes(cj->localtree, cj->recalc_flags);
@@ -291,6 +449,14 @@ static CompositTreeExec *build_composit_exec(CompoJob *cj)
   exec_data->scene = cj->scene;
   exec_data->rd = &cj->scene->r;
   exec_data->view_settings = &scene->view_settings;
+
+  exec_data->job_context = (NodeCameraJobContext *)MEM_callocN(sizeof(NodeCameraJobContext),
+                                                               "NodeCameraJobContext");
+  exec_data->job_context->C = cj->C;
+  exec_data->job_context->wm_job = cj->wm_job;
+
+  exec_data->camera_draw_fn = node_camera_gl_draw;
+
   return exec_data;
 }
 
@@ -340,6 +506,7 @@ static void compo_startjob(void *cjv,
       ntreeCompositExecTree(exec_data);
     }
   }
+  MEM_freeN(exec_data->job_context);
   MEM_freeN(exec_data);
 
   ntree->test_break = NULL;
@@ -389,6 +556,7 @@ void ED_node_composite_job(const bContext *C, struct bNodeTree *nodetree, Scene 
   cj->view_layer = view_layer;
   cj->ntree = nodetree;
   cj->recalc_flags = compo_get_recalc_flags(C);
+  cj->wm_job = wm_job;
 
   /* setup job */
   WM_jobs_customdata_set(wm_job, cj, compo_freejob);

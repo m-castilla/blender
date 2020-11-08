@@ -101,8 +101,10 @@ void COM_execute(CompositTreeExec *exec_data)
 
 void COM_deinitialize()
 {
-  delete GlobalMan.get();
-  GlobalMan.release();
+  if (GlobalMan) {
+    delete GlobalMan.get();
+    GlobalMan.release();
+  }
   if (is_compositorMutex_init) {
     BLI_mutex_lock(&s_compositorMutex);
     WorkScheduler::deinitialize();
@@ -110,21 +112,4 @@ void COM_deinitialize()
     BLI_mutex_unlock(&s_compositorMutex);
     BLI_mutex_end(&s_compositorMutex);
   }
-}
-
-bool COM_hasCameraNodeGlRender(bNode *camera_node)
-{
-  assureGlobalMan();
-  return GlobalMan->renderer()->hasCameraNodeGlRender(camera_node);
-}
-
-CompositGlRender *COM_getCameraNodeGlRender(bNode *camera_node)
-{
-  assureGlobalMan();
-  return GlobalMan->renderer()->getCameraNodeGlRender(camera_node);
-}
-void COM_setCameraNodeGlRender(bNode *camera_node, CompositGlRender *render)
-{
-  assureGlobalMan();
-  return GlobalMan->renderer()->setCameraNodeGlRender(camera_node, render);
 }

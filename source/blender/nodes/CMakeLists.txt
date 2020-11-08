@@ -28,7 +28,6 @@ set(INC
   texture
   ../blenkernel
   ../blenlib
-  ../draw
   ../blentranslation
   ../depsgraph
   ../functions
@@ -36,6 +35,7 @@ set(INC
   ../imbuf
   ../makesdna
   ../makesrna
+  ../windowmanager
   ../render/extern/include
   ../../../intern/glew-mx
   ../../../intern/guardedalloc

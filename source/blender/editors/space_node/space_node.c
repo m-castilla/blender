@@ -36,7 +36,7 @@
 #include "BKE_global.h"
 #include "BKE_lib_id.h"
 #include "BKE_node.h"
-#include "BKE_node_offscreen.h"
+#include "BKE_node_camera_view.h"
 #include "BKE_scene.h"
 #include "BKE_screen.h"
 
@@ -57,8 +57,6 @@
 #include "WM_types.h"
 
 #include "node_intern.h" /* own include */
-
-NodeDrawView node_view3d_fn = NULL; /* NULL in background mode */
 
 /* ******************** tree path ********************* */
 
@@ -1053,8 +1051,4 @@ void ED_spacetype_node(void)
   node_toolbar_register(art);
 
   BKE_spacetype_register(st);
-
-  if (G.background == 0) {
-    node_view3d_fn = ED_view3d_draw_offscreen_imbuf_simple;
-  }
 }
