@@ -246,11 +246,6 @@ void ntreeCompositExecTree(CompositTreeExec *exec_data)
 {
 #ifdef WITH_COMPOSITOR
   COM_execute(exec_data);
-  /* disable auto composition by default for next execution, will only be enabled if needed in node
-   * area listener. */
-  if (exec_data->ntree) {
-    exec_data->ntree->auto_comp = 0;
-  }
 #else
   UNUSED_VARS(exec_data);
 #endif

@@ -92,44 +92,22 @@ typedef struct NodeCameraJobContext {
   const bContext *C;
   wmJob *wm_job;
 } NodeCameraJobContext;
-typedef struct NodeCameraJobTimer {
-  const bContext *C;
-  Scene *scene;
-  ViewLayer *view_layer;
-  const char *viewname;
-  Camera *camera;
-  int frame_offset;
-  eDrawType draw_mode;
-  ImBuf *result;
-  ThreadMutex mutex;
-  ThreadCondition cond;
-} NodeCameraJobTimer;
-typedef struct OrigObjMode {
-  struct OrigObjMode *prev, *next;
-  Object *obj;
-  eObjectMode orig_mode;
-} OrigObjMode;
-static double node_camera_gl_draw_timer(uintptr_t UNUSED(uuid), void *user_data)
+
+/* if camera is NULL, scene camera will be used */
+ImBuf *node_camera_gl_draw(Scene *scene,
+                           ViewLayer *view_layer,
+                           const char *viewname,
+                           Camera *camera,
+                           int frame_offset,
+                           eDrawType draw_mode,
+                           NodeCameraJobContext *job_context)
 {
-  BLI_assert(BLI_thread_is_main());
+  /* Should only be called from a job thread */
+  BLI_assert(!BLI_thread_is_main());
 
-  NodeCameraJobTimer *job = user_data;
+  WM_job_main_thread_lock_acquire(job_context->wm_job);
 
-  /* Assure OBJECT mode so that objects are drawn correctly (when in EDIT or SCULPT they might not)
-   */
-  Object *active_obj = CTX_data_active_object(job->C);
-  int orig_obj_mode = OB_MODE_OBJECT;
-  if (active_obj) {
-    orig_obj_mode = active_obj->mode;
-    if (orig_obj_mode != OB_MODE_OBJECT) {
-      ED_object_mode_set_ex(job->C, OB_MODE_OBJECT, false, NULL);
-    }
-  }
-
-  Scene *scene = job->scene;
-  Camera *camera = job->camera;
-
-  Main *main = CTX_data_main(job->C);
+  Main *main = CTX_data_main(job_context->C);
 
   int w = (scene->r.size * scene->r.xsch) / 100;
   int h = (scene->r.size * scene->r.ysch) / 100;
@@ -147,6 +125,7 @@ static double node_camera_gl_draw_timer(uintptr_t UNUSED(uuid), void *user_data)
     }
   }
 
+  ImBuf *result = NULL;
   if (camera_obj) {
 
     char error[256];
@@ -163,30 +142,30 @@ static double node_camera_gl_draw_timer(uintptr_t UNUSED(uuid), void *user_data)
       short orig_r_frame = scene->r.cfra;
 
       scene->r.mode |= R_NO_CAMERA_SWITCH;
-      scene->r.cfra += job->frame_offset;
+      scene->r.cfra += frame_offset;
 
       unsigned int draw_flags = V3D_OFSDRAW_OVERRIDE_SCENE_SETTINGS;
 
-      Depsgraph *scene_dg = scene_dg = BKE_scene_ensure_depsgraph(main, scene, job->view_layer);
+      Depsgraph *scene_dg = scene_dg = BKE_scene_ensure_depsgraph(main, scene, view_layer);
       BKE_scene_graph_update_for_newframe(scene_dg);
 
-      job->result = ED_view3d_draw_offscreen_imbuf_simple(scene_dg,
-                                                          scene,
-                                                          &scene->display.shading,
-                                                          job->draw_mode,
-                                                          camera_obj,
-                                                          w,
-                                                          h,
-                                                          IB_rectfloat,
-                                                          (eV3DOffscreenDrawFlag)draw_flags,
-                                                          scene->r.alphamode,
-                                                          job->viewname,
-                                                          gpu_buf,
-                                                          error);
+      result = ED_view3d_draw_offscreen_imbuf_simple(scene_dg,
+                                                     scene,
+                                                     &scene->display.shading,
+                                                     draw_mode,
+                                                     camera_obj,
+                                                     w,
+                                                     h,
+                                                     IB_rectfloat,
+                                                     (eV3DOffscreenDrawFlag)draw_flags,
+                                                     scene->r.alphamode,
+                                                     viewname,
+                                                     gpu_buf,
+                                                     error);
 
       GPU_offscreen_free(gpu_buf);
 
-      if (!job->result) {
+      if (!result) {
         fprintf(stderr, "opengl camera render failed in a node space job: %s\n", error);
       }
 
@@ -196,66 +175,10 @@ static double node_camera_gl_draw_timer(uintptr_t UNUSED(uuid), void *user_data)
     }
   }
 
-  /* reestablish original object mode */
-  if (orig_obj_mode != OB_MODE_OBJECT) {
-    ED_object_mode_set_ex(job->C, orig_obj_mode, false, NULL);
-  }
-
-  BLI_mutex_lock(&job->mutex);
-  BLI_condition_notify_one(&job->cond);
-  BLI_mutex_unlock(&job->mutex);
-
-  /* remove timer */
-  return -1;
-}
-
-/* if camera is NULL, scene camera will be used */
-ImBuf *node_camera_gl_draw(Scene *scene,
-                           ViewLayer *view_layer,
-                           const char *viewname,
-                           Camera *camera,
-                           int frame_offset,
-                           eDrawType draw_mode,
-                           NodeCameraJobContext *job_context)
-{
-  /* Should only be called from a job thread */
-  BLI_assert(!BLI_thread_is_main());
-
-  WM_job_main_thread_lock_acquire(job_context->wm_job);
-
-  NodeCameraJobTimer timer_data = {0};
-  timer_data.scene = scene;
-  timer_data.C = job_context->C;
-  timer_data.camera = camera;
-  timer_data.draw_mode = draw_mode;
-  timer_data.frame_offset = frame_offset;
-  timer_data.view_layer = view_layer;
-  timer_data.viewname = viewname;
-  BLI_mutex_init(&timer_data.mutex);
-  BLI_condition_init(&timer_data.cond);
-
-  /* Execute the draw function as a timer so that is launched in main thread. Only in main thread
-   * we may access UI elements or draw with OpenGL */
-  SessionUUID timer_uuid = BLI_session_uuid_generate();
-  BLI_timer_register(timer_uuid.uuid_, node_camera_gl_draw_timer, &timer_data, NULL, 0, false);
-
   WM_job_main_thread_lock_release(job_context->wm_job);
 
-  BLI_condition_wait(&timer_data.cond, &timer_data.mutex);
-
-  WM_job_main_thread_lock_acquire(job_context->wm_job);
-
-  BLI_timer_unregister(timer_uuid.uuid_);
-
-  BLI_mutex_end(&timer_data.mutex);
-  BLI_condition_end(&timer_data.cond);
-
-  WM_job_main_thread_lock_release(job_context->wm_job);
-
-  return timer_data.result;
+  return result;
 }
-
-/* ***************************************** */
 
 /* ***************** composite job manager ********************** */
 
@@ -418,12 +341,6 @@ static void compo_updatejob(void *UNUSED(cjv))
 
 static void compo_endjob(void *cjv)
 {
-  CompoJob *cj = cjv;
-  /* disable auto composition by default for next execution, will only be enabled if needed in node
-   * area listener. */
-  if (cj->ntree) {
-    cj->ntree->auto_comp = 0;
-  }
 }
 
 static void compo_progressjob(void *cjv, float progress)

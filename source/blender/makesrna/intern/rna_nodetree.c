@@ -6035,21 +6035,21 @@ static void def_cmp_extend(StructRNA *srna)
   prop = RNA_def_property(srna, "add_extend_x", PROP_FLOAT, PROP_NONE);
   RNA_def_property_float_sdna(prop, NULL, "add_extend_x");
   RNA_def_property_range(prop, 1.0, 999.99);
-  RNA_def_property_ui_range(prop, 1.0, 999.99, 10, 2);
+  RNA_def_property_ui_range(prop, 1.0, 999.99, 1, 2);
   RNA_def_property_ui_text(prop, "Width", "Extend image width");
   RNA_def_property_update(prop, NC_NODE | NA_EDITED, "rna_Node_update");
 
   prop = RNA_def_property(srna, "add_extend_y", PROP_FLOAT, PROP_NONE);
   RNA_def_property_float_sdna(prop, NULL, "add_extend_y");
   RNA_def_property_range(prop, 1.0, 999.99);
-  RNA_def_property_ui_range(prop, 1.0, 999.99, 10, 2);
+  RNA_def_property_ui_range(prop, 1.0, 999.99, 1, 2);
   RNA_def_property_ui_text(prop, "Height", "Extend image height");
   RNA_def_property_update(prop, NC_NODE | NA_EDITED, "rna_Node_update");
 
   prop = RNA_def_property(srna, "scale", PROP_FLOAT, PROP_NONE);
   RNA_def_property_float_sdna(prop, NULL, "scale");
   RNA_def_property_range(prop, 0.01, 999.99);
-  RNA_def_property_ui_range(prop, 0.01, 999.99, 10, 2);
+  RNA_def_property_ui_range(prop, 0.01, 999.99, 1, 2);
   RNA_def_property_ui_text(prop, "Scale", "Scale image");
   RNA_def_property_update(prop, NC_NODE | NA_EDITED, "rna_Node_update");
 }
