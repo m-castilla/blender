@@ -493,7 +493,7 @@ static void node_area_listener(wmWindow *UNUSED(win),
       bool auto_comp = (wmn->category == NC_SCENE &&
                         (wmn->data == ND_FRAME || wmn->data == ND_TRANSFORM ||
                          wmn->data == ND_OB_VISIBLE || wmn->data == ND_WORLD ||
-                         wmn->data == ND_LAYER_CONTENT)) ||
+                         wmn->data == ND_LAYER_CONTENT || wmn->data == ND_MODE)) ||
                        (wmn->category == NC_MATERIAL &&
                         (wmn->data == ND_SHADING || wmn->data == ND_SHADING_DRAW ||
                          wmn->data == ND_SHADING_LINKS)) ||
