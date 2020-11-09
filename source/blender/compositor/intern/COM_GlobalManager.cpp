@@ -40,6 +40,9 @@ GlobalManager::~GlobalManager()
   if (ComputeMan != nullptr) {
     delete ComputeMan;
   }
+  if (m_renderer != nullptr) {
+    delete m_renderer;
+  }
 }
 
 void GlobalManager::initialize(CompositorContext &ctx)

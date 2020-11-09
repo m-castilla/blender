@@ -54,7 +54,6 @@ Renderer::Renderer()
 
 Renderer::~Renderer()
 {
-  deinitialize();
   for (auto render : m_cam_gl_renders.values()) {
     freeGlRender(render);
   }
@@ -84,6 +83,7 @@ void Renderer::deinitialize()
     }
   }
   m_used_cam_nodes.clear();
+  m_ctx = nullptr;
 }
 
 Render *Renderer::getSceneRender(Scene *selected_scene, ViewLayer *layer)
