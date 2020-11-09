@@ -18,7 +18,7 @@
 
 #pragma once
 
-#include "BLI_Map.hh"
+#include "BLI_map.hh"
 #include "BLI_set.hh"
 #include "DNA_object_enums.h"
 

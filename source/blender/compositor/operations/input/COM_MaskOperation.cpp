@@ -60,7 +60,7 @@ void MaskOperation::initExecution()
       float frame_iter = frame;
 
       Mask *mask_temp = (Mask *)BKE_id_copy_ex(
-          +NULL, &this->m_mask->id, NULL, LIB_ID_COPY_LOCALIZE | LIB_ID_COPY_NO_ANIMDATA);
+          NULL, &this->m_mask->id, NULL, LIB_ID_COPY_LOCALIZE | LIB_ID_COPY_NO_ANIMDATA);
 
       /* trick so we can get unkeyed edits to display */
       {
