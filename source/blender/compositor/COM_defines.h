@@ -79,4 +79,7 @@ constexpr float COM_PREVIEW_SIZE = 140.f;
 constexpr float COM_RULE_OF_THIRDS_DIVIDER = 100.0f;
 constexpr float COM_BLUR_BOKEH_PIXELS = 512;
 
+/* TODO: remove once all new system is working */
+typedef void ReadBufferOperation;
+
 }  // namespace blender::compositor

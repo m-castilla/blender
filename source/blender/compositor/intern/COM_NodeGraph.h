@@ -101,13 +101,9 @@ class NodeGraph {
                         bNode *b_node,
                         bNodeInstanceKey key,
                         bool is_active_group);
-  void add_proxies_skip(bNodeTree *b_ntree,
-                        bNode *b_node,
-                        bNodeInstanceKey key,
-                        bool is_active_group);
 
   void add_proxies_group_inputs(bNode *b_node, bNode *b_node_io);
-  void add_proxies_group_outputs(bNode *b_node, bNode *b_node_io, bool use_buffer);
+  void add_proxies_group_outputs(bNode *b_node, bNode *b_node_io);
   void add_proxies_group(const CompositorContext &context, bNode *b_node, bNodeInstanceKey key);
 
   void add_proxies_reroute(bNodeTree *b_ntree,

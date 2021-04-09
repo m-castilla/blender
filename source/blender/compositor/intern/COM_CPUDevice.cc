@@ -18,8 +18,6 @@
 
 #include "COM_CPUDevice.h"
 
-#include "COM_ExecutionGroup.h"
-
 #include "BLI_rect.h"
 
 namespace blender::compositor {
@@ -30,11 +28,7 @@ CPUDevice::CPUDevice(int thread_id) : m_thread_id(thread_id)
 
 void CPUDevice::execute(WorkPackage *work_package)
 {
-  const unsigned int chunkNumber = work_package->chunk_number;
-  ExecutionGroup *executionGroup = work_package->execution_group;
-
-  executionGroup->getOutputOperation()->executeRegion(&work_package->rect, chunkNumber);
-  executionGroup->finalizeChunkExecution(chunkNumber, nullptr);
+  work_package->execute();
 }
 
 }  // namespace blender::compositor

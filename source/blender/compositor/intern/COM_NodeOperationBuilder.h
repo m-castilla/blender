@@ -33,7 +33,6 @@ class NodeInput;
 class NodeOutput;
 
 class ExecutionSystem;
-class ExecutionGroup;
 class NodeOperation;
 class NodeOperationInput;
 class NodeOperationOutput;
@@ -70,7 +69,6 @@ class NodeOperationBuilder {
 
   Vector<NodeOperation *> m_operations;
   Vector<Link> m_links;
-  Vector<ExecutionGroup *> m_groups;
 
   /** Maps operation inputs to node inputs */
   Map<NodeOperationInput *, NodeInput *> m_input_map;
@@ -156,10 +154,6 @@ class NodeOperationBuilder {
 
   /** Sort operations by link dependencies */
   void sort_operations();
-
-  /** Create execution groups */
-  void group_operations();
-  ExecutionGroup *make_group(NodeOperation *op);
 
  private:
   PreviewOperation *make_preview_operation() const;

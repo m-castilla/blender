@@ -22,7 +22,6 @@ class ExecutionGroup;
 
 #include "BKE_text.h"
 
-#include "COM_ExecutionGroup.h"
 #include "COM_Node.h"
 #include "COM_NodeOperation.h"
 
@@ -131,11 +130,6 @@ class ExecutionSystem {
    */
   Vector<NodeOperation *> m_operations;
 
-  /**
-   * \brief vector of groups
-   */
-  Vector<ExecutionGroup *> m_groups;
-
  private:  // methods
  public:
   /**
@@ -149,7 +143,6 @@ class ExecutionSystem {
                   Scene *scene,
                   bNodeTree *editingtree,
                   bool rendering,
-                  bool fastcalculation,
                   const ColorManagedViewSettings *viewSettings,
                   const ColorManagedDisplaySettings *displaySettings,
                   const char *viewName);
@@ -159,14 +152,13 @@ class ExecutionSystem {
    */
   ~ExecutionSystem();
 
-  void set_operations(const Vector<NodeOperation *> &operations,
-                      const Vector<ExecutionGroup *> &groups);
+  void set_operations(const Vector<NodeOperation *> &operations);
 
   /**
    * \brief execute this system
-   * - initialize the NodeOperation's and ExecutionGroup's
-   * - schedule the output ExecutionGroup's based on their priority
-   * - deinitialize the ExecutionGroup's and NodeOperation's
+   * - initialize the NodeOperation's
+   * - execute the output Operations based on their priority
+   * - deinitialize NodeOperation's
    */
   void execute();
 

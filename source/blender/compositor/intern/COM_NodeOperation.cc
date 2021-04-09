@@ -20,7 +20,6 @@
 #include <typeinfo>
 
 #include "COM_ExecutionSystem.h"
-#include "COM_ReadBufferOperation.h"
 #include "COM_defines.h"
 
 #include "COM_NodeOperation.h" /* own include */
@@ -264,16 +263,6 @@ std::ostream &operator<<(std::ostream &os, const NodeOperation &node_operation)
     os << ",name=" << node_operation.get_name();
   }
   os << ",flags={" << flags << "}";
-  if (flags.is_read_buffer_operation) {
-    const ReadBufferOperation *read_operation = (const ReadBufferOperation *)&node_operation;
-    const MemoryProxy *proxy = read_operation->getMemoryProxy();
-    if (proxy) {
-      const WriteBufferOperation *write_operation = proxy->getWriteBufferOperation();
-      if (write_operation) {
-        os << ",write=" << (NodeOperation &)*write_operation;
-      }
-    }
-  }
   os << ")";
 
   return os;

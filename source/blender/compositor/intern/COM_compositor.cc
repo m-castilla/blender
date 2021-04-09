@@ -96,20 +96,8 @@ void COM_execute(RenderData *render_data,
   blender::compositor::WorkScheduler::initialize(BKE_render_num_threads(render_data));
 
   /* Execute. */
-  const bool twopass = (node_tree->flag & NTREE_TWO_PASS) && !rendering;
-  if (twopass) {
-    blender::compositor::ExecutionSystem fast_pass(
-        render_data, scene, node_tree, rendering, true, viewSettings, displaySettings, viewName);
-    fast_pass.execute();
-
-    if (node_tree->test_break(node_tree->tbh)) {
-      BLI_mutex_unlock(&g_compositor.mutex);
-      return;
-    }
-  }
-
   blender::compositor::ExecutionSystem system(
-      render_data, scene, node_tree, rendering, false, viewSettings, displaySettings, viewName);
+      render_data, scene, node_tree, rendering, viewSettings, displaySettings, viewName);
   system.execute();
 
   BLI_mutex_unlock(&g_compositor.mutex);

@@ -18,12 +18,10 @@
 
 #include "COM_SocketProxyNode.h"
 #include "COM_ExecutionSystem.h"
-#include "COM_ReadBufferOperation.h"
 #include "COM_SetColorOperation.h"
 #include "COM_SetValueOperation.h"
 #include "COM_SetVectorOperation.h"
 #include "COM_SocketProxyOperation.h"
-#include "COM_WriteBufferOperation.h"
 
 namespace blender::compositor {
 
@@ -59,49 +57,6 @@ void SocketProxyNode::convertToOperations(NodeConverter &converter,
 {
   NodeOperationOutput *proxy_output = converter.addInputProxy(getInputSocket(0), m_use_conversion);
   converter.mapOutputSocket(getOutputSocket(), proxy_output);
-}
-
-SocketBufferNode::SocketBufferNode(bNode *editorNode,
-                                   bNodeSocket *editorInput,
-                                   bNodeSocket *editorOutput)
-    : Node(editorNode, false)
-{
-  DataType dt;
-
-  dt = DataType::Value;
-  if (editorInput->type == SOCK_RGBA) {
-    dt = DataType::Color;
-  }
-  if (editorInput->type == SOCK_VECTOR) {
-    dt = DataType::Vector;
-  }
-  this->addInputSocket(dt, editorInput);
-
-  dt = DataType::Value;
-  if (editorOutput->type == SOCK_RGBA) {
-    dt = DataType::Color;
-  }
-  if (editorOutput->type == SOCK_VECTOR) {
-    dt = DataType::Vector;
-  }
-  this->addOutputSocket(dt, editorOutput);
-}
-
-void SocketBufferNode::convertToOperations(NodeConverter &converter,
-                                           const CompositorContext & /*context*/) const
-{
-  NodeOutput *output = this->getOutputSocket(0);
-  NodeInput *input = this->getInputSocket(0);
-
-  DataType datatype = output->getDataType();
-  WriteBufferOperation *writeOperation = new WriteBufferOperation(datatype);
-  ReadBufferOperation *readOperation = new ReadBufferOperation(datatype);
-  readOperation->setMemoryProxy(writeOperation->getMemoryProxy());
-  converter.addOperation(writeOperation);
-  converter.addOperation(readOperation);
-
-  converter.mapInputSocket(input, writeOperation->getInputSocket(0));
-  converter.mapOutputSocket(output, readOperation->getOutputSocket());
 }
 
 }  // namespace blender::compositor

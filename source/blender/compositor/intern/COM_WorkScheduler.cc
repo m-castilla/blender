@@ -21,7 +21,6 @@
 
 #include "COM_CPUDevice.h"
 #include "COM_WorkScheduler.h"
-#include "COM_WriteBufferOperation.h"
 #include "COM_compositor.h"
 
 #include "clew.h"

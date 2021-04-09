@@ -28,13 +28,11 @@
 
 #include "COM_NodeOperation.h"
 #include "COM_PreviewOperation.h"
-#include "COM_ReadBufferOperation.h"
 #include "COM_SetColorOperation.h"
 #include "COM_SetValueOperation.h"
 #include "COM_SetVectorOperation.h"
 #include "COM_SocketProxyOperation.h"
 #include "COM_ViewerOperation.h"
-#include "COM_WriteBufferOperation.h"
 
 #include "COM_NodeOperationBuilder.h" /* own include */
 
@@ -99,9 +97,6 @@ void NodeOperationBuilder::convertToOperations(ExecutionSystem *system)
 
   determineResolutions();
 
-  /* surround complex ops with read/write buffer */
-  add_complex_operation_buffers();
-
   /* links not available from here on */
   /* XXX make m_links a local variable to avoid confusion! */
   m_links.clear();
@@ -111,11 +106,8 @@ void NodeOperationBuilder::convertToOperations(ExecutionSystem *system)
   /* ensure topological (link-based) order of nodes */
   /*sort_operations();*/ /* not needed yet */
 
-  /* create execution groups */
-  group_operations();
-
   /* transfer resulting operations to the system */
-  system->set_operations(m_operations, m_groups);
+  system->set_operations(m_operations);
 }
 
 void NodeOperationBuilder::addOperation(NodeOperation *operation)
@@ -416,145 +408,6 @@ void NodeOperationBuilder::determineResolutions()
   }
 }
 
-Vector<NodeOperationInput *> NodeOperationBuilder::cache_output_links(
-    NodeOperationOutput *output) const
-{
-  Vector<NodeOperationInput *> inputs;
-  for (const Link &link : m_links) {
-    if (link.from() == output) {
-      inputs.append(link.to());
-    }
-  }
-  return inputs;
-}
-
-WriteBufferOperation *NodeOperationBuilder::find_attached_write_buffer_operation(
-    NodeOperationOutput *output) const
-{
-  for (const Link &link : m_links) {
-    if (link.from() == output) {
-      NodeOperation &op = link.to()->getOperation();
-      if (op.get_flags().is_write_buffer_operation) {
-        return (WriteBufferOperation *)(&op);
-      }
-    }
-  }
-  return nullptr;
-}
-
-void NodeOperationBuilder::add_input_buffers(NodeOperation * /*operation*/,
-                                             NodeOperationInput *input)
-{
-  if (!input->isConnected()) {
-    return;
-  }
-
-  NodeOperationOutput *output = input->getLink();
-  if (output->getOperation().get_flags().is_read_buffer_operation) {
-    /* input is already buffered, no need to add another */
-    return;
-  }
-
-  /* this link will be replaced below */
-  removeInputLink(input);
-
-  /* check of other end already has write operation, otherwise add a new one */
-  WriteBufferOperation *writeoperation = find_attached_write_buffer_operation(output);
-  if (!writeoperation) {
-    writeoperation = new WriteBufferOperation(output->getDataType());
-    writeoperation->setbNodeTree(m_context->getbNodeTree());
-    addOperation(writeoperation);
-
-    addLink(output, writeoperation->getInputSocket(0));
-
-    writeoperation->readResolutionFromInputSocket();
-  }
-
-  /* add readbuffer op for the input */
-  ReadBufferOperation *readoperation = new ReadBufferOperation(output->getDataType());
-  readoperation->setMemoryProxy(writeoperation->getMemoryProxy());
-  this->addOperation(readoperation);
-
-  addLink(readoperation->getOutputSocket(), input);
-
-  readoperation->readResolutionFromWriteBuffer();
-}
-
-void NodeOperationBuilder::add_output_buffers(NodeOperation *operation,
-                                              NodeOperationOutput *output)
-{
-  /* cache connected sockets, so we can safely remove links first before replacing them */
-  Vector<NodeOperationInput *> targets = cache_output_links(output);
-  if (targets.is_empty()) {
-    return;
-  }
-
-  WriteBufferOperation *writeOperation = nullptr;
-  for (NodeOperationInput *target : targets) {
-    /* try to find existing write buffer operation */
-    if (target->getOperation().get_flags().is_write_buffer_operation) {
-      BLI_assert(writeOperation == nullptr); /* there should only be one write op connected */
-      writeOperation = (WriteBufferOperation *)(&target->getOperation());
-    }
-    else {
-      /* remove all links to other nodes */
-      removeInputLink(target);
-    }
-  }
-
-  /* if no write buffer operation exists yet, create a new one */
-  if (!writeOperation) {
-    writeOperation = new WriteBufferOperation(operation->getOutputSocket()->getDataType());
-    writeOperation->setbNodeTree(m_context->getbNodeTree());
-    addOperation(writeOperation);
-
-    addLink(output, writeOperation->getInputSocket(0));
-  }
-
-  writeOperation->readResolutionFromInputSocket();
-
-  /* add readbuffer op for every former connected input */
-  for (NodeOperationInput *target : targets) {
-    if (&target->getOperation() == writeOperation) {
-      continue; /* skip existing write op links */
-    }
-
-    ReadBufferOperation *readoperation = new ReadBufferOperation(
-        operation->getOutputSocket()->getDataType());
-    readoperation->setMemoryProxy(writeOperation->getMemoryProxy());
-    addOperation(readoperation);
-
-    addLink(readoperation->getOutputSocket(), target);
-
-    readoperation->readResolutionFromWriteBuffer();
-  }
-}
-
-void NodeOperationBuilder::add_complex_operation_buffers()
-{
-  /* note: complex ops and get cached here first, since adding operations
-   * will invalidate iterators over the main m_operations
-   */
-  Vector<NodeOperation *> complex_ops;
-  for (NodeOperation *operation : m_operations) {
-    if (operation->get_flags().complex) {
-      complex_ops.append(operation);
-    }
-  }
-
-  for (NodeOperation *op : complex_ops) {
-    DebugInfo::operation_read_write_buffer(op);
-
-    for (int index = 0; index < op->getNumberOfInputSockets(); index++) {
-      add_input_buffers(op, op->getInputSocket(index));
-    }
-
-    for (int index = 0; index < op->getNumberOfOutputSockets(); index++) {
-      add_output_buffers(op, op->getOutputSocket(index));
-    }
-  }
-}
-
 using Tags = std::set<NodeOperation *>;
 
 static void find_reachable_operations_recursive(Tags &reachable, NodeOperation *op)
@@ -569,13 +422,6 @@ static void find_reachable_operations_recursive(Tags &reachable, NodeOperation *
     if (input->isConnected()) {
       find_reachable_operations_recursive(reachable, &input->getLink()->getOperation());
     }
-  }
-
-  /* associated write-buffer operations are executed as well */
-  if (op->get_flags().is_read_buffer_operation) {
-    ReadBufferOperation *read_op = (ReadBufferOperation *)op;
-    MemoryProxy *memproxy = read_op->getMemoryProxy();
-    find_reachable_operations_recursive(reachable, memproxy->getWriteBufferOperation());
   }
 }
 
@@ -636,58 +482,6 @@ void NodeOperationBuilder::sort_operations()
   m_operations = sorted;
 }
 
-static void add_group_operations_recursive(Tags &visited, NodeOperation *op, ExecutionGroup *group)
-{
-  if (visited.find(op) != visited.end()) {
-    return;
-  }
-  visited.insert(op);
-
-  if (!group->addOperation(op)) {
-    return;
-  }
-
-  /* add all eligible input ops to the group */
-  for (int i = 0; i < op->getNumberOfInputSockets(); i++) {
-    NodeOperationInput *input = op->getInputSocket(i);
-    if (input->isConnected()) {
-      add_group_operations_recursive(visited, &input->getLink()->getOperation(), group);
-    }
-  }
-}
-
-ExecutionGroup *NodeOperationBuilder::make_group(NodeOperation *op)
-{
-  ExecutionGroup *group = new ExecutionGroup(this->m_groups.size());
-  m_groups.append(group);
-
-  Tags visited;
-  add_group_operations_recursive(visited, op, group);
-
-  return group;
-}
-
-void NodeOperationBuilder::group_operations()
-{
-  for (NodeOperation *op : m_operations) {
-    if (op->isOutputOperation(m_context->isRendering())) {
-      ExecutionGroup *group = make_group(op);
-      group->setOutputExecutionGroup(true);
-    }
-
-    /* add new groups for associated memory proxies where needed */
-    if (op->get_flags().is_read_buffer_operation) {
-      ReadBufferOperation *read_op = (ReadBufferOperation *)op;
-      MemoryProxy *memproxy = read_op->getMemoryProxy();
-
-      if (memproxy->getExecutor() == nullptr) {
-        ExecutionGroup *group = make_group(memproxy->getWriteBufferOperation());
-        memproxy->setExecutor(group);
-      }
-    }
-  }
-}
-
 /** Create a graphviz representation of the NodeOperationBuilder. */
 std::ostream &operator<<(std::ostream &os, const NodeOperationBuilder &builder)
 {
@@ -703,15 +497,6 @@ std::ostream &operator<<(std::ostream &os, const NodeOperationBuilder &builder)
   for (const NodeOperationBuilder::Link &link : builder.get_links()) {
     os << "    op" << link.from()->getOperation().get_id() << " -> op"
        << link.to()->getOperation().get_id() << ";\n";
-  }
-  for (const NodeOperation *operation : builder.get_operations()) {
-    if (operation->get_flags().is_read_buffer_operation) {
-      const ReadBufferOperation &read_operation = static_cast<const ReadBufferOperation &>(
-          *operation);
-      const WriteBufferOperation &write_operation =
-          *read_operation.getMemoryProxy()->getWriteBufferOperation();
-      os << "    op" << write_operation.get_id() << " -> op" << read_operation.get_id() << ";\n";
-    }
   }
 
   os << "}\n";

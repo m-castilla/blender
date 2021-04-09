@@ -51,10 +51,6 @@ set(SRC
 
   intern/COM_CPUDevice.cc
   intern/COM_CPUDevice.h
-  intern/COM_ChunkOrder.cc
-  intern/COM_ChunkOrder.h
-  intern/COM_ChunkOrderHotspot.cc
-  intern/COM_ChunkOrderHotspot.h
   intern/COM_CompositorContext.cc
   intern/COM_CompositorContext.h
   intern/COM_Converter.cc
@@ -64,14 +60,8 @@ set(SRC
   intern/COM_Debug.h
   intern/COM_Device.cc
   intern/COM_Device.h
-  intern/COM_ExecutionGroup.cc
-  intern/COM_ExecutionGroup.h
   intern/COM_ExecutionSystem.cc
   intern/COM_ExecutionSystem.h
-  intern/COM_MemoryBuffer.cc
-  intern/COM_MemoryBuffer.h
-  intern/COM_MemoryProxy.cc
-  intern/COM_MemoryProxy.h
   intern/COM_MetaData.cc
   intern/COM_MetaData.h
   intern/COM_Node.cc
@@ -136,16 +126,12 @@ set(SRC
   operations/COM_GammaOperation.cc
   operations/COM_GammaOperation.h
 
-  operations/COM_ReadBufferOperation.cc
-  operations/COM_ReadBufferOperation.h
   operations/COM_SetColorOperation.cc
   operations/COM_SetColorOperation.h
   operations/COM_SetValueOperation.cc
   operations/COM_SetValueOperation.h
   operations/COM_SetVectorOperation.cc
   operations/COM_SetVectorOperation.h
-  operations/COM_WriteBufferOperation.cc
-  operations/COM_WriteBufferOperation.h
 
   # Distort operation
   operations/COM_ScaleOperation.cc

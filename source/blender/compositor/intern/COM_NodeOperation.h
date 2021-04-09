@@ -27,18 +27,12 @@
 #include "BLI_threads.h"
 
 #include "COM_Enums.h"
-#include "COM_MemoryBuffer.h"
-#include "COM_MemoryProxy.h"
 #include "COM_MetaData.h"
 #include "COM_Node.h"
 
 #include "clew.h"
 
 namespace blender::compositor {
-
-class OpenCLDevice;
-class ReadBufferOperation;
-class WriteBufferOperation;
 
 class NodeOperation;
 typedef NodeOperation SocketReader;
@@ -234,8 +228,6 @@ struct NodeOperationFlags {
     use_viewer_border = false;
     is_resolution_set = false;
     is_set_operation = false;
-    is_read_buffer_operation = false;
-    is_write_buffer_operation = false;
     is_proxy_operation = false;
     is_viewer_operation = false;
     is_preview_operation = false;
@@ -471,11 +463,6 @@ class NodeOperation {
 
   virtual void deinitializeTileData(rcti * /*rect*/, void * /*data*/)
   {
-  }
-
-  virtual MemoryBuffer *getInputMemoryBuffer(MemoryBuffer ** /*memoryBuffers*/)
-  {
-    return 0;
   }
 
   /**

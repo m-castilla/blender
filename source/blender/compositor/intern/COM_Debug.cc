@@ -36,9 +36,7 @@ extern "C" {
 #include "COM_ExecutionSystem.h"
 #include "COM_Node.h"
 
-#include "COM_ReadBufferOperation.h"
 #include "COM_ViewerOperation.h"
-#include "COM_WriteBufferOperation.h"
 
 namespace blender::compositor {
 

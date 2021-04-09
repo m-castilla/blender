@@ -22,6 +22,7 @@
 
 #include "BLI_rect.h"
 
+#include <functional>
 #include <ostream>
 
 namespace blender::compositor {
@@ -36,19 +37,9 @@ struct WorkPackage {
   eWorkPackageState state = eWorkPackageState::NotScheduled;
 
   /**
-   * \brief executionGroup with the operations-setup to be evaluated
+   * Work execute function.
    */
-  ExecutionGroup *execution_group;
-
-  /**
-   * \brief number of the chunk to be executed
-   */
-  unsigned int chunk_number;
-
-  /**
-   * Area of the execution group that the work package calculates.
-   */
-  rcti rect;
+  std::function<void()> execute;
 
 #ifdef WITH_CXX_GUARDEDALLOC
   MEM_CXX_CLASS_ALLOC_FUNCS("COM:WorkPackage")
