@@ -398,23 +398,6 @@ void ExecutionGroup::execute(ExecutionSystem *graph)
   DebugInfo::graphviz(graph);
 }
 
-MemoryBuffer **ExecutionGroup::getInputBuffersOpenCL(int chunkNumber)
-{
-  WorkPackage &work_package = m_work_packages[chunkNumber];
-
-  MemoryBuffer **memoryBuffers = (MemoryBuffer **)MEM_callocN(
-      sizeof(MemoryBuffer *) * this->m_max_read_buffer_offset, __func__);
-  rcti output;
-  for (ReadBufferOperation *readOperation : m_read_operations) {
-    MemoryProxy *memoryProxy = readOperation->getMemoryProxy();
-    this->determineDependingAreaOfInterest(&work_package.rect, readOperation, &output);
-    MemoryBuffer *memoryBuffer = memoryProxy->getExecutor()->constructConsolidatedMemoryBuffer(
-        *memoryProxy, output);
-    memoryBuffers[readOperation->getOffset()] = memoryBuffer;
-  }
-  return memoryBuffers;
-}
-
 MemoryBuffer *ExecutionGroup::constructConsolidatedMemoryBuffer(MemoryProxy &memoryProxy,
                                                                 rcti &rect)
 {

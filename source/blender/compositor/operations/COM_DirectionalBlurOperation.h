@@ -58,13 +58,6 @@ class DirectionalBlurOperation : public NodeOperation, public QualityStepHelper 
   {
     this->m_data = data;
   }
-
-  void executeOpenCL(OpenCLDevice *device,
-                     MemoryBuffer *outputMemoryBuffer,
-                     cl_mem clOutputBuffer,
-                     MemoryBuffer **inputMemoryBuffers,
-                     std::list<cl_mem> *clMemToCleanUp,
-                     std::list<cl_kernel> *clKernelsToCleanUp) override;
 };
 
 }  // namespace blender::compositor

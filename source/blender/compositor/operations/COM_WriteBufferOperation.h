@@ -23,7 +23,6 @@
 
 namespace blender::compositor {
 
-class OpenCLDevice;
 class MemoryProxy;
 
 /**
@@ -51,11 +50,6 @@ class WriteBufferOperation : public NodeOperation {
   void executeRegion(rcti *rect, unsigned int tileNumber) override;
   void initExecution() override;
   void deinitExecution() override;
-  void executeOpenCLRegion(OpenCLDevice *device,
-                           rcti *rect,
-                           unsigned int chunkNumber,
-                           MemoryBuffer **memoryBuffers,
-                           MemoryBuffer *outputBuffer) override;
   void determineResolution(unsigned int resolution[2],
                            unsigned int preferredResolution[2]) override;
   void readResolutionFromInputSocket();

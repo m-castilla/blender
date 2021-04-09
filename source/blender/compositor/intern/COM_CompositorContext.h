@@ -73,11 +73,6 @@ class CompositorContext {
   bNodeInstanceHash *m_previews;
 
   /**
-   * \brief does this system have active opencl devices?
-   */
-  bool m_hasActiveOpenCLDevices;
-
-  /**
    * \brief Skip slow nodes
    */
   bool m_fastCalculation;
@@ -222,22 +217,6 @@ class CompositorContext {
    * \brief get the current frame-number of the scene in this context
    */
   int getFramenumber() const;
-
-  /**
-   * \brief has this system active openclDevices?
-   */
-  bool getHasActiveOpenCLDevices() const
-  {
-    return this->m_hasActiveOpenCLDevices;
-  }
-
-  /**
-   * \brief set has this system active openclDevices?
-   */
-  void setHasActiveOpenCLDevices(bool hasAvtiveOpenCLDevices)
-  {
-    this->m_hasActiveOpenCLDevices = hasAvtiveOpenCLDevices;
-  }
 
   /**
    * \brief get the active rendering view

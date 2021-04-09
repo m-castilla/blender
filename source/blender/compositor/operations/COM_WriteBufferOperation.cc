@@ -17,7 +17,6 @@
  */
 
 #include "COM_WriteBufferOperation.h"
-#include "COM_OpenCLDevice.h"
 #include "COM_defines.h"
 #include <cstdio>
 
@@ -108,102 +107,6 @@ void WriteBufferOperation::executeRegion(rcti *rect, unsigned int /*tileNumber*/
       }
     }
   }
-}
-
-void WriteBufferOperation::executeOpenCLRegion(OpenCLDevice *device,
-                                               rcti * /*rect*/,
-                                               unsigned int /*chunkNumber*/,
-                                               MemoryBuffer **inputMemoryBuffers,
-                                               MemoryBuffer *outputBuffer)
-{
-  float *outputFloatBuffer = outputBuffer->getBuffer();
-  cl_int error;
-  /*
-   * 1. create cl_mem from outputbuffer
-   * 2. call NodeOperation (input) executeOpenCLChunk(.....)
-   * 3. schedule read back from opencl to main device (outputbuffer)
-   * 4. schedule native callback
-   *
-   * note: list of cl_mem will be filled by 2, and needs to be cleaned up by 4
-   */
-  // STEP 1
-  const unsigned int outputBufferWidth = outputBuffer->getWidth();
-  const unsigned int outputBufferHeight = outputBuffer->getHeight();
-
-  const cl_image_format *imageFormat = OpenCLDevice::determineImageFormat(outputBuffer);
-
-  cl_mem clOutputBuffer = clCreateImage2D(device->getContext(),
-                                          CL_MEM_WRITE_ONLY | CL_MEM_USE_HOST_PTR,
-                                          imageFormat,
-                                          outputBufferWidth,
-                                          outputBufferHeight,
-                                          0,
-                                          outputFloatBuffer,
-                                          &error);
-  if (error != CL_SUCCESS) {
-    printf("CLERROR[%d]: %s\n", error, clewErrorString(error));
-  }
-
-  // STEP 2
-  std::list<cl_mem> *clMemToCleanUp = new std::list<cl_mem>();
-  clMemToCleanUp->push_back(clOutputBuffer);
-  std::list<cl_kernel> *clKernelsToCleanUp = new std::list<cl_kernel>();
-
-  this->m_input->executeOpenCL(device,
-                               outputBuffer,
-                               clOutputBuffer,
-                               inputMemoryBuffers,
-                               clMemToCleanUp,
-                               clKernelsToCleanUp);
-
-  // STEP 3
-
-  size_t origin[3] = {0, 0, 0};
-  size_t region[3] = {outputBufferWidth, outputBufferHeight, 1};
-
-  //  clFlush(queue);
-  //  clFinish(queue);
-
-  error = clEnqueueBarrier(device->getQueue());
-  if (error != CL_SUCCESS) {
-    printf("CLERROR[%d]: %s\n", error, clewErrorString(error));
-  }
-  error = clEnqueueReadImage(device->getQueue(),
-                             clOutputBuffer,
-                             CL_TRUE,
-                             origin,
-                             region,
-                             0,
-                             0,
-                             outputFloatBuffer,
-                             0,
-                             nullptr,
-                             nullptr);
-  if (error != CL_SUCCESS) {
-    printf("CLERROR[%d]: %s\n", error, clewErrorString(error));
-  }
-
-  this->getMemoryProxy()->getBuffer()->fill_from(*outputBuffer);
-
-  // STEP 4
-  while (!clMemToCleanUp->empty()) {
-    cl_mem mem = clMemToCleanUp->front();
-    error = clReleaseMemObject(mem);
-    if (error != CL_SUCCESS) {
-      printf("CLERROR[%d]: %s\n", error, clewErrorString(error));
-    }
-    clMemToCleanUp->pop_front();
-  }
-
-  while (!clKernelsToCleanUp->empty()) {
-    cl_kernel kernel = clKernelsToCleanUp->front();
-    error = clReleaseKernel(kernel);
-    if (error != CL_SUCCESS) {
-      printf("CLERROR[%d]: %s\n", error, clewErrorString(error));
-    }
-    clKernelsToCleanUp->pop_front();
-  }
-  delete clKernelsToCleanUp;
 }
 
 void WriteBufferOperation::determineResolution(unsigned int resolution[2],

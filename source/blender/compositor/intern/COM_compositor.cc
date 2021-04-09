@@ -89,9 +89,11 @@ void COM_execute(RenderData *render_data,
   compositor_init_node_previews(render_data, node_tree);
   compositor_reset_node_tree_status(node_tree);
 
-  /* Initialize workscheduler. */
   const bool use_opencl = (node_tree->flag & NTREE_COM_OPENCL) != 0;
-  blender::compositor::WorkScheduler::initialize(use_opencl, BKE_render_num_threads(render_data));
+  /* TODO setup computing system */
+
+  /* Initialize workscheduler. */
+  blender::compositor::WorkScheduler::initialize(BKE_render_num_threads(render_data));
 
   /* Execute. */
   const bool twopass = (node_tree->flag & NTREE_TWO_PASS) && !rendering;

@@ -51,7 +51,7 @@ struct WorkScheduler {
    *
    * This function can be called multiple times to lazily initialize OpenCL.
    */
-  static void initialize(bool use_opencl, int num_cpu_threads);
+  static void initialize(int num_cpu_threads);
 
   /**
    * \brief deinitialize the WorkScheduler
@@ -78,14 +78,6 @@ struct WorkScheduler {
    * \brief wait for all work to be completed.
    */
   static void finish();
-
-  /**
-   * \brief Are there OpenCL capable GPU devices initialized?
-   * the result of this method is stored in the CompositorContext
-   * A node can generate a different operation tree when OpenCLDevices exists.
-   * \see CompositorContext.getHasActiveOpenCLDevices
-   */
-  static bool has_gpu_devices();
 
   static int current_thread_id();
 
