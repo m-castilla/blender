@@ -21,6 +21,7 @@
 set(INC
   .
   intern
+  intern/computing
   nodes
   operations
   ../blenkernel
@@ -82,6 +83,26 @@ set(SRC
 
   operations/COM_QualityStepHelper.cc
   operations/COM_QualityStepHelper.h
+
+    #computing
+  intern/computing/COM_compute_types.h
+  intern/computing/COM_ComputeDevice.cpp
+  intern/computing/COM_ComputeDevice.h
+  intern/computing/COM_ComputeKernel.cpp
+  intern/computing/COM_ComputeKernel.h
+  intern/computing/COM_ComputeManager.cpp
+  intern/computing/COM_ComputeManager.h
+  intern/computing/COM_ComputeNoneManager.h
+  intern/computing/COM_ComputePlatform.cpp
+  intern/computing/COM_ComputePlatform.h
+  intern/computing/opencl/COM_OpenCLDevice.cpp
+  intern/computing/opencl/COM_OpenCLDevice.h
+  intern/computing/opencl/COM_OpenCLKernel.cpp
+  intern/computing/opencl/COM_OpenCLKernel.h
+  intern/computing/opencl/COM_OpenCLManager.cpp
+  intern/computing/opencl/COM_OpenCLManager.h
+  intern/computing/opencl/COM_OpenCLPlatform.cpp
+  intern/computing/opencl/COM_OpenCLPlatform.h
 
   # Internal nodes
   nodes/COM_SocketProxyNode.cc
