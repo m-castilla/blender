@@ -24,6 +24,7 @@
 #  include <algorithm>
 #  include <fstream>
 #  include <iostream>
+#  include <memory>
 
 #  include "BLI_allocator.hh"
 #  include "BLI_array.hh"
@@ -38,6 +39,7 @@
 #  include "BLI_math_mpq.hh"
 #  include "BLI_mpq2.hh"
 #  include "BLI_mpq3.hh"
+#  include "BLI_set.hh"
 #  include "BLI_span.hh"
 #  include "BLI_task.h"
 #  include "BLI_threads.h"
@@ -75,7 +77,13 @@ bool Vert::operator==(const Vert &other) const
 
 uint64_t Vert::hash() const
 {
-  return co_exact.hash();
+  uint64_t x = *reinterpret_cast<const uint64_t *>(&co.x);
+  uint64_t y = *reinterpret_cast<const uint64_t *>(&co.y);
+  uint64_t z = *reinterpret_cast<const uint64_t *>(&co.z);
+  x = (x >> 56) ^ (x >> 46) ^ x;
+  y = (y >> 55) ^ (y >> 45) ^ y;
+  z = (z >> 54) ^ (z >> 44) ^ z;
+  return x ^ y ^ z;
 }
 
 std::ostream &operator<<(std::ostream &os, const Vert *v)
@@ -144,15 +152,15 @@ bool Plane::exact_populated() const
 
 uint64_t Plane::hash() const
 {
-  constexpr uint64_t h1 = 33;
-  constexpr uint64_t h2 = 37;
-  constexpr uint64_t h3 = 39;
-  uint64_t hashx = hash_mpq_class(this->norm_exact.x);
-  uint64_t hashy = hash_mpq_class(this->norm_exact.y);
-  uint64_t hashz = hash_mpq_class(this->norm_exact.z);
-  uint64_t hashd = hash_mpq_class(this->d_exact);
-  uint64_t ans = hashx ^ (hashy * h1) ^ (hashz * h1 * h2) ^ (hashd * h1 * h2 * h3);
-  return ans;
+  uint64_t x = *reinterpret_cast<const uint64_t *>(&this->norm.x);
+  uint64_t y = *reinterpret_cast<const uint64_t *>(&this->norm.y);
+  uint64_t z = *reinterpret_cast<const uint64_t *>(&this->norm.z);
+  uint64_t d = *reinterpret_cast<const uint64_t *>(&this->d);
+  x = (x >> 56) ^ (x >> 46) ^ x;
+  y = (y >> 55) ^ (y >> 45) ^ y;
+  z = (z >> 54) ^ (z >> 44) ^ z;
+  d = (d >> 53) ^ (d >> 43) ^ d;
+  return x ^ y ^ z ^ d;
 }
 
 std::ostream &operator<<(std::ostream &os, const Plane *plane)
@@ -314,7 +322,7 @@ class IMeshArena::IMeshArenaImpl : NonCopyable, NonMovable {
     {
     }
 
-    uint32_t hash() const
+    uint64_t hash() const
     {
       return vert->hash();
     }
@@ -325,7 +333,7 @@ class IMeshArena::IMeshArenaImpl : NonCopyable, NonMovable {
     }
   };
 
-  VectorSet<VSetKey> vset_; /* TODO: replace with Set */
+  Set<VSetKey> vset_;
 
   /**
    * Ownership of the Vert memory is here, so destroying this reclaims that memory.
@@ -433,8 +441,7 @@ class IMeshArena::IMeshArenaImpl : NonCopyable, NonMovable {
 
   const Vert *find_vert(const mpq3 &co)
   {
-    const Vert *ans;
-    Vert vtry(co, double3(), NO_INDEX, NO_INDEX);
+    Vert vtry(co, double3(co[0].get_d(), co[1].get_d(), co[2].get_d()), NO_INDEX, NO_INDEX);
     VSetKey vskey(&vtry);
     if (intersect_use_threading) {
 #  ifdef USE_SPINLOCK
@@ -443,13 +450,7 @@ class IMeshArena::IMeshArenaImpl : NonCopyable, NonMovable {
       BLI_mutex_lock(mutex_);
 #  endif
     }
-    int i = vset_.index_of_try(vskey);
-    if (i == -1) {
-      ans = nullptr;
-    }
-    else {
-      ans = vset_[i].vert;
-    }
+    const VSetKey *lookup = vset_.lookup_key_ptr(vskey);
     if (intersect_use_threading) {
 #  ifdef USE_SPINLOCK
       BLI_spin_unlock(&lock_);
@@ -457,7 +458,10 @@ class IMeshArena::IMeshArenaImpl : NonCopyable, NonMovable {
       BLI_mutex_unlock(mutex_);
 #  endif
     }
-    return ans;
+    if (!lookup) {
+      return nullptr;
+    }
+    return lookup->vert;
   }
 
   /**
@@ -492,8 +496,8 @@ class IMeshArena::IMeshArenaImpl : NonCopyable, NonMovable {
       BLI_mutex_lock(mutex_);
 #  endif
     }
-    int i = vset_.index_of_try(vskey);
-    if (i == -1) {
+    const VSetKey *lookup = vset_.lookup_key_ptr(vskey);
+    if (!lookup) {
       vskey.vert = new Vert(mco, dco, next_vert_id_++, orig);
       vset_.add_new(vskey);
       allocated_verts_.append(std::unique_ptr<Vert>(vskey.vert));
@@ -505,7 +509,7 @@ class IMeshArena::IMeshArenaImpl : NonCopyable, NonMovable {
        * This is the intended semantics: if the Vert already
        * exists then we are merging verts and using the first-seen
        * one as the canonical one. */
-      ans = vset_[i].vert;
+      ans = lookup->vert;
     }
     if (intersect_use_threading) {
 #  ifdef USE_SPINLOCK
@@ -520,12 +524,10 @@ class IMeshArena::IMeshArenaImpl : NonCopyable, NonMovable {
 
 IMeshArena::IMeshArena()
 {
-  pimpl_ = std::unique_ptr<IMeshArenaImpl>(new IMeshArenaImpl());
+  pimpl_ = std::make_unique<IMeshArenaImpl>();
 }
 
-IMeshArena::~IMeshArena()
-{
-}
+IMeshArena::~IMeshArena() = default;
 
 void IMeshArena::reserve(int vert_num_hint, int face_num_hint)
 {
@@ -695,7 +697,7 @@ void IMesh::remove_null_faces()
 {
   int64_t nullcount = 0;
   for (Face *f : this->face_) {
-    if (f == NULL) {
+    if (f == nullptr) {
       ++nullcount;
     }
   }
@@ -748,27 +750,6 @@ struct BoundingBox {
   BoundingBox() = default;
   BoundingBox(const float3 &min, const float3 &max) : min(min), max(max)
   {
-  }
-  BoundingBox(const BoundingBox &other) : min(other.min), max(other.max)
-  {
-  }
-  BoundingBox(BoundingBox &&other) noexcept : min(std::move(other.min)), max(std::move(other.max))
-  {
-  }
-  ~BoundingBox() = default;
-  BoundingBox operator=(const BoundingBox &other)
-  {
-    if (this != &other) {
-      min = other.min;
-      max = other.max;
-    }
-    return *this;
-  }
-  BoundingBox operator=(BoundingBox &&other) noexcept
-  {
-    min = std::move(other.min);
-    max = std::move(other.max);
-    return *this;
   }
 
   void combine(const float3 &p)
@@ -932,28 +913,6 @@ class CoplanarCluster {
   {
     this->add_tri(t, bb);
   }
-  CoplanarCluster(const CoplanarCluster &other) : tris_(other.tris_), bb_(other.bb_)
-  {
-  }
-  CoplanarCluster(CoplanarCluster &&other) noexcept
-      : tris_(std::move(other.tris_)), bb_(std::move(other.bb_))
-  {
-  }
-  ~CoplanarCluster() = default;
-  CoplanarCluster &operator=(const CoplanarCluster &other)
-  {
-    if (this != &other) {
-      tris_ = other.tris_;
-      bb_ = other.bb_;
-    }
-    return *this;
-  }
-  CoplanarCluster &operator=(CoplanarCluster &&other) noexcept
-  {
-    tris_ = std::move(other.tris_);
-    bb_ = std::move(other.bb_);
-    return *this;
-  }
 
   /* Assume that caller knows this will not be a duplicate. */
   void add_tri(int t, const BoundingBox &bb)
@@ -1051,58 +1010,23 @@ static std::ostream &operator<<(std::ostream &os, const CoplanarClusterInfo &cli
 enum ITT_value_kind { INONE, IPOINT, ISEGMENT, ICOPLANAR };
 
 struct ITT_value {
-  enum ITT_value_kind kind;
-  mpq3 p1;      /* Only relevant for IPOINT and ISEGMENT kind. */
-  mpq3 p2;      /* Only relevant for ISEGMENT kind. */
-  int t_source; /* Index of the source triangle that intersected the target one. */
+  mpq3 p1;           /* Only relevant for IPOINT and ISEGMENT kind. */
+  mpq3 p2;           /* Only relevant for ISEGMENT kind. */
+  int t_source = -1; /* Index of the source triangle that intersected the target one. */
+  enum ITT_value_kind kind = INONE;
 
-  ITT_value() : kind(INONE), t_source(-1)
+  ITT_value() = default;
+  explicit ITT_value(ITT_value_kind k) : kind(k)
   {
   }
-  ITT_value(ITT_value_kind k) : kind(k), t_source(-1)
+  ITT_value(ITT_value_kind k, int tsrc) : t_source(tsrc), kind(k)
   {
   }
-  ITT_value(ITT_value_kind k, int tsrc) : kind(k), t_source(tsrc)
+  ITT_value(ITT_value_kind k, const mpq3 &p1) : p1(p1), kind(k)
   {
   }
-  ITT_value(ITT_value_kind k, const mpq3 &p1) : kind(k), p1(p1), t_source(-1)
+  ITT_value(ITT_value_kind k, const mpq3 &p1, const mpq3 &p2) : p1(p1), p2(p2), kind(k)
   {
-  }
-  ITT_value(ITT_value_kind k, const mpq3 &p1, const mpq3 &p2)
-      : kind(k), p1(p1), p2(p2), t_source(-1)
-  {
-  }
-  ITT_value(const ITT_value &other)
-      : kind(other.kind), p1(other.p1), p2(other.p2), t_source(other.t_source)
-  {
-  }
-  ITT_value(ITT_value &&other) noexcept
-      : kind(other.kind),
-        p1(std::move(other.p1)),
-        p2(std::move(other.p2)),
-        t_source(other.t_source)
-  {
-  }
-  ~ITT_value()
-  {
-  }
-  ITT_value &operator=(const ITT_value &other)
-  {
-    if (this != &other) {
-      kind = other.kind;
-      p1 = other.p1;
-      p2 = other.p2;
-      t_source = other.t_source;
-    }
-    return *this;
-  }
-  ITT_value &operator=(ITT_value &&other) noexcept
-  {
-    kind = other.kind;
-    p1 = std::move(other.p1);
-    p2 = std::move(other.p2);
-    t_source = other.t_source;
-    return *this;
   }
 };
 
@@ -1381,7 +1305,7 @@ static ITT_value itt_canon2(const mpq3 &p1,
   return ITT_value(ISEGMENT, intersect_1, intersect_2);
 }
 
-/* Helper function for intersect_tri_tri. Args have been canonicalized for triangle 1. */
+/* Helper function for intersect_tri_tri. Arguments have been canonicalized for triangle 1. */
 
 static ITT_value itt_canon1(const mpq3 &p1,
                             const mpq3 &q1,
@@ -2022,7 +1946,7 @@ class TriOverlaps {
     if (dbg_level > 0) {
       std::cout << "TriOverlaps construction\n";
     }
-    /* Tree type is 8 => octtree; axis = 6 => using XYZ axes only. */
+    /* Tree type is 8 => octree; axis = 6 => using XYZ axes only. */
     tree_ = BLI_bvhtree_new(tm.face_size(), FLT_EPSILON, 8, 6);
     /* In the common case of a binary boolean and no self intersection in
      * each shape, we will use two trees and simple bounding box overlap. */
@@ -2054,12 +1978,12 @@ class TriOverlaps {
     if (two_trees_no_self) {
       BLI_bvhtree_balance(tree_b_);
       /* Don't expect a lot of trivial intersects in this case. */
-      overlap_ = BLI_bvhtree_overlap(tree_, tree_b_, &overlap_tot_, NULL, NULL);
+      overlap_ = BLI_bvhtree_overlap(tree_, tree_b_, &overlap_tot_, nullptr, nullptr);
     }
     else {
       CBData cbdata{tm, shape_fn, nshapes, use_self};
       if (nshapes == 1) {
-        overlap_ = BLI_bvhtree_overlap(tree_, tree_, &overlap_tot_, NULL, NULL);
+        overlap_ = BLI_bvhtree_overlap(tree_, tree_, &overlap_tot_, nullptr, nullptr);
       }
       else {
         overlap_ = BLI_bvhtree_overlap(
@@ -2174,8 +2098,8 @@ static void calc_overlap_itts_range_func(void *__restrict userdata,
 }
 
 /**
- * Fill in itt_map with the vector of ITT_values that result from intersecting the triangles in ov.
- * Use a canonical order for triangles: (a,b) where  a < b.
+ * Fill in itt_map with the vector of ITT_values that result from intersecting the triangles in
+ * ov. Use a canonical order for triangles: (a,b) where  a < b.
  */
 static void calc_overlap_itts(Map<std::pair<int, int>, ITT_value> &itt_map,
                               const IMesh &tm,
@@ -2231,8 +2155,7 @@ struct SubdivideTrisData {
         tm(tm),
         itt_map(itt_map),
         overlap(overlap),
-        arena(arena),
-        overlap_tri_range{}
+        arena(arena)
   {
   }
 };
@@ -2365,7 +2288,7 @@ static CDT_data calc_cluster_subdivided(const CoplanarClusterInfo &clinfo,
         std::pair<int, int> key = canon_int_pair(t, t_other);
         if (itt_map.contains(key)) {
           ITT_value itt = itt_map.lookup(key);
-          if (itt.kind != INONE && itt.kind != ICOPLANAR) {
+          if (!ELEM(itt.kind, INONE, ICOPLANAR)) {
             itts.append(itt);
             if (dbg_level > 0) {
               std::cout << "  itt = " << itt << "\n";
@@ -2375,7 +2298,7 @@ static CDT_data calc_cluster_subdivided(const CoplanarClusterInfo &clinfo,
       }
     }
   }
-  /* Use CDT to subdivide the cluster triangles and the points and segs in itts. */
+  /* Use CDT to subdivide the cluster triangles and the points and segments in itts. */
   CDT_data cd_data = prepare_cdt_input_for_cluster(tm, clinfo, c, itts);
   do_cdt(cd_data);
   return cd_data;

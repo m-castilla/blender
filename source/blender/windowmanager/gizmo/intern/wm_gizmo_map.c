@@ -158,7 +158,6 @@ void wm_gizmomap_select_array_remove(wmGizmoMap *gzmap, wmGizmo *gz)
 
 /* -------------------------------------------------------------------- */
 /** \name wmGizmoMap
- *
  * \{ */
 
 static wmGizmoMap *wm_gizmomap_new_from_type_ex(struct wmGizmoMapType *gzmap_type,
@@ -942,7 +941,7 @@ bool WM_gizmomap_select_all(bContext *C, wmGizmoMap *gzmap, const int action)
       changed = wm_gizmomap_deselect_all(gzmap);
       break;
     default:
-      BLI_assert(0);
+      BLI_assert_unreachable();
       break;
   }
 
@@ -1156,7 +1155,7 @@ ListBase *wm_gizmomap_groups_get(wmGizmoMap *gzmap)
   return &gzmap->groups;
 }
 
-void WM_gizmomap_message_subscribe(bContext *C,
+void WM_gizmomap_message_subscribe(const bContext *C,
                                    wmGizmoMap *gzmap,
                                    ARegion *region,
                                    struct wmMsgBus *mbus)
@@ -1182,7 +1181,6 @@ void WM_gizmomap_message_subscribe(bContext *C,
 
 /* -------------------------------------------------------------------- */
 /** \name Tooltip Handling
- *
  * \{ */
 
 struct ARegion *WM_gizmomap_tooltip_init(struct bContext *C,
@@ -1211,7 +1209,6 @@ struct ARegion *WM_gizmomap_tooltip_init(struct bContext *C,
 
 /* -------------------------------------------------------------------- */
 /** \name wmGizmoMapType
- *
  * \{ */
 
 wmGizmoMapType *WM_gizmomaptype_find(const struct wmGizmoMapType_Params *gzmap_params)
@@ -1261,9 +1258,6 @@ void wm_gizmomaptypes_free(void)
  */
 void wm_gizmos_keymap(wmKeyConfig *keyconf)
 {
-  /* we add this item-less keymap once and use it to group gizmo-group keymaps into it */
-  WM_keymap_ensure(keyconf, "Gizmos", 0, 0);
-
   LISTBASE_FOREACH (wmGizmoMapType *, gzmap_type, &gizmomaptypes) {
     LISTBASE_FOREACH (wmGizmoGroupTypeRef *, gzgt_ref, &gzmap_type->grouptype_refs) {
       wm_gizmogrouptype_setup_keymap(gzgt_ref->type, keyconf);
@@ -1277,7 +1271,6 @@ void wm_gizmos_keymap(wmKeyConfig *keyconf)
 
 /* -------------------------------------------------------------------- */
 /** \name Updates for Dynamic Type Registration
- *
  * \{ */
 
 void WM_gizmoconfig_update_tag_group_type_init(wmGizmoMapType *gzmap_type, wmGizmoGroupType *gzgt)

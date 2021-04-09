@@ -1194,7 +1194,10 @@ static void reconstruct_struct(const DNA_ReconstructInfo *reconstruct_info,
                             new_block + step->data.substruct.new_offset);
         break;
       case RECONSTRUCT_STEP_INIT_ZERO:
-        /* Do nothing, because the memory block has been calloced. */
+        /* Do nothing, because the memory block are zeroed (from #MEM_callocN).
+         *
+         * Note that the struct could be initialized with the default struct,
+         * however this complicates versioning, especially with flags, see: D4500. */
         break;
     }
   }
@@ -1699,7 +1702,7 @@ bool DNA_sdna_patch_struct(SDNA *sdna, const char *struct_name_old, const char *
   return false;
 }
 
-/* Make public if called often with same struct (avoid duplicate look-ups). */
+/* Make public if called often with same struct (avoid duplicate lookups). */
 static bool DNA_sdna_patch_struct_member_nr(SDNA *sdna,
                                             const int struct_name_nr,
                                             const char *elem_old,

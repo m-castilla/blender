@@ -18,6 +18,7 @@
  * \ingroup RNA
  */
 
+/* Use a define instead of `#pragma once` because of `BKE_addon.h`, `ED_object.h` & others. */
 #ifndef __RNA_TYPES_H__
 #define __RNA_TYPES_H__
 
@@ -618,7 +619,7 @@ typedef enum StructFlag {
   /** Indicates that this struct is an ID struct, and to use reference-counting. */
   STRUCT_ID = (1 << 0),
   STRUCT_ID_REFCOUNT = (1 << 1),
-  /** defaults on, clear for user preferences and similar */
+  /** defaults on, indicates when changes in members of a StructRNA should trigger undo steps. */
   STRUCT_UNDO = (1 << 2),
 
   /* internal flags */

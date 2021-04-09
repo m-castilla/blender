@@ -39,9 +39,7 @@
 #include "transform_snap.h"
 
 /* -------------------------------------------------------------------- */
-/* Transform (Normal Rotation) */
-
-/** \name Transform Normal Rotation
+/** \name Transform (Normal Rotation)
  * \{ */
 
 static void storeCustomLNorValue(TransDataContainer *tc, BMesh *bm)
@@ -129,7 +127,6 @@ void initNormalRotation(TransInfo *t)
   t->mode = TFM_NORMAL_ROTATION;
   t->transform = applyNormalRotation;
 
-  setInputPostFct(&t->mouse, postInputRotation);
   initMouseInputMode(t, &t->mouse, INPUT_ANGLE);
 
   t->idx_max = 0;

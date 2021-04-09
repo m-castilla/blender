@@ -112,14 +112,17 @@ set(OPENIMAGEIO_EXTRA_ARGS
   -DOPENEXR_IEX_LIBRARY=${LIBDIR}/openexr/lib/${LIBPREFIX}Iex${OPENEXR_VERSION_POSTFIX}${LIBEXT}
   -DOPENEXR_ILMIMF_LIBRARY=${LIBDIR}/openexr/lib/${LIBPREFIX}IlmImf${OPENEXR_VERSION_POSTFIX}${LIBEXT}
   -DSTOP_ON_WARNING=OFF
+  -DUSE_EXTERNAL_PUGIXML=ON
+  -DPUGIXML_LIBRARY=${LIBDIR}/pugixml/lib/${LIBPREFIX}pugixml${LIBEXT}
+  -DPUGIXML_INCLUDE_DIR=${LIBDIR}/pugixml/include/
   ${WEBP_FLAGS}
   ${OIIO_SIMD_FLAGS}
 )
 
 ExternalProject_Add(external_openimageio
-  URL ${OPENIMAGEIO_URI}
+  URL file://${PACKAGE_DIR}/${OPENIMAGEIO_FILE}
   DOWNLOAD_DIR ${DOWNLOAD_DIR}
-  URL_HASH MD5=${OPENIMAGEIO_HASH}
+  URL_HASH ${OPENIMAGEIO_HASH_TYPE}=${OPENIMAGEIO_HASH}
   PREFIX ${BUILD_DIR}/openimageio
   PATCH_COMMAND ${PATCH_CMD} -p 1 -N -d ${BUILD_DIR}/openimageio/src/external_openimageio/ < ${PATCH_DIR}/openimageio.diff
   CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${LIBDIR}/openimageio ${DEFAULT_CMAKE_FLAGS} ${OPENIMAGEIO_EXTRA_ARGS}
@@ -134,6 +137,7 @@ add_dependencies(
   external_jpeg
   external_boost
   external_tiff
+  external_pugixml
   external_openjpeg${OPENJPEG_POSTFIX}
   ${WEBP_DEP}
 )

@@ -30,7 +30,6 @@
 #include "BKE_global.h"
 #include "BKE_main.h"
 #include "BKE_movieclip.h"
-#include "BKE_report.h"
 #include "BKE_tracking.h"
 
 #include "WM_api.h"
@@ -185,7 +184,7 @@ static bool track_markers_initjob(bContext *C, TrackMarkersJob *tmj, bool backwa
     }
   }
 
-  tmj->context = BKE_autotrack_context_new(clip, &sc->user, backwards, true);
+  tmj->context = BKE_autotrack_context_new(clip, &sc->user, backwards);
 
   clip->tracking_context = tmj->context;
 
@@ -357,7 +356,7 @@ static int track_markers(bContext *C, wmOperator *op, bool use_job)
     G.is_break = false;
 
     WM_jobs_start(CTX_wm_manager(C), wm_job);
-    WM_cursor_wait(0);
+    WM_cursor_wait(false);
 
     /* Add modal handler for ESC. */
     WM_event_add_modal_handler(C, op);

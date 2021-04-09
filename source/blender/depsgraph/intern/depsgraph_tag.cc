@@ -25,9 +25,9 @@
 
 #include "intern/depsgraph_tag.h"
 
+#include <cstdio>
 #include <cstring> /* required for memset */
 #include <queue>
-#include <stdio.h>
 
 #include "BLI_math_bits.h"
 #include "BLI_task.h"
@@ -73,8 +73,7 @@ namespace deg = blender::deg;
 /* *********************** */
 /* Update Tagging/Flushing */
 
-namespace blender {
-namespace deg {
+namespace blender::deg {
 
 namespace {
 
@@ -254,7 +253,7 @@ void depsgraph_update_editors_tag(Main *bmain, Depsgraph *graph, ID *id)
 {
   /* NOTE: We handle this immediately, without delaying anything, to be
    * sure we don't cause threading issues with OpenGL. */
-  /* TODO(sergey): Make sure this works for CoW-ed datablocks as well. */
+  /* TODO(sergey): Make sure this works for CoW-ed data-blocks as well. */
   DEGEditorUpdateContext update_ctx = {nullptr};
   update_ctx.bmain = bmain;
   update_ctx.depsgraph = (::Depsgraph *)graph;
@@ -266,6 +265,10 @@ void depsgraph_update_editors_tag(Main *bmain, Depsgraph *graph, ID *id)
 void depsgraph_id_tag_copy_on_write(Depsgraph *graph, IDNode *id_node, eUpdateSource update_source)
 {
   ComponentNode *cow_comp = id_node->find_component(NodeType::COPY_ON_WRITE);
+  if (cow_comp == nullptr) {
+    BLI_assert(!deg_copy_on_write_is_needed(GS(id_node->id_orig->name)));
+    return;
+  }
   cow_comp->tag_update(graph, update_source);
 }
 
@@ -303,12 +306,12 @@ void depsgraph_tag_component(Depsgraph *graph,
 /* This is a tag compatibility with legacy code.
  *
  * Mainly, old code was tagging object with ID_RECALC_GEOMETRY tag to inform
- * that object's data datablock changed. Now API expects that ID is given
+ * that object's data data-block changed. Now API expects that ID is given
  * explicitly, but not all areas are aware of this yet. */
 void deg_graph_id_tag_legacy_compat(
     Main *bmain, Depsgraph *depsgraph, ID *id, IDRecalcFlag tag, eUpdateSource update_source)
 {
-  if (tag == ID_RECALC_GEOMETRY || tag == 0) {
+  if (ELEM(tag, ID_RECALC_GEOMETRY, 0)) {
     switch (GS(id->name)) {
       case ID_OB: {
         Object *object = (Object *)id;
@@ -617,7 +620,7 @@ void id_tag_update(Main *bmain, ID *id, int flag, eUpdateSource update_source)
 
   /* Accumulate all tags for an ID between two undo steps, so they can be
    * replayed for undo. */
-  id->recalc_after_undo_push |= deg_recalc_flags_effective(NULL, flag);
+  id->recalc_after_undo_push |= deg_recalc_flags_effective(nullptr, flag);
 }
 
 void graph_id_tag_update(
@@ -664,7 +667,7 @@ void graph_id_tag_update(
     IDRecalcFlag tag = (IDRecalcFlag)(1 << bitscan_forward_clear_i(&current_flag));
     graph_id_tag_update_single_flag(bmain, graph, id, id_node, tag, update_source);
   }
-  /* Special case for nested node tree datablocks. */
+  /* Special case for nested node tree data-blocks. */
   id_tag_update_ntree_special(bmain, graph, id, flag, update_source);
   /* Direct update tags means that something outside of simulated/cached
    * physics did change and that cache is to be invalidated.
@@ -676,8 +679,7 @@ void graph_id_tag_update(
   }
 }
 
-}  // namespace deg
-}  // namespace blender
+}  // namespace blender::deg
 
 const char *DEG_update_tag_as_string(IDRecalcFlag flag)
 {
@@ -775,12 +777,12 @@ void DEG_graph_time_tag_update(struct Depsgraph *depsgraph)
   deg_graph->tag_time_source();
 }
 
-/* Mark a particular datablock type as having changing. */
+/* Mark a particular data-block type as having changing. */
 void DEG_graph_id_type_tag(Depsgraph *depsgraph, short id_type)
 {
   if (id_type == ID_NT) {
-    /* Stupid workaround so parent datablocks of nested nodetree get looped
-     * over when we loop over tagged datablock types. */
+    /* Stupid workaround so parent data-blocks of nested node-tree get looped
+     * over when we loop over tagged data-block types. */
     DEG_graph_id_type_tag(depsgraph, ID_MA);
     DEG_graph_id_type_tag(depsgraph, ID_TE);
     DEG_graph_id_type_tag(depsgraph, ID_LA);
@@ -814,19 +816,31 @@ void DEG_on_visible_update(Main *bmain, const bool do_time)
   }
 }
 
+void DEG_enable_editors_update(Depsgraph *depsgraph)
+{
+  deg::Depsgraph *graph = (deg::Depsgraph *)depsgraph;
+  graph->use_editors_update = true;
+}
+
 /* Check if something was changed in the database and inform
  * editors about this. */
-void DEG_ids_check_recalc(
+void DEG_editors_update(
     Main *bmain, Depsgraph *depsgraph, Scene *scene, ViewLayer *view_layer, bool time)
 {
-  bool updated = time || DEG_id_type_any_updated(depsgraph);
+  deg::Depsgraph *graph = (deg::Depsgraph *)depsgraph;
 
-  DEGEditorUpdateContext update_ctx = {nullptr};
-  update_ctx.bmain = bmain;
-  update_ctx.depsgraph = depsgraph;
-  update_ctx.scene = scene;
-  update_ctx.view_layer = view_layer;
-  deg::deg_editors_scene_update(&update_ctx, updated);
+  if (graph->use_editors_update) {
+    bool updated = time || DEG_id_type_any_updated(depsgraph);
+
+    DEGEditorUpdateContext update_ctx = {nullptr};
+    update_ctx.bmain = bmain;
+    update_ctx.depsgraph = depsgraph;
+    update_ctx.scene = scene;
+    update_ctx.view_layer = view_layer;
+    deg::deg_editors_scene_update(&update_ctx, updated);
+  }
+
+  DEG_ids_clear_recalc(depsgraph);
 }
 
 static void deg_graph_clear_id_recalc_flags(ID *id)
@@ -840,7 +854,7 @@ static void deg_graph_clear_id_recalc_flags(ID *id)
   /* XXX And what about scene's master collection here? */
 }
 
-void DEG_ids_clear_recalc(Main *UNUSED(bmain), Depsgraph *depsgraph)
+void DEG_ids_clear_recalc(Depsgraph *depsgraph)
 {
   deg::Depsgraph *deg_graph = reinterpret_cast<deg::Depsgraph *>(depsgraph);
   /* TODO(sergey): Re-implement POST_UPDATE_HANDLER_WORKAROUND using entry_tags

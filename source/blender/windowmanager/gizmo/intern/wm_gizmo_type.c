@@ -18,6 +18,8 @@
  * \ingroup wm
  */
 
+#include <stdio.h>
+
 #include "BLI_ghash.h"
 #include "BLI_listbase.h"
 #include "BLI_utildefines.h"
@@ -45,6 +47,7 @@
 #include "wm_gizmo_intern.h"
 #include "wm_gizmo_wmapi.h"
 
+/* -------------------------------------------------------------------- */
 /** \name Gizmo Type Append
  *
  * \note This follows conventions from #WM_operatortype_find #WM_operatortype_append & friends.

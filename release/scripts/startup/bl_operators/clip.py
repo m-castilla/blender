@@ -139,7 +139,7 @@ def CLIP_default_settings_from_track(clip, track, framenr):
     settings.default_weight = track.weight
 
 
-class CLIP_OT_filter_tracks(bpy.types.Operator):
+class CLIP_OT_filter_tracks(Operator):
     """Filter tracks which has weirdly looking spikes in motion curves"""
     bl_label = "Filter Tracks"
     bl_idname = "clip.filter_tracks"
@@ -216,7 +216,7 @@ class CLIP_OT_filter_tracks(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class CLIP_OT_set_active_clip(bpy.types.Operator):
+class CLIP_OT_set_active_clip(Operator):
     bl_label = "Set Active Clip"
     bl_idname = "clip.set_active_clip"
 
@@ -414,8 +414,8 @@ class CLIP_OT_delete_proxy(Operator):
 
 
 class CLIP_OT_set_viewport_background(Operator):
-    """Set current movie clip as a camera background in 3D view-port """ \
-        """(works only when a 3D view-port is visible)"""
+    """Set current movie clip as a camera background in 3D Viewport """ \
+        """(works only when a 3D Viewport is visible)"""
 
     bl_idname = "clip.set_viewport_background"
     bl_label = "Set as Background"
@@ -960,7 +960,7 @@ class CLIP_OT_setup_tracking_scene(Operator):
             for ob in collection.objects:
                 ob.cycles.is_shadow_catcher = True
                 for child in collection.children:
-                    setup_shadow_catcher_collection(child)
+                    setup_shadow_catcher_objects(child)
 
         scene = context.scene
         fg_coll = bpy.data.collections["foreground", None]
@@ -1011,7 +1011,7 @@ class CLIP_OT_track_settings_as_default(Operator):
     """Copy tracking settings from active track to default settings"""
 
     bl_idname = "clip.track_settings_as_default"
-    bl_label = "Track Settings As Default"
+    bl_label = "Track Settings as Default"
     bl_options = {'UNDO', 'REGISTER'}
 
     @classmethod
@@ -1037,7 +1037,7 @@ class CLIP_OT_track_settings_as_default(Operator):
         return {'FINISHED'}
 
 
-class CLIP_OT_track_settings_to_track(bpy.types.Operator):
+class CLIP_OT_track_settings_to_track(Operator):
     """Copy tracking settings from active track to selected tracks"""
 
     bl_label = "Copy Track Settings"

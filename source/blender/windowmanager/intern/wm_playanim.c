@@ -1097,6 +1097,7 @@ static void playanim_window_open(const char *title, int posx, int posy, int size
   posy = (scr_h - posy - sizey);
 
   g_WS.ghost_window = GHOST_CreateWindow(g_WS.ghost_system,
+                                         NULL,
                                          title,
                                          posx,
                                          posy,
@@ -1104,6 +1105,7 @@ static void playanim_window_open(const char *title, int posx, int posy, int size
                                          sizey,
                                          /* could optionally start fullscreen */
                                          GHOST_kWindowStateNormal,
+                                         false,
                                          GHOST_kDrawingContextTypeOpenGL,
                                          glsettings);
 }
@@ -1144,7 +1146,6 @@ static char *wm_main_playanim_intern(int argc, const char **argv)
 
   PlayState ps = {0};
 
-  /* ps.doubleb   = true;*/ /* UNUSED */
   ps.go = true;
   ps.direction = true;
   ps.next_frame = 1;
@@ -1160,7 +1161,6 @@ static char *wm_main_playanim_intern(int argc, const char **argv)
   ps.indicator = false;
   ps.dropped_file[0] = 0;
   ps.zoom = 1.0f;
-  /* resetmap = false */
   ps.draw_flip[0] = false;
   ps.draw_flip[1] = false;
 
@@ -1274,7 +1274,7 @@ static char *wm_main_playanim_intern(int argc, const char **argv)
     g_WS.ghost_system = GHOST_CreateSystem();
     GHOST_AddEventConsumer(g_WS.ghost_system, consumer);
 
-    playanim_window_open("Blender:Anim", start_x, start_y, ibuf->x, ibuf->y);
+    playanim_window_open("Blender Animation Player", start_x, start_y, ibuf->x, ibuf->y);
   }
 
   GHOST_GetMainDisplayDimensions(g_WS.ghost_system, &maxwinx, &maxwiny);
@@ -1391,7 +1391,7 @@ static char *wm_main_playanim_intern(int argc, const char **argv)
     while (ps.picture) {
       int hasevent;
 #ifndef USE_IMB_CACHE
-      if (ibuf != NULL && ibuf->ftype == 0) {
+      if (ibuf != NULL && ibuf->ftype == IMB_FTYPE_NONE) {
         IMB_freeImBuf(ibuf);
       }
 #endif
@@ -1421,7 +1421,7 @@ static char *wm_main_playanim_intern(int argc, const char **argv)
 #endif
 
 #ifdef USE_FRAME_CACHE_LIMIT
-        /* really basic memory conservation scheme. Keep frames in a fifo queue */
+        /* Really basic memory conservation scheme. Keep frames in a FIFO queue. */
         node = inmempicsbase.last;
 
         while (node && added_images > PLAY_FRAME_CACHE_MAX) {
@@ -1619,8 +1619,8 @@ void WM_main_playanim(int argc, const char **argv)
 
     AUD_initOnce();
 
-    if (!(audio_device = AUD_init("OpenAL", specs, 1024, "Blender"))) {
-      audio_device = AUD_init("Null", specs, 0, "Blender");
+    if (!(audio_device = AUD_init(NULL, specs, 1024, "Blender"))) {
+      audio_device = AUD_init("None", specs, 0, "Blender");
     }
   }
 #endif
