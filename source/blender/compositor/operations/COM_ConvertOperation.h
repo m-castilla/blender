@@ -47,13 +47,6 @@ class ConvertColorToValueOperation : public ConvertBaseOperation {
   void executePixelSampled(float output[4], float x, float y, PixelSampler sampler) override;
 };
 
-class ConvertColorToBWOperation : public ConvertBaseOperation {
- public:
-  ConvertColorToBWOperation();
-
-  void executePixelSampled(float output[4], float x, float y, PixelSampler sampler) override;
-};
-
 class ConvertColorToVectorOperation : public ConvertBaseOperation {
  public:
   ConvertColorToVectorOperation();
@@ -82,62 +75,6 @@ class ConvertVectorToValueOperation : public ConvertBaseOperation {
   void executePixelSampled(float output[4], float x, float y, PixelSampler sampler) override;
 };
 
-class ConvertRGBToYCCOperation : public ConvertBaseOperation {
- private:
-  /** YCbCr mode (Jpeg, ITU601, ITU709) */
-  int m_mode;
-
- public:
-  ConvertRGBToYCCOperation();
-
-  void executePixelSampled(float output[4], float x, float y, PixelSampler sampler) override;
-
-  /** Set the YCC mode */
-  void setMode(int mode);
-};
-
-class ConvertYCCToRGBOperation : public ConvertBaseOperation {
- private:
-  /** YCbCr mode (Jpeg, ITU601, ITU709) */
-  int m_mode;
-
- public:
-  ConvertYCCToRGBOperation();
-
-  void executePixelSampled(float output[4], float x, float y, PixelSampler sampler) override;
-
-  /** Set the YCC mode */
-  void setMode(int mode);
-};
-
-class ConvertRGBToYUVOperation : public ConvertBaseOperation {
- public:
-  ConvertRGBToYUVOperation();
-
-  void executePixelSampled(float output[4], float x, float y, PixelSampler sampler) override;
-};
-
-class ConvertYUVToRGBOperation : public ConvertBaseOperation {
- public:
-  ConvertYUVToRGBOperation();
-
-  void executePixelSampled(float output[4], float x, float y, PixelSampler sampler) override;
-};
-
-class ConvertRGBToHSVOperation : public ConvertBaseOperation {
- public:
-  ConvertRGBToHSVOperation();
-
-  void executePixelSampled(float output[4], float x, float y, PixelSampler sampler) override;
-};
-
-class ConvertHSVToRGBOperation : public ConvertBaseOperation {
- public:
-  ConvertHSVToRGBOperation();
-
-  void executePixelSampled(float output[4], float x, float y, PixelSampler sampler) override;
-};
-
 class ConvertPremulToStraightOperation : public ConvertBaseOperation {
  public:
   ConvertPremulToStraightOperation();
@@ -150,39 +87,6 @@ class ConvertStraightToPremulOperation : public ConvertBaseOperation {
   ConvertStraightToPremulOperation();
 
   void executePixelSampled(float output[4], float x, float y, PixelSampler sampler) override;
-};
-
-class SeparateChannelOperation : public NodeOperation {
- private:
-  SocketReader *m_inputOperation;
-  int m_channel;
-
- public:
-  SeparateChannelOperation();
-  void executePixelSampled(float output[4], float x, float y, PixelSampler sampler) override;
-
-  void initExecution() override;
-  void deinitExecution() override;
-
-  void setChannel(int channel)
-  {
-    this->m_channel = channel;
-  }
-};
-
-class CombineChannelsOperation : public NodeOperation {
- private:
-  SocketReader *m_inputChannel1Operation;
-  SocketReader *m_inputChannel2Operation;
-  SocketReader *m_inputChannel3Operation;
-  SocketReader *m_inputChannel4Operation;
-
- public:
-  CombineChannelsOperation();
-  void executePixelSampled(float output[4], float x, float y, PixelSampler sampler) override;
-
-  void initExecution() override;
-  void deinitExecution() override;
 };
 
 }  // namespace blender::compositor
