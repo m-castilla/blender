@@ -18,6 +18,7 @@
 
 #include "COM_ComputeKernel.h"
 
+namespace blender::compositor {
 ComputeKernel::ComputeKernel(const blender::StringRef kernel_name) : m_kernel_name(kernel_name)
 {
 }
@@ -25,3 +26,5 @@ ComputeKernel::ComputeKernel(const blender::StringRef kernel_name) : m_kernel_na
 ComputeKernel::~ComputeKernel()
 {
 }
+
+}  // namespace blender::compositor

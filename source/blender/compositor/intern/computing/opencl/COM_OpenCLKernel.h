@@ -6,6 +6,7 @@
 #include "clew.h"
 #include <functional>
 
+namespace blender::compositor {
 class OpenCLManager;
 class OpenCLPlatform;
 class OpenCLDevice;
@@ -118,3 +119,5 @@ class OpenCLKernel : public ComputeKernel {
     addBufferArg(data, elem_size, n_elems, mem_access);
   }
 };
+
+}  // namespace blender::compositor

@@ -25,11 +25,12 @@
 #  include "MEM_guardedalloc.h"
 #endif
 
-class ComputeManager;
 namespace blender::compositor {
 
 #define COM_RECYCLING_ENABLED 1
 constexpr double COM_RECYCLING_FACTOR = 5.0;
+
+class ComputeManager;
 
 template<typename TBuffer,
          typename std::enable_if<std::is_base_of<BaseBuffer, TBuffer>::value>::type * = nullptr>

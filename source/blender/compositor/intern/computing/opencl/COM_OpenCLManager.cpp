@@ -8,6 +8,7 @@
 
 #include "clew.h"
 
+namespace blender::compositor {
 static void CL_CALLBACK clContextError(const char *errinfo,
                                        const void *UNUSED(private_info),
                                        size_t UNUSED(cb),
@@ -194,3 +195,5 @@ std::pair<cl_device_id *, int> OpenCLManager::checkDevicesRequiredCapabilities(
   }
   return std::make_pair(checked_devices, n_ok_devices);
 }
+
+}  // namespace blender::compositor

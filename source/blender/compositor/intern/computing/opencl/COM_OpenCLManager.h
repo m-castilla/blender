@@ -23,6 +23,7 @@
 #include "COM_ComputeManager.h"
 #include "clew.h"
 
+namespace blender::compositor {
 class OpenCLPlatform;
 class OpenCLDevice;
 class ComputeDevice;
@@ -52,3 +53,5 @@ class OpenCLManager : public ComputeManager {
   MEM_CXX_CLASS_ALLOC_FUNCS("COM:OpenCLManager")
 #endif
 };
+
+}  // namespace blender::compositor

@@ -28,6 +28,8 @@
 #  include "MEM_guardedalloc.h"
 #endif
 
+namespace blender::compositor {
+
 using ComputeKernelDeleter = std::function<void(ComputeKernel *)>;
 using ComputeKernelUniquePtr = std::unique_ptr<ComputeKernel, ComputeKernelDeleter>;
 
@@ -60,3 +62,5 @@ class ComputePlatform {
   MEM_CXX_CLASS_ALLOC_FUNCS("COM:ComputePlatform")
 #endif
 };
+
+}  // namespace blender::compositor

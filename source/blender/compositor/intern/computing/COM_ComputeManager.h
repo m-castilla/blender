@@ -24,6 +24,8 @@
 #  include "MEM_guardedalloc.h"
 #endif
 
+namespace blender::compositor {
+
 class ComputeKernel;
 class ComputeDevice;
 class ComputeManager {
@@ -59,3 +61,5 @@ class ComputeManager {
   MEM_CXX_CLASS_ALLOC_FUNCS("COM:ComputeManager")
 #endif
 };
+
+}  // namespace blender::compositor

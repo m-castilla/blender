@@ -18,9 +18,12 @@
 
 #include "COM_ComputeDevice.h"
 
+namespace blender::compositor {
 ComputeDevice::ComputeDevice() : m_initialized(false)
 {
 }
 ComputeDevice::~ComputeDevice()
 {
 }
+
+}  // namespace blender::compositor

@@ -25,6 +25,7 @@
 #include "COM_OpenCLPlatform.h"
 #include "MEM_guardedalloc.h"
 
+namespace blender::compositor {
 OpenCLKernel::OpenCLKernel(OpenCLManager &man,
                            OpenCLPlatform &platform,
                            OpenCLDevice *device,
@@ -216,3 +217,5 @@ void OpenCLKernel::addBufferArg(void *data, int elem_size, int n_elems, ComputeA
 
   addArg(sizeof(cl_mem), &buffer);
 }
+
+}  // namespace blender::compositor

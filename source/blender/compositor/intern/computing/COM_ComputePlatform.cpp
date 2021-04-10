@@ -20,6 +20,8 @@
 #include "BLI_assert.h"
 #include "COM_ComputeKernel.h"
 
+namespace blender::compositor {
+
 const int MAX_KERNELS_IN_CACHE = 1000;
 
 ComputePlatform::ComputePlatform() : m_kernels(), m_kernels_count(0)
@@ -97,3 +99,5 @@ void ComputePlatform::cleanKernelsCache()
   m_kernels.clear();
   m_kernels_count = 0;
 }
+
+}  // namespace blender::compositor

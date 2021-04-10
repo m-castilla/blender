@@ -23,6 +23,8 @@
 #endif
 #include "COM_ComputeManager.h"
 
+namespace blender::compositor {
+
 class ComputeNoneManager : public ComputeManager {
  protected:
   blender::Span<ComputeDevice *> getDevices() override
@@ -38,3 +40,5 @@ class ComputeNoneManager : public ComputeManager {
   MEM_CXX_CLASS_ALLOC_FUNCS("COM:ComputeNoneManager")
 #endif
 };
+
+}  // namespace blender::compositor

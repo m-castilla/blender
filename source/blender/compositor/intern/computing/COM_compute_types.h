@@ -18,8 +18,12 @@
 
 #pragma once
 
+namespace blender::compositor {
+
 enum class ComputeType { NONE, OPENCL };
 enum class ComputeDeviceType { CPU, GPU };
 enum class ComputeAccess { READ, WRITE, READ_WRITE };
 enum class ComputeInterpolation { BILINEAR, NEAREST };
 enum class ComputeExtend { UNCHECKED, CLIP, EXTEND, REPEAT, MIRROR };
+
+}  // namespace blender::compositor

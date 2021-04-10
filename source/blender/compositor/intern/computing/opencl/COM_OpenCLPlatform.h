@@ -22,6 +22,7 @@
 #include "COM_ComputePlatform.h"
 #include "clew.h"
 
+namespace blender::compositor {
 class OpenCLManager;
 class OpenCLPlatform : public ComputePlatform {
  private:
@@ -55,3 +56,5 @@ class OpenCLPlatform : public ComputePlatform {
   MEM_CXX_CLASS_ALLOC_FUNCS("COM:OpenCLPlatform")
 #endif
 };
+
+}  // namespace blender::compositor

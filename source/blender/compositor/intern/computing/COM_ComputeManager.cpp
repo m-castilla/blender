@@ -19,6 +19,8 @@
 #include "COM_ComputeManager.h"
 #include "COM_ComputeDevice.h"
 
+namespace blender::compositor {
+
 ComputeManager::ComputeManager() : m_device(nullptr), m_is_initialized(false)
 {
 }
@@ -45,3 +47,5 @@ void ComputeManager::initialize()
     m_is_initialized = true;
   }
 }
+
+}  // namespace blender::compositor

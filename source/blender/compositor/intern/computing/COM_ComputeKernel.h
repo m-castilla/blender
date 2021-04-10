@@ -25,6 +25,8 @@
 #include "BLI_string_ref.hh"
 #include "COM_compute_types.h"
 
+namespace blender::compositor {
+
 class ComputeDevice;
 class ComputeKernel {
  private:
@@ -67,3 +69,5 @@ class ComputeKernel {
   MEM_CXX_CLASS_ALLOC_FUNCS("COM:ComputeKernel")
 #endif
 };
+
+}  // namespace blender::compositor

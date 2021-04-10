@@ -3,6 +3,7 @@
 #include "COM_OpenCLKernel.h"
 #include "COM_OpenCLManager.h"
 
+namespace blender::compositor {
 /* CL_RGB/CL_FLOAT and CL_R/CL_FLOAT not supported in most implementations, we have to use CL_RGBA
  */
 const cl_image_format IMAGE_FORMAT_COLOR = {
@@ -107,3 +108,5 @@ void OpenCLPlatform::freeSampler(void *sampler)
 {
   m_man.printIfError(clReleaseSampler((cl_sampler)sampler));
 }
+
+}  // namespace blender::compositor

@@ -26,6 +26,8 @@
 #include <string>
 #include <unordered_map>
 
+namespace blender::compositor {
+
 class ComputeKernel;
 class ComputeDevice {
  private:
@@ -75,3 +77,5 @@ class ComputeDevice {
   MEM_CXX_CLASS_ALLOC_FUNCS("COM:ComputeDevice")
 #endif
 };
+
+}  // namespace blender::compositor

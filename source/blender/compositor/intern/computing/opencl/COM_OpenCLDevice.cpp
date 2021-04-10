@@ -7,6 +7,7 @@
 #include "MEM_guardedalloc.h"
 #include <algorithm>
 
+namespace blender::compositor {
 typedef enum COM_VendorID { NVIDIA = 0x10DE, AMD = 0x1002 } COM_VendorID;
 // const int DEFAULT_NVIDIA_GLOBAL_DIM = 64;
 // const int DEFAULT_OTHER_GLOBAL_DIM = 1024;
@@ -213,3 +214,5 @@ void OpenCLDevice::freeBuffer(void *device_buffer)
   cl_mem img = (cl_mem)device_buffer;
   m_man.printIfError(clReleaseMemObject(img));
 }
+
+}  // namespace blender::compositor
