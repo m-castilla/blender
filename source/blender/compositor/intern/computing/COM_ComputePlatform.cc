@@ -31,22 +31,6 @@ ComputePlatform::ComputePlatform() : m_kernels(), m_kernels_count(0)
 ComputePlatform::~ComputePlatform()
 {
   cleanKernelsCache();
-  for (auto sampler : m_samplers.values()) {
-    freeSampler(sampler);
-  }
-}
-
-void *ComputePlatform::getSampler(ComputeInterpolation interp, ComputeExtend extend)
-{
-  auto key = std::make_pair((int)interp, (int)extend);
-  if (m_samplers.contains(key)) {
-    return m_samplers.lookup(key);
-  }
-  else {
-    auto sampler = createSampler(interp, extend);
-    m_samplers.add(key, sampler);
-    return sampler;
-  }
 }
 
 ComputeKernelUniquePtr ComputePlatform::takeKernel(const blender::StringRef kernel_name,

@@ -11,12 +11,15 @@ const cl_image_format IMAGE_FORMAT_COLOR = {
     CL_FLOAT,
 };
 OpenCLPlatform::OpenCLPlatform(OpenCLManager &man, cl_context context, cl_program program)
-    : m_context(context), m_program(program), m_man(man)
+    : m_context(context), m_program(program), m_man(man), m_samplers()
 {
 }
 
 OpenCLPlatform::~OpenCLPlatform()
 {
+  for (auto sampler : m_samplers.values()) {
+    m_man.printIfError(clReleaseSampler((cl_sampler)sampler));
+  }
   if (m_program) {
     m_man.printIfError(clReleaseProgram(m_program));
   }
@@ -60,7 +63,7 @@ ComputeKernel *OpenCLPlatform::createKernel(const blender::StringRef kernel_name
   return (ComputeKernel *)kernel;
 }
 
-void *OpenCLPlatform::createSampler(ComputeInterpolation interp, ComputeExtend extend)
+cl_sampler OpenCLPlatform::createSampler(ComputeInterpolation interp, ComputeExtend extend)
 {
   cl_int error;
   cl_addressing_mode address;
@@ -104,9 +107,17 @@ void *OpenCLPlatform::createSampler(ComputeInterpolation interp, ComputeExtend e
   return sampler;
 }
 
-void OpenCLPlatform::freeSampler(void *sampler)
+cl_sampler OpenCLPlatform::getSampler(ComputeInterpolation interp, ComputeExtend extend)
 {
-  m_man.printIfError(clReleaseSampler((cl_sampler)sampler));
+  auto key = std::make_pair((int)interp, (int)extend);
+  if (m_samplers.contains(key)) {
+    return m_samplers.lookup(key);
+  }
+  else {
+    auto sampler = createSampler(interp, extend);
+    m_samplers.add(key, sampler);
+    return sampler;
+  }
 }
 
 }  // namespace blender::compositor

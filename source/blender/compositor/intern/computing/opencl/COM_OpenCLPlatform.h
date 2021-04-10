@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include "BLI_map.hh"
 #include "COM_ComputeDevice.h"
 #include "COM_ComputePlatform.h"
 #include "clew.h"
@@ -29,6 +30,7 @@ class OpenCLPlatform : public ComputePlatform {
   cl_context m_context;
   cl_program m_program;
   OpenCLManager &m_man;
+  blender::Map<std::pair<int, int>, cl_sampler> m_samplers;
 
  public:
   OpenCLPlatform(OpenCLManager &man, cl_context context, cl_program program);
@@ -45,12 +47,12 @@ class OpenCLPlatform : public ComputePlatform {
 
   const cl_image_format *getImageFormat() const;
   int getMemoryAccessFlag(ComputeAccess mem_access) const;
+  cl_sampler getSampler(ComputeInterpolation interp, ComputeExtend extend);
 
  protected:
   ComputeKernel *createKernel(const blender::StringRef kernel_name,
                               ComputeDevice *device) override;
-  virtual void *createSampler(ComputeInterpolation interp, ComputeExtend extend) override;
-  virtual void freeSampler(void *sampler) override;
+  cl_sampler createSampler(ComputeInterpolation interp, ComputeExtend extend);
 
 #ifdef WITH_CXX_GUARDEDALLOC
   MEM_CXX_CLASS_ALLOC_FUNCS("COM:OpenCLPlatform")

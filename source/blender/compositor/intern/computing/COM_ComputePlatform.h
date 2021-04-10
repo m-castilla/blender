@@ -38,12 +38,10 @@ class ComputeDevice;
 class ComputePlatform {
  private:
   blender::Map<std::string, blender::Vector<ComputeKernel *>> m_kernels;
-  blender::Map<std::pair<int, int>, void *> m_samplers;
   int m_kernels_count;
 
  public:
   ComputeKernelUniquePtr takeKernel(const blender::StringRef kernel_name, ComputeDevice *device);
-  void *getSampler(ComputeInterpolation interp, ComputeExtend extend);
 
   virtual ~ComputePlatform();
 
@@ -51,8 +49,6 @@ class ComputePlatform {
   ComputePlatform();
   virtual ComputeKernel *createKernel(const blender::StringRef kernel_name,
                                       ComputeDevice *device) = 0;
-  virtual void *createSampler(ComputeInterpolation interp, ComputeExtend extend) = 0;
-  virtual void freeSampler(void *sampler) = 0;
 
  private:
   void recycleKernel(ComputeKernel *kernel);

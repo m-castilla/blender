@@ -134,7 +134,7 @@ void OpenCLKernel::addBufferArg(void *cl_buffer)
 
 void OpenCLKernel::addSamplerArg(ComputeInterpolation interp, ComputeExtend extend)
 {
-  cl_sampler sampler = (cl_sampler)m_platform.getSampler(interp, extend);
+  cl_sampler sampler = m_platform.getSampler(interp, extend);
   addArg(sizeof(cl_sampler), &sampler);
 }
 
