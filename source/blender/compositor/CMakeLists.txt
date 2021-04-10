@@ -78,6 +78,8 @@ set(SRC
   intern/COM_NodeOperation.h
   intern/COM_NodeOperationBuilder.cc
   intern/COM_NodeOperationBuilder.h
+  intern/COM_OutputManager.cpp
+  intern/COM_OutputManager.h
   intern/COM_WorkPackage.cc
   intern/COM_WorkPackage.h
   intern/COM_WorkScheduler.cc
