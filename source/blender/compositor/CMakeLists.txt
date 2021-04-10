@@ -51,7 +51,7 @@ set(SRC
   COM_defines.h
 
   intern/COM_Buffer.h
-  intern/COM_BufferManager.cpp
+  intern/COM_BufferManager.cc
   intern/COM_BufferManager.h
   intern/COM_CPUDevice.cc
   intern/COM_CPUDevice.h
@@ -78,7 +78,7 @@ set(SRC
   intern/COM_NodeOperation.h
   intern/COM_NodeOperationBuilder.cc
   intern/COM_NodeOperationBuilder.h
-  intern/COM_OutputManager.cpp
+  intern/COM_OutputManager.cc
   intern/COM_OutputManager.h
   intern/COM_WorkPackage.cc
   intern/COM_WorkPackage.h
@@ -91,22 +91,22 @@ set(SRC
 
     #computing
   intern/computing/COM_compute_types.h
-  intern/computing/COM_ComputeDevice.cpp
+  intern/computing/COM_ComputeDevice.cc
   intern/computing/COM_ComputeDevice.h
-  intern/computing/COM_ComputeKernel.cpp
+  intern/computing/COM_ComputeKernel.cc
   intern/computing/COM_ComputeKernel.h
-  intern/computing/COM_ComputeManager.cpp
+  intern/computing/COM_ComputeManager.cc
   intern/computing/COM_ComputeManager.h
   intern/computing/COM_ComputeNoneManager.h
-  intern/computing/COM_ComputePlatform.cpp
+  intern/computing/COM_ComputePlatform.cc
   intern/computing/COM_ComputePlatform.h
-  intern/computing/opencl/COM_OpenCLDevice.cpp
+  intern/computing/opencl/COM_OpenCLDevice.cc
   intern/computing/opencl/COM_OpenCLDevice.h
-  intern/computing/opencl/COM_OpenCLKernel.cpp
+  intern/computing/opencl/COM_OpenCLKernel.cc
   intern/computing/opencl/COM_OpenCLKernel.h
-  intern/computing/opencl/COM_OpenCLManager.cpp
+  intern/computing/opencl/COM_OpenCLManager.cc
   intern/computing/opencl/COM_OpenCLManager.h
-  intern/computing/opencl/COM_OpenCLPlatform.cpp
+  intern/computing/opencl/COM_OpenCLPlatform.cc
   intern/computing/opencl/COM_OpenCLPlatform.h
 
   # Internal nodes
