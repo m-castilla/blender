@@ -50,6 +50,9 @@ set(SRC
   COM_compositor.h
   COM_defines.h
 
+  intern/COM_Buffer.h
+  intern/COM_BufferManager.cpp
+  intern/COM_BufferManager.h
   intern/COM_CPUDevice.cc
   intern/COM_CPUDevice.h
   intern/COM_CompositorContext.cc
