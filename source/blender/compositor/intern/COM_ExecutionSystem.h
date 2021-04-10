@@ -25,6 +25,9 @@ class ExecutionGroup;
 #include "COM_Node.h"
 #include "COM_NodeOperation.h"
 
+#include "COM_BufferManager.h"
+#include "COM_OutputManager.h"
+
 #include "DNA_color_types.h"
 #include "DNA_node_types.h"
 
@@ -117,6 +120,10 @@ namespace blender::compositor {
 /**
  * \brief the ExecutionSystem contains the whole compositor tree.
  */
+
+class ComputeManager;
+class ComputeKernel;
+struct WorkPackage;
 class ExecutionSystem {
 
  private:
@@ -130,7 +137,13 @@ class ExecutionSystem {
    */
   Vector<NodeOperation *> m_operations;
 
- private:  // methods
+  int m_n_cpu_work_splits;
+  int m_n_operations_executed;
+  ComputeManager *m_compute_manager;
+  GPUBufferManager m_gpu_buffer_manager;
+  CPUBufferManager m_cpu_buffer_manager;
+  OutputManager m_output_manager;
+
  public:
   /**
    * \brief Create a new ExecutionSystem and initialize it with the
@@ -145,7 +158,9 @@ class ExecutionSystem {
                   bool rendering,
                   const ColorManagedViewSettings *viewSettings,
                   const ColorManagedDisplaySettings *displaySettings,
-                  const char *viewName);
+                  const char *viewName,
+                  ComputeManager *compute_manager,
+                  int n_cpu_threads);
 
   /**
    * Destructor
@@ -170,7 +185,38 @@ class ExecutionSystem {
     return this->m_context;
   }
 
+  CPUBufferManager &getCPUBufferManager()
+  {
+    return this->m_cpu_buffer_manager;
+  }
+
+  GPUBufferManager &getGPUBufferManager()
+  {
+    return this->m_gpu_buffer_manager;
+  }
+
+  OutputManager &getOutputManager()
+  {
+    return this->m_output_manager;
+  }
+
+  void execWorkCPU(const rcti &work_rect, std::function<void(const rcti &split_rect)> &work_func);
+  void execWorkCPU(int work_from,
+                   int work_to,
+                   std::function<void(int split_from, int split_to)> &work_func);
+  void execWorkGPU(int work_width,
+                   int work_height,
+                   const StringRef kernel_name,
+                   std::function<void(ComputeKernel *)> add_kernel_args_func);
+
+  void reportOperationEnd();
+
  private:
+  void execWorkCPU(
+      int work_length,
+      std::function<void(WorkPackage *, int from_split, int to_split)> config_work_func);
+  void updateProgressBar();
+
   void execute_groups(eCompositorPriority priority);
 
   /* allow the DebugInfo class to look at internals */

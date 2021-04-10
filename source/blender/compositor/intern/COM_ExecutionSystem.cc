@@ -25,6 +25,8 @@
 
 #include "BLT_translation.h"
 
+#include "COM_ComputeDevice.h"
+#include "COM_ComputeManager.h"
 #include "COM_Converter.h"
 #include "COM_Debug.h"
 #include "COM_NodeOperation.h"
@@ -43,7 +45,17 @@ ExecutionSystem::ExecutionSystem(RenderData *rd,
                                  bool rendering,
                                  const ColorManagedViewSettings *viewSettings,
                                  const ColorManagedDisplaySettings *displaySettings,
-                                 const char *viewName)
+                                 const char *viewName,
+                                 ComputeManager *compute_manager,
+                                 int n_cpu_threads)
+    : m_context(),
+      m_operations(),
+      m_n_cpu_work_splits(n_cpu_threads),
+      m_n_operations_executed(0),
+      m_compute_manager(compute_manager),
+      m_gpu_buffer_manager(compute_manager),
+      m_cpu_buffer_manager(compute_manager),
+      m_output_manager(&m_cpu_buffer_manager, &m_gpu_buffer_manager)
 {
   this->m_context.setViewName(viewName);
   this->m_context.setScene(scene);
@@ -85,6 +97,8 @@ void ExecutionSystem::set_operations(const Vector<NodeOperation *> &operations)
 
 void ExecutionSystem::execute()
 {
+  m_n_operations_executed = 0;
+
   const bNodeTree *editingtree = this->m_context.getbNodeTree();
   const RenderData *rd = this->m_context.getRenderData();
 
@@ -109,6 +123,100 @@ void ExecutionSystem::execute()
   WorkScheduler::stop();
 
   editingtree->stats_draw(editingtree->sdh, TIP_("Compositing | De-initializing execution"));
+}
+
+void ExecutionSystem::execWorkCPU(const rcti &work_rect,
+                                  std::function<void(const rcti &split_rect)> &work_func)
+{
+  /* split work rect vertically to execute multi-threadedly */
+  int work_height = BLI_rcti_size_y(&work_rect);
+  execWorkCPU(work_height, [&](WorkPackage *work, int split_from, int split_to) {
+    work->execute = [=, &work_func, &work_rect]() {
+      rcti split_rect;
+      BLI_rcti_init(&split_rect,
+                    work_rect.xmin,
+                    work_rect.xmax,
+                    work_rect.ymin + split_from,
+                    work_rect.ymin + split_to);
+      work_func(split_rect);
+    };
+  });
+}
+
+void ExecutionSystem::execWorkCPU(int work_from,
+                                  int work_to,
+                                  std::function<void(int split_from, int split_to)> &work_func)
+{
+  /* split work length in ranges to execute multi-threadedly */
+  int work_length = work_to - work_from;
+  execWorkCPU(work_length, [=, &work_func](WorkPackage *work, int split_from, int split_to) {
+    work->execute = [=, &work_func]() { work_func(work_from + split_from, work_from + split_to); };
+  });
+}
+
+void ExecutionSystem::execWorkCPU(
+    int work_length,
+    std::function<void(WorkPackage *, int split_from, int split_to)> config_work_func)
+{
+  /* Split cpu work */
+  int std_split_length = work_length / m_n_cpu_work_splits;
+  int last_split_length = std_split_length +
+                          (work_length - std_split_length * m_n_cpu_work_splits);
+  Vector<WorkPackage *> works;
+  for (int i = 0; i < m_n_cpu_work_splits; i++) {
+    bool is_last = (i == m_n_cpu_work_splits - 1);
+    int split_length = is_last ? last_split_length : std_split_length;
+    WorkPackage *work = new WorkPackage();
+    int split_from = split_length * i;
+    int split_to = split_from + split_length;
+    config_work_func(work, split_from, split_to);
+    works.append(work);
+  }
+
+  /* execute cpu works */
+  for (auto work : works) {
+    WorkScheduler::schedule(work);
+  }
+  WorkScheduler::finish();
+
+  /* delete cpu works */
+  for (auto work : works) {
+    delete work;
+  }
+}
+
+void ExecutionSystem::execWorkGPU(int work_width,
+                                  int work_height,
+                                  const StringRef kernel_name,
+                                  std::function<void(ComputeKernel *)> add_kernel_args_func)
+{
+  auto device = m_compute_manager->getSelectedDevice();
+  device->enqueueWork(work_width, work_height, kernel_name, add_kernel_args_func);
+  device->waitQueueToFinish();
+}
+
+void ExecutionSystem::reportOperationEnd()
+{
+  m_n_operations_executed++;
+  updateProgressBar();
+}
+
+void ExecutionSystem::updateProgressBar()
+{
+  auto tree = m_context.getbNodeTree();
+  if (tree) {
+    int n_operations = m_operations.size();
+    float progress = static_cast<float>(m_operations.size()) / m_n_operations_executed;
+    tree->progress(tree->prh, progress);
+
+    char buf[128];
+    BLI_snprintf(buf,
+                 sizeof(buf),
+                 TIP_("Compositing | Operation %u-%u"),
+                 m_n_operations_executed + 1,
+                 n_operations);
+    tree->stats_draw(tree->sdh, buf);
+  }
 }
 
 }  // namespace blender::compositor

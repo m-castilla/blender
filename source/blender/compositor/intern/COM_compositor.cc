@@ -23,14 +23,18 @@
 #include "BKE_node.h"
 #include "BKE_scene.h"
 
+#include "COM_ComputeManager.h"
+#include "COM_ComputeNoneManager.h"
 #include "COM_ExecutionSystem.h"
 #include "COM_WorkScheduler.h"
 #include "COM_compositor.h"
 #include "clew.h"
+#include "opencl/COM_OpenCLManager.h"
 
 static struct {
   bool is_initialized = false;
   ThreadMutex mutex;
+  blender::compositor::ComputeManager *compute_manager;
 } g_compositor;
 
 /* Make sure node tree has previews.
@@ -89,15 +93,37 @@ void COM_execute(RenderData *render_data,
   compositor_init_node_previews(render_data, node_tree);
   compositor_reset_node_tree_status(node_tree);
 
+  /* setup compute manager */
   const bool use_opencl = (node_tree->flag & NTREE_COM_OPENCL) != 0;
-  /* TODO setup computing system */
+  auto compute_type = use_opencl ? blender::compositor::ComputeType::OPENCL :
+                                   blender::compositor::ComputeType::NONE;
+  bool compute_type_changed = !g_compositor.compute_manager ||
+                              g_compositor.compute_manager->getComputeType() != compute_type;
+  if (compute_type_changed) {
+    if (g_compositor.compute_manager) {
+      delete g_compositor.compute_manager;
+    }
+    g_compositor.compute_manager =
+        use_opencl ?
+            (blender::compositor::ComputeManager *)new blender::compositor::OpenCLManager() :
+            (blender::compositor::ComputeManager *)new blender::compositor::ComputeNoneManager();
+    g_compositor.compute_manager->initialize();
+  }
 
   /* Initialize workscheduler. */
+  int n_cpu_threads = BKE_render_num_threads(render_data);
   blender::compositor::WorkScheduler::initialize(BKE_render_num_threads(render_data));
 
   /* Execute. */
-  blender::compositor::ExecutionSystem system(
-      render_data, scene, node_tree, rendering, viewSettings, displaySettings, viewName);
+  blender::compositor::ExecutionSystem system(render_data,
+                                              scene,
+                                              node_tree,
+                                              rendering,
+                                              viewSettings,
+                                              displaySettings,
+                                              viewName,
+                                              g_compositor.compute_manager,
+                                              n_cpu_threads);
   system.execute();
 
   BLI_mutex_unlock(&g_compositor.mutex);
@@ -109,6 +135,7 @@ void COM_deinitialize()
     BLI_mutex_lock(&g_compositor.mutex);
     blender::compositor::WorkScheduler::deinitialize();
     g_compositor.is_initialized = false;
+    delete g_compositor.compute_manager;
     BLI_mutex_unlock(&g_compositor.mutex);
     BLI_mutex_end(&g_compositor.mutex);
   }
