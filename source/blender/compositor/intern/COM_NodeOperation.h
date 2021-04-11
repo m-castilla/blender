@@ -35,6 +35,10 @@
 namespace blender::compositor {
 
 class NodeOperation;
+class OutputManager;
+class ExecutionSystem;
+template<typename T> struct CPUBuffer;
+struct GPUBuffer;
 typedef NodeOperation SocketReader;
 
 /**
@@ -361,6 +365,10 @@ class NodeOperation {
   }
   virtual void initExecution();
 
+  void determineRectsToRender(const rcti &render_rect, OutputManager *output_man);
+  void registerReads(OutputManager *output_man);
+  void renderPixels(ExecutionSystem *exec_system);
+
   /**
    * \brief when a chunk is executed by a CPUDevice, this method is called
    * \ingroup execution
@@ -476,6 +484,23 @@ class NodeOperation {
 
  protected:
   NodeOperation();
+
+  virtual void execPixelsCPU(const rcti &render_rect,
+                             CPUBuffer<float> &output,
+                             blender::Span<const CPUBuffer<float> *> inputs,
+                             ExecutionSystem *exec_system)
+  {
+  }
+  virtual void execPixelsGPU(const rcti &render_rect,
+                             GPUBuffer &output,
+                             blender::Span<const GPUBuffer *> inputs,
+                             ExecutionSystem *exec_system)
+  {
+  }
+  virtual rcti getInputAreaOfInterest(int input_idx, const rcti &render_rect)
+  {
+    return render_rect;
+  }
 
   void addInputSocket(DataType datatype, ResizeMode resize_mode = ResizeMode::Center);
   void addOutputSocket(DataType datatype);

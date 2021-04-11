@@ -127,6 +127,94 @@ NodeOperation *NodeOperation::getInputOperation(unsigned int inputSocketIndex)
   return nullptr;
 }
 
+void NodeOperation::determineRectsToRender(const rcti &render_rect, OutputManager *output_man)
+{
+  if (!output_man->isRenderRegistered(this, render_rect)) {
+    output_man->registerRender(this, render_rect);
+
+    int n_inputs = getNumberOfInputSockets();
+    for (int i = 0; i < n_inputs; i++) {
+      auto input_op = getInputOperation(i);
+      auto input_area = getInputAreaOfInterest(i, render_rect);
+      input_op->determineRectsToRender(input_area, output_man);
+    }
+  }
+}
+
+void NodeOperation::registerReads(OutputManager *output_man)
+{
+  if (!output_man->hasRegisteredReads(this)) {
+    int n_inputs = getNumberOfInputSockets();
+    for (int i = 0; i < n_inputs; i++) {
+      auto input_op = getInputOperation(i);
+      input_op->registerReads(output_man);
+      output_man->registerRead(input_op);
+    }
+  }
+}
+
+void NodeOperation::renderPixels(ExecutionSystem *exec_system)
+{
+  OutputManager *output_man = exec_system->getOutputManager();
+  if (!output_man->isOutputRendered(this)) {
+    /* ensure inputs are rendered */
+    int n_inputs = getNumberOfInputSockets();
+    blender::Vector<NodeOperation *> inputs_ops(n_inputs);
+    for (int i = 0; i < n_inputs; i++) {
+      auto input_op = getInputOperation(i);
+      if (!output_man->isOutputRendered(input_op)) {
+        input_op->renderPixels(exec_system);
+      }
+      inputs_ops.append(input_op);
+    }
+
+    initExecution();
+    auto render_rects = output_man->getRectsToRender(this);
+    auto data_type = getOutputSocket(0)->getDataType();
+    bool has_gpu_support = get_flags().open_cl;
+    if (has_gpu_support) {
+      /* get inputs as gpu buffers */
+      blender::Vector<const GPUBuffer *> inputs_bufs(n_inputs);
+      for (auto input_op : inputs_ops) {
+        inputs_bufs.append(output_man->getOutputGPU(input_op));
+      }
+
+      /* gpu render */
+      auto gpu_man = exec_system->getGPUBufferManager();
+      GPUBufferUniquePtr output_buf = gpu_man->takeImageBuffer(
+          data_type, getWidth(), getHeight(), get_flags().is_set_operation);
+      for (const rcti &render_rect : render_rects) {
+        execPixelsGPU(render_rect, *output_buf.get(), inputs_bufs.as_span(), exec_system);
+      }
+      output_man->giveRenderedOutput(this, std::move(output_buf));
+    }
+    else {
+      /* get inputs as cpu buffers */
+      blender::Vector<const CPUBuffer<float> *> inputs_bufs(n_inputs);
+      for (auto input_op : inputs_ops) {
+        inputs_bufs.append(output_man->getOutputCPU(input_op));
+      }
+
+      /* cpu render */
+      auto cpu_man = exec_system->getCPUBufferManager();
+      CPUBufferUniquePtr<float> output_buf = cpu_man->takeImageBuffer(
+          data_type, getWidth(), getHeight(), get_flags().is_set_operation);
+      for (const rcti &render_rect : render_rects) {
+        execPixelsCPU(render_rect, *output_buf.get(), inputs_bufs.as_span(), exec_system);
+      }
+      output_man->giveRenderedOutput(this, std::move(output_buf));
+    }
+    deinitExecution();
+
+    /* report inputs reads so that buffers may be freed/recycled when total reads reached */
+    for (auto input_op : inputs_ops) {
+      output_man->reportRead(input_op);
+    }
+
+    exec_system->reportOperationEnd();
+  }
+}
+
 bool NodeOperation::determineDependingAreaOfInterest(rcti *input,
                                                      ReadBufferOperation *readOperation,
                                                      rcti *output)

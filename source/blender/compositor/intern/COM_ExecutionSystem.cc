@@ -25,12 +25,14 @@
 
 #include "BLT_translation.h"
 
+#include "COM_BufferManager.h"
 #include "COM_ComputeDevice.h"
 #include "COM_ComputeManager.h"
 #include "COM_Converter.h"
 #include "COM_Debug.h"
 #include "COM_NodeOperation.h"
 #include "COM_NodeOperationBuilder.h"
+#include "COM_OutputManager.h"
 #include "COM_WorkScheduler.h"
 
 #ifdef WITH_CXX_GUARDEDALLOC
@@ -48,7 +50,8 @@ ExecutionSystem::ExecutionSystem(RenderData *rd,
                                  const char *viewName,
                                  ComputeManager *compute_manager,
                                  int n_cpu_threads)
-    : m_context(),
+    : m_border_info(),
+      m_context(),
       m_operations(),
       m_n_cpu_work_splits(n_cpu_threads),
       m_n_operations_executed(0),
@@ -73,6 +76,25 @@ ExecutionSystem::ExecutionSystem(RenderData *rd,
   this->m_context.setRenderData(rd);
   this->m_context.setViewSettings(viewSettings);
   this->m_context.setDisplaySettings(displaySettings);
+
+  const rctf &viewer_border = editingtree->viewer_border;
+  const rctf &render_border = rd->border;
+  m_border_info.use_viewer_border = (editingtree->flag & NTREE_VIEWER_BORDER) &&
+                                    viewer_border.xmin < viewer_border.xmax &&
+                                    viewer_border.ymin < viewer_border.ymax;
+  m_border_info.use_render_border = m_context.isRendering() && (rd->mode & R_BORDER) &&
+                                    !(rd->mode & R_CROP);
+
+  BLI_rcti_init(&m_border_info.viewer_border,
+                viewer_border.xmin,
+                viewer_border.xmax,
+                viewer_border.ymin,
+                viewer_border.ymax);
+  BLI_rcti_init(&m_border_info.render_border,
+                render_border.xmin,
+                render_border.xmax,
+                render_border.ymin,
+                render_border.ymax);
 
   {
     NodeOperationBuilder builder(&m_context, editingtree);
@@ -100,14 +122,6 @@ void ExecutionSystem::execute()
   m_n_operations_executed = 0;
 
   const bNodeTree *editingtree = this->m_context.getbNodeTree();
-  const RenderData *rd = this->m_context.getRenderData();
-
-  const rctf *viewer_border = &editingtree->viewer_border;
-  bool use_viewer_border = (editingtree->flag & NTREE_VIEWER_BORDER) &&
-                           viewer_border->xmin < viewer_border->xmax &&
-                           viewer_border->ymin < viewer_border->ymax;
-  bool use_render_border = (rd->mode & R_BORDER) && !(rd->mode & R_CROP);
-  const rctf *render_border = &rd->border;
 
   editingtree->stats_draw(editingtree->sdh, TIP_("Compositing | Initializing execution"));
 
@@ -115,14 +129,60 @@ void ExecutionSystem::execute()
 
   WorkScheduler::start(this->m_context);
 
-  /* TODO: execute operations by eCompositorPriority order. Use Viewer/Render border as render rect
-   * when enabled otherwise a full frame rect. No need to initialize/deinitialize operations
-   * anymore, they'll do it by themselves on start/end of first read. */
+  prepare_operations(eCompositorPriority::High);
+  prepare_operations(eCompositorPriority::Medium);
+  prepare_operations(eCompositorPriority::Low);
+  exec_operations(eCompositorPriority::High);
+  exec_operations(eCompositorPriority::Medium);
+  exec_operations(eCompositorPriority::Low);
 
   WorkScheduler::finish();
   WorkScheduler::stop();
 
   editingtree->stats_draw(editingtree->sdh, TIP_("Compositing | De-initializing execution"));
+}
+
+rcti ExecutionSystem::get_op_rect_to_render(NodeOperation *op)
+{
+  auto op_flags = op->get_flags();
+  bool is_rendering = m_context.isRendering();
+  rcti op_rect;
+  BLI_rcti_init(&op_rect, 0, op->getWidth(), 0, op->getHeight());
+
+  bool has_viewer_border = m_border_info.use_viewer_border &&
+                           (op_flags.is_viewer_operation || op_flags.is_preview_operation);
+  bool has_render_border = m_border_info.use_render_border && op->isOutputOperation(is_rendering);
+  if (has_viewer_border || has_render_border) {
+    rcti &border = has_viewer_border ? m_border_info.viewer_border : m_border_info.render_border;
+    op_rect.xmin = border.xmin > op_rect.xmin ? border.xmin : op_rect.xmin;
+    op_rect.xmax = border.xmax < op_rect.xmax ? border.xmax : op_rect.xmax;
+    op_rect.ymin = border.ymin > op_rect.ymin ? border.ymin : op_rect.ymin;
+    op_rect.ymax = border.ymax < op_rect.ymax ? border.ymax : op_rect.ymax;
+  }
+
+  return op_rect;
+}
+
+void ExecutionSystem::prepare_operations(eCompositorPriority priority)
+{
+  bool is_rendering = m_context.isRendering();
+  for (auto op : m_operations) {
+    if (op->isOutputOperation(is_rendering) && op->getRenderPriority() == priority) {
+      auto render_rect = get_op_rect_to_render(op);
+      op->determineRectsToRender(render_rect, &m_output_manager);
+      op->registerReads(&m_output_manager);
+    }
+  }
+}
+
+void ExecutionSystem::exec_operations(eCompositorPriority priority)
+{
+  bool is_rendering = m_context.isRendering();
+  for (auto op : m_operations) {
+    if (op->isOutputOperation(is_rendering) && op->getRenderPriority() == priority) {
+      op->renderPixels(this);
+    }
+  }
 }
 
 void ExecutionSystem::execWorkCPU(const rcti &work_rect,

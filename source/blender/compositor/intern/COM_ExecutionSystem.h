@@ -22,14 +22,10 @@ class ExecutionGroup;
 
 #include "BKE_text.h"
 
+#include "COM_BufferManager.h"
 #include "COM_Node.h"
 #include "COM_NodeOperation.h"
-
-#include "COM_BufferManager.h"
 #include "COM_OutputManager.h"
-
-#include "DNA_color_types.h"
-#include "DNA_node_types.h"
 
 #include "BLI_vector.hh"
 
@@ -125,8 +121,14 @@ class ComputeManager;
 class ComputeKernel;
 struct WorkPackage;
 class ExecutionSystem {
-
  private:
+  struct {
+    bool use_render_border;
+    rcti render_border;
+    bool use_viewer_border;
+    rcti viewer_border;
+  } m_border_info;
+
   /**
    * \brief the context used during execution
    */
@@ -185,19 +187,19 @@ class ExecutionSystem {
     return this->m_context;
   }
 
-  CPUBufferManager &getCPUBufferManager()
+  CPUBufferManager *getCPUBufferManager()
   {
-    return this->m_cpu_buffer_manager;
+    return &this->m_cpu_buffer_manager;
   }
 
-  GPUBufferManager &getGPUBufferManager()
+  GPUBufferManager *getGPUBufferManager()
   {
-    return this->m_gpu_buffer_manager;
+    return &this->m_gpu_buffer_manager;
   }
 
-  OutputManager &getOutputManager()
+  OutputManager *getOutputManager()
   {
-    return this->m_output_manager;
+    return &this->m_output_manager;
   }
 
   void execWorkCPU(const rcti &work_rect, std::function<void(const rcti &split_rect)> &work_func);
@@ -212,12 +214,14 @@ class ExecutionSystem {
   void reportOperationEnd();
 
  private:
+  rcti get_op_rect_to_render(NodeOperation *op);
+  void prepare_operations(eCompositorPriority priority);
+  void exec_operations(eCompositorPriority priority);
+
   void execWorkCPU(
       int work_length,
       std::function<void(WorkPackage *, int from_split, int to_split)> config_work_func);
   void updateProgressBar();
-
-  void execute_groups(eCompositorPriority priority);
 
   /* allow the DebugInfo class to look at internals */
   friend class DebugInfo;
