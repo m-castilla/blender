@@ -27,6 +27,7 @@
 #include "BLI_threads.h"
 
 #include "COM_Enums.h"
+#include "COM_ExecutionSystem.h"
 #include "COM_MetaData.h"
 #include "COM_Node.h"
 
