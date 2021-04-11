@@ -202,10 +202,10 @@ class ExecutionSystem {
     return &this->m_output_manager;
   }
 
-  void execWorkCPU(const rcti &work_rect, std::function<void(const rcti &split_rect)> &work_func);
+  void execWorkCPU(const rcti &work_rect, std::function<void(const rcti &split_rect)> work_func);
   void execWorkCPU(int work_from,
                    int work_to,
-                   std::function<void(int split_from, int split_to)> &work_func);
+                   std::function<void(int split_from, int split_to)> work_func);
   void execWorkGPU(int work_width,
                    int work_height,
                    const StringRef kernel_name,

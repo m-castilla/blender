@@ -186,7 +186,7 @@ void ExecutionSystem::exec_operations(eCompositorPriority priority)
 }
 
 void ExecutionSystem::execWorkCPU(const rcti &work_rect,
-                                  std::function<void(const rcti &split_rect)> &work_func)
+                                  std::function<void(const rcti &split_rect)> work_func)
 {
   /* split work rect vertically to execute multi-threadedly */
   int work_height = BLI_rcti_size_y(&work_rect);
@@ -205,7 +205,7 @@ void ExecutionSystem::execWorkCPU(const rcti &work_rect,
 
 void ExecutionSystem::execWorkCPU(int work_from,
                                   int work_to,
-                                  std::function<void(int split_from, int split_to)> &work_func)
+                                  std::function<void(int split_from, int split_to)> work_func)
 {
   /* split work length in ranges to execute multi-threadedly */
   int work_length = work_to - work_from;
