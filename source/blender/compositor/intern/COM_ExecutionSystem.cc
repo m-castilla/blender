@@ -60,6 +60,9 @@ ExecutionSystem::ExecutionSystem(RenderData *rd,
       m_cpu_buffer_manager(compute_manager),
       m_output_manager(&m_cpu_buffer_manager, &m_gpu_buffer_manager)
 {
+  m_gpu_buffer_manager.setCPUBufferManager(&m_cpu_buffer_manager);
+  m_cpu_buffer_manager.setGPUBufferManager(&m_gpu_buffer_manager);
+
   this->m_context.setViewName(viewName);
   this->m_context.setScene(scene);
   this->m_context.setbNodeTree(editingtree);
@@ -129,12 +132,16 @@ void ExecutionSystem::execute()
 
   WorkScheduler::start(this->m_context);
 
+  DebugInfo::start_benchmark();
+
   prepare_operations(eCompositorPriority::High);
   prepare_operations(eCompositorPriority::Medium);
   prepare_operations(eCompositorPriority::Low);
   exec_operations(eCompositorPriority::High);
   exec_operations(eCompositorPriority::Medium);
   exec_operations(eCompositorPriority::Low);
+
+  DebugInfo::end_benchmark();
 
   WorkScheduler::finish();
   WorkScheduler::stop();
@@ -185,13 +192,18 @@ void ExecutionSystem::exec_operations(eCompositorPriority priority)
   }
 }
 
+bool ExecutionSystem::hasGpuSupport() const
+{
+  return m_compute_manager->canCompute();
+}
+
 void ExecutionSystem::execWorkCPU(const rcti &work_rect,
                                   std::function<void(const rcti &split_rect)> work_func)
 {
   /* split work rect vertically to execute multi-threadedly */
   int work_height = BLI_rcti_size_y(&work_rect);
   execWorkCPU(work_height, [&](WorkPackage *work, int split_from, int split_to) {
-    work->execute = [=, &work_func, &work_rect]() {
+    work->work_func = [=, &work_func, &work_rect]() {
       rcti split_rect;
       BLI_rcti_init(&split_rect,
                     work_rect.xmin,
@@ -210,7 +222,9 @@ void ExecutionSystem::execWorkCPU(int work_from,
   /* split work length in ranges to execute multi-threadedly */
   int work_length = work_to - work_from;
   execWorkCPU(work_length, [=, &work_func](WorkPackage *work, int split_from, int split_to) {
-    work->execute = [=, &work_func]() { work_func(work_from + split_from, work_from + split_to); };
+    work->work_func = [=, &work_func]() {
+      work_func(work_from + split_from, work_from + split_to);
+    };
   });
 }
 
@@ -219,16 +233,15 @@ void ExecutionSystem::execWorkCPU(
     std::function<void(WorkPackage *, int split_from, int split_to)> config_work_func)
 {
   /* Split cpu work */
-  int std_split_length = work_length / m_n_cpu_work_splits;
-  int last_split_length = std_split_length +
-                          (work_length - std_split_length * m_n_cpu_work_splits);
+  int n_works = m_n_cpu_work_splits < work_length ? m_n_cpu_work_splits : work_length;
+  int std_split_length = n_works == 0 ? 0 : work_length / n_works;
+  int last_split_length = std_split_length + (work_length - std_split_length * n_works);
   Vector<WorkPackage *> works;
-  for (int i = 0; i < m_n_cpu_work_splits; i++) {
-    bool is_last = (i == m_n_cpu_work_splits - 1);
-    int split_length = is_last ? last_split_length : std_split_length;
+  for (int i = 0; i < n_works; i++) {
+    bool is_last = (i == n_works - 1);
     WorkPackage *work = new WorkPackage();
-    int split_from = split_length * i;
-    int split_to = split_from + split_length;
+    int split_from = std_split_length * i;
+    int split_to = split_from + (is_last ? last_split_length : std_split_length);
     config_work_func(work, split_from, split_to);
     works.append(work);
   }
@@ -237,7 +250,17 @@ void ExecutionSystem::execWorkCPU(
   for (auto work : works) {
     WorkScheduler::schedule(work);
   }
-  WorkScheduler::finish();
+  bool works_finished = false;
+  while (!works_finished) {
+    works_finished = true;
+    for (auto work : works) {
+      if (!work->finished) {
+        works_finished = false;
+        WorkScheduler::finish();
+        continue;
+      }
+    }
+  }
 
   /* delete cpu works */
   for (auto work : works) {
@@ -245,13 +268,12 @@ void ExecutionSystem::execWorkCPU(
   }
 }
 
-void ExecutionSystem::execWorkGPU(int work_width,
-                                  int work_height,
+void ExecutionSystem::execWorkGPU(const rcti &work_rect,
                                   const StringRef kernel_name,
                                   std::function<void(ComputeKernel *)> add_kernel_args_func)
 {
   auto device = m_compute_manager->getSelectedDevice();
-  device->enqueueWork(work_width, work_height, kernel_name, add_kernel_args_func);
+  device->enqueueWork(work_rect, kernel_name, add_kernel_args_func);
   device->waitQueueToFinish();
 }
 

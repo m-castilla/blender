@@ -35,11 +35,14 @@ class ExecutionGroup;
  */
 struct WorkPackage {
   eWorkPackageState state = eWorkPackageState::NotScheduled;
+  std::atomic<bool> finished = false;
+  std::function<void()> work_func;
 
-  /**
-   * Work execute function.
-   */
-  std::function<void()> execute;
+  void execute()
+  {
+    work_func();
+    finished = true;
+  }
 
 #ifdef WITH_CXX_GUARDEDALLOC
   MEM_CXX_CLASS_ALLOC_FUNCS("COM:WorkPackage")

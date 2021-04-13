@@ -37,8 +37,27 @@ extern "C" {
 #include "COM_Node.h"
 
 #include "COM_ViewerOperation.h"
+#include <ctime>
 
 namespace blender::compositor {
+
+clock_t start_bench_ticks;
+clock_t end_bench_ticks;
+bool bench_started = false;
+
+void DebugInfo::start_benchmark()
+{
+  bench_started = true;
+  start_bench_ticks = clock();
+}
+
+void DebugInfo::end_benchmark()
+{
+  end_bench_ticks = clock();
+  bench_started = false;
+  float secs = (end_bench_ticks - start_bench_ticks) / (float)CLOCKS_PER_SEC;
+  printf("\nCompositor execution time: %f seconds\n", secs);
+}
 
 #ifdef COM_DEBUG
 
@@ -76,9 +95,6 @@ void DebugInfo::execute_started(const ExecutionSystem *system)
 {
   m_file_index = 1;
   m_group_states.clear();
-  for (ExecutionGroup *execution_group : system->m_groups) {
-    m_group_states[execution_group] = EG_WAIT;
-  }
 }
 
 void DebugInfo::node_added(const Node *node)
@@ -305,7 +321,6 @@ int DebugInfo::graphviz_legend(char *str, int maxlen)
 
 bool DebugInfo::graphviz_system(const ExecutionSystem *system, char *str, int maxlen)
 {
-  char strbuf[64];
   int len = 0;
 
   len += snprintf(str + len, maxlen > len ? maxlen - len : 0, "digraph compositorexecution {\r\n");
@@ -313,70 +328,10 @@ bool DebugInfo::graphviz_system(const ExecutionSystem *system, char *str, int ma
   len += snprintf(str + len, maxlen > len ? maxlen - len : 0, "rankdir=LR\r\n");
   len += snprintf(str + len, maxlen > len ? maxlen - len : 0, "splines=false\r\n");
 
-  std::map<NodeOperation *, std::vector<std::string>> op_groups;
-  int index = 0;
-  for (const ExecutionGroup *group : system->m_groups) {
-    len += snprintf(str + len, maxlen > len ? maxlen - len : 0, "// GROUP: %d\r\n", index);
-    len += snprintf(str + len, maxlen > len ? maxlen - len : 0, "subgraph cluster_%d{\r\n", index);
-    /* used as a check for executing group */
-    if (m_group_states[group] == EG_WAIT) {
-      len += snprintf(str + len, maxlen > len ? maxlen - len : 0, "style=dashed\r\n");
-    }
-    else if (m_group_states[group] == EG_RUNNING) {
-      len += snprintf(str + len, maxlen > len ? maxlen - len : 0, "style=filled\r\n");
-      len += snprintf(str + len, maxlen > len ? maxlen - len : 0, "color=black\r\n");
-      len += snprintf(str + len, maxlen > len ? maxlen - len : 0, "fillcolor=firebrick1\r\n");
-    }
-    else if (m_group_states[group] == EG_FINISHED) {
-      len += snprintf(str + len, maxlen > len ? maxlen - len : 0, "style=filled\r\n");
-      len += snprintf(str + len, maxlen > len ? maxlen - len : 0, "color=black\r\n");
-      len += snprintf(str + len, maxlen > len ? maxlen - len : 0, "fillcolor=chartreuse4\r\n");
-    }
-
-    for (NodeOperation *operation : group->m_operations) {
-
-      sprintf(strbuf, "_%p", group);
-      op_groups[operation].push_back(std::string(strbuf));
-
-      len += graphviz_operation(
-          system, operation, group, str + len, maxlen > len ? maxlen - len : 0);
-    }
-
-    len += snprintf(str + len, maxlen > len ? maxlen - len : 0, "}\r\n");
-    index++;
-  }
-
   /* operations not included in any group */
   for (NodeOperation *operation : system->m_operations) {
-    if (op_groups.find(operation) != op_groups.end()) {
-      continue;
-    }
-
-    op_groups[operation].push_back(std::string(""));
-
     len += graphviz_operation(
         system, operation, nullptr, str + len, maxlen > len ? maxlen - len : 0);
-  }
-
-  for (NodeOperation *operation : system->m_operations) {
-    if (operation->get_flags().is_read_buffer_operation) {
-      ReadBufferOperation *read = (ReadBufferOperation *)operation;
-      WriteBufferOperation *write = read->getMemoryProxy()->getWriteBufferOperation();
-      std::vector<std::string> &read_groups = op_groups[read];
-      std::vector<std::string> &write_groups = op_groups[write];
-
-      for (int k = 0; k < write_groups.size(); k++) {
-        for (int l = 0; l < read_groups.size(); l++) {
-          len += snprintf(str + len,
-                          maxlen > len ? maxlen - len : 0,
-                          "\"O_%p%s\" -> \"O_%p%s\" [style=dotted]\r\n",
-                          write,
-                          write_groups[k].c_str(),
-                          read,
-                          read_groups[l].c_str());
-        }
-      }
-    }
   }
 
   for (NodeOperation *op : system->m_operations) {
@@ -398,35 +353,6 @@ bool DebugInfo::graphviz_system(const ExecutionSystem *system, char *str, int ma
         case DataType::Color:
           color = "orange";
           break;
-      }
-
-      NodeOperation *to_op = &to.getOperation();
-      NodeOperation *from_op = &from->getOperation();
-      std::vector<std::string> &from_groups = op_groups[from_op];
-      std::vector<std::string> &to_groups = op_groups[to_op];
-
-      len += snprintf(str + len,
-                      maxlen > len ? maxlen - len : 0,
-                      "// CONNECTION: %p.%p -> %p.%p\r\n",
-                      from_op,
-                      from,
-                      to_op,
-                      &to);
-      for (int k = 0; k < from_groups.size(); k++) {
-        for (int l = 0; l < to_groups.size(); l++) {
-          len += snprintf(str + len,
-                          maxlen > len ? maxlen - len : 0,
-                          R"("O_%p%s":"OUT_%p":e -> "O_%p%s":"IN_%p":w)",
-                          from_op,
-                          from_groups[k].c_str(),
-                          from,
-                          to_op,
-                          to_groups[l].c_str(),
-                          &to);
-          len += snprintf(
-              str + len, maxlen > len ? maxlen - len : 0, " [color=%s]", color.c_str());
-          len += snprintf(str + len, maxlen > len ? maxlen - len : 0, "\r\n");
-        }
       }
     }
   }

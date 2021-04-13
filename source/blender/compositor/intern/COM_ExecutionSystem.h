@@ -187,6 +187,8 @@ class ExecutionSystem {
     return this->m_context;
   }
 
+  bool hasGpuSupport() const;
+
   CPUBufferManager *getCPUBufferManager()
   {
     return &this->m_cpu_buffer_manager;
@@ -196,7 +198,10 @@ class ExecutionSystem {
   {
     return &this->m_gpu_buffer_manager;
   }
-
+  ComputeManager *getComputeManager()
+  {
+    return m_compute_manager;
+  }
   OutputManager *getOutputManager()
   {
     return &this->m_output_manager;
@@ -206,8 +211,7 @@ class ExecutionSystem {
   void execWorkCPU(int work_from,
                    int work_to,
                    std::function<void(int split_from, int split_to)> work_func);
-  void execWorkGPU(int work_width,
-                   int work_height,
+  void execWorkGPU(const rcti &work_rect,
                    const StringRef kernel_name,
                    std::function<void(ComputeKernel *)> add_kernel_args_func);
 

@@ -28,7 +28,6 @@ namespace blender::compositor {
 
 class Node;
 class ExecutionSystem;
-class ExecutionGroup;
 
 class DebugInfo {
  public:
@@ -40,6 +39,9 @@ class DebugInfo {
 
   static std::string node_name(const Node *node);
   static std::string operation_name(const NodeOperation *op);
+
+  static void start_benchmark();
+  static void end_benchmark();
 
   static void convert_started();
   static void execute_started(const ExecutionSystem *system);
