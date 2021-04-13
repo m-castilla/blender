@@ -85,8 +85,7 @@ void OpenCLDevice::initialize()
   }
 }
 
-void OpenCLDevice::enqueueWork(int work_width,
-                               int work_height,
+void OpenCLDevice::enqueueWork(const rcti &work_rect,
                                std::string kernel_name,
                                std::function<void(ComputeKernel *)> add_kernel_args_func)
 {
@@ -100,12 +99,14 @@ void OpenCLDevice::enqueueWork(int work_width,
     waitQueueToFinish();
   }
 
+  int work_width = BLI_rcti_size_x(&work_rect);
+  int work_height = BLI_rcti_size_y(&work_rect);
   int max_global_w = m_max_group_dims[0] / 2;
   int max_global_h = m_max_group_dims[1] / 2;
   int width_step = max_global_w > work_width ? work_width : max_global_w;
   int height_step = max_global_h > work_height ? work_height : max_global_h;
-  for (int work_y = 0; work_y < work_height; work_y += height_step) {
-    for (int work_x = 0; work_x < work_width; work_x += width_step) {
+  for (int work_y = work_rect.ymin; work_y < work_rect.ymax; work_y += height_step) {
+    for (int work_x = work_rect.xmin; work_x < work_rect.xmax; work_x += width_step) {
       int x_size = (work_width - work_x) > width_step ? width_step : (work_width - work_x);
       int y_size = (work_height - work_y) > height_step ? height_step : (work_height - work_y);
 
@@ -189,7 +190,7 @@ float *OpenCLDevice::mapImageBufferToHostEnqueue(void *device_buffer,
   size_t size[3] = {(size_t)width, (size_t)height, 1};
   float *map = (float *)clEnqueueMapImage(m_queue,
                                           img,
-                                          CL_FALSE,
+                                          CL_TRUE,
                                           map_flags,
                                           origin,
                                           size,

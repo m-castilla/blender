@@ -19,6 +19,7 @@
 #include "COM_OpenCLKernel.h"
 #include "BLI_assert.h"
 #include "BLI_rect.h"
+#include "COM_Buffer.h"
 #include "COM_ComputeManager.h"
 #include "COM_OpenCLDevice.h"
 #include "COM_OpenCLManager.h"
@@ -130,6 +131,12 @@ void OpenCLKernel::addArg(size_t arg_size, const void *arg)
 void OpenCLKernel::addBufferArg(void *cl_buffer)
 {
   addArg(sizeof(cl_mem), &cl_buffer);
+}
+
+void OpenCLKernel::addBufferArg(const GPUBuffer *gpu_buffer)
+{
+  addBufferArg(gpu_buffer->buf);
+  addBoolArg(!gpu_buffer->is_single_elem);
 }
 
 void OpenCLKernel::addSamplerArg(ComputeInterpolation interp, ComputeExtend extend)

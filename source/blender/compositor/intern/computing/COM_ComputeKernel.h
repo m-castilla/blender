@@ -22,12 +22,14 @@
 #  include "MEM_guardedalloc.h"
 #endif
 
+#include "BLI_rect.h"
 #include "BLI_string_ref.hh"
 #include "COM_compute_types.h"
 
 namespace blender::compositor {
 
 class ComputeDevice;
+struct GPUBuffer;
 class ComputeKernel {
  private:
   std::string m_kernel_name;
@@ -40,6 +42,7 @@ class ComputeKernel {
   virtual void reset(ComputeDevice *new_device) = 0;
   virtual void clearArgs() = 0;
   virtual void addBufferArg(void *device_buffer) = 0;
+  virtual void addBufferArg(const GPUBuffer *gpu_buffer) = 0;
   virtual void addSamplerArg(ComputeInterpolation interp, ComputeExtend extend) = 0;
   virtual void addBoolArg(bool value) = 0;
   virtual void addIntArg(int value) = 0;

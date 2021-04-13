@@ -46,8 +46,7 @@ class OpenCLDevice : public ComputeDevice {
   ~OpenCLDevice();
 
   void initialize() override;
-  void enqueueWork(int work_width,
-                   int work_height,
+  void enqueueWork(const rcti &work_rect,
                    std::string kernel_name,
                    std::function<void(ComputeKernel *)> add_kernel_args_func) override;
   void waitQueueToFinish() override;

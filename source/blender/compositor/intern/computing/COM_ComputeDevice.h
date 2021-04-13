@@ -21,6 +21,7 @@
 #ifdef WITH_CXX_GUARDEDALLOC
 #  include "MEM_guardedalloc.h"
 #endif
+#include "BLI_rect.h"
 #include "COM_compute_types.h"
 #include <functional>
 #include <string>
@@ -43,8 +44,7 @@ class ComputeDevice {
     return m_initialized;
   }
 
-  virtual void enqueueWork(int work_width,
-                           int work_height,
+  virtual void enqueueWork(const rcti &work_rect,
                            std::string kernel_name,
                            std::function<void(ComputeKernel *)> add_kernel_args_func) = 0;
   virtual void waitQueueToFinish() = 0;

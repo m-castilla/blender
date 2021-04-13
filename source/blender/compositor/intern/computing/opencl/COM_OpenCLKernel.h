@@ -46,6 +46,7 @@ class OpenCLKernel : public ComputeKernel {
   void reset(ComputeDevice *new_device) override;
   void clearArgs() override;
   void addBufferArg(void *cl_buffer) override;
+  void addBufferArg(const GPUBuffer *gpu_buffer) override;
   void addSamplerArg(ComputeInterpolation interp, ComputeExtend extend) override;
   void addBoolArg(bool value) override;
   void addIntArg(int value) override;
