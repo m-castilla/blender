@@ -37,7 +37,8 @@ ComputeKernelUniquePtr ComputePlatform::takeKernel(const blender::StringRef kern
                                                    ComputeDevice *device)
 {
   ComputeKernel *kernel = nullptr;
-  auto &kernels = m_kernels.lookup(kernel_name);
+  auto &kernels = m_kernels.lookup_or_add_cb(kernel_name,
+                                             [] { return blender::Vector<ComputeKernel *>(); });
   if (!kernels.is_empty()) {
     kernel = kernels.pop_last();
     m_kernels_count--;
