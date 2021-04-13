@@ -95,6 +95,10 @@ CPUBufferManager::CPUBufferManager(ComputeManager *compu_man)
     : m_gpu_buf_man(nullptr), m_compu_man(compu_man)
 {
 }
+CPUBufferManager::~CPUBufferManager()
+{
+  freeRecycledBuffers();
+}
 
 CPUBufferUniquePtr<float> CPUBufferManager::takeImageBuffer(DataType image_type,
                                                             int width,
@@ -154,6 +158,7 @@ CPUBufferUniquePtr<float> CPUBufferManager::adaptImageBuffer(BaseBufferUniquePtr
         gpu_buf->getMemWidth(),
         gpu_buf->getMemHeight(),
         map_row_bytes);
+    m_compu_man->getSelectedDevice()->waitQueueToFinish();
 
     /* wrap cpu map and mapped gpu buf in a CPUBuffer */
     BaseCPUBuffer *cpu_buf = new CPUBuffer<float>();
@@ -232,8 +237,8 @@ BaseCPUBufferUniquePtr CPUBufferManager::takeMinSizeBuffer(
                 elem_stride,
                 row_stride,
                 ch_bytes,
-                total_bytes,
-                is_single_elem);
+                is_single_elem,
+                total_bytes);
 
   return manageBuffer(buf);
 }
@@ -260,6 +265,10 @@ void CPUBufferManager::freeBuffer(BaseCPUBuffer *cpu_buf)
 GPUBufferManager::GPUBufferManager(ComputeManager *compu_man)
     : m_cpu_buf_man(nullptr), m_compu_man(compu_man)
 {
+}
+GPUBufferManager::~GPUBufferManager()
+{
+  freeRecycledBuffers();
 }
 
 GPUBufferUniquePtr GPUBufferManager::takeImageBuffer(DataType image_type,
@@ -313,15 +322,17 @@ GPUBufferUniquePtr GPUBufferManager::takeImageBuffer(DataType image_type,
 
 GPUBufferUniquePtr GPUBufferManager::adaptImageBuffer(BaseBufferUniquePtr buf)
 {
-  if (typeid(*buf.get()) == typeid(BaseCPUBuffer)) {
-    BLI_assert(buf->type == BufferType::IMAGE_MAP);
-
+  if (buf->type == BufferType::IMAGE_MAP) {
     BaseCPUBuffer *cpu_buf = (BaseCPUBuffer *)buf.get();
-    m_compu_man->getSelectedDevice()->unmapBufferFromHostEnqueue(cpu_buf->mapped_gpu_buf,
+    m_compu_man->getSelectedDevice()->unmapBufferFromHostEnqueue(cpu_buf->mapped_gpu_buf->buf,
                                                                  cpu_buf->buf);
-    buf.release();  // release cpu buffer ownership as we have unmapped it
-
+    m_compu_man->getSelectedDevice()->waitQueueToFinish();
     GPUBuffer *gpu_buf = cpu_buf->mapped_gpu_buf;
+
+    /* release cpu buffer ownership as we have unmapped it */
+    buf.release();
+    delete cpu_buf;
+
     return asGPUBuffer(manageBuffer(gpu_buf));
   }
   else {

@@ -48,7 +48,6 @@ class BufferManager {
 
   virtual ~BufferManager()
   {
-    freeRecycledBuffers();
   }
 
  protected:
@@ -83,26 +82,38 @@ class BufferManager {
         }
       }
     }
+
+    if (best) {
+      m_recycled_bufs.erase(best);
+    }
+
     return best;
   }
 
   TBuffer *takeRecycledBuffer(BufferType type, int width, int height, bool is_single_elem)
   {
+    TBuffer *best = nullptr;
     if (is_single_elem) {
       for (auto buf : m_recycled_bufs) {
         if (buf->type == type && buf->is_single_elem) {
-          return buf;
+          best = buf;
         }
       }
     }
     else {
       for (auto buf : m_recycled_bufs) {
-        if (buf->type == type && buf->width == width && buf->height == height) {
-          return buf;
+        if (buf->type == type && buf->width == width && buf->height == height &&
+            !buf->is_single_elem) {
+          best = buf;
         }
       }
     }
-    return nullptr;
+
+    if (best) {
+      m_recycled_bufs.erase(best);
+    }
+
+    return best;
   }
 
  private:
@@ -124,6 +135,7 @@ class CPUBufferManager : public BufferManager<BaseCPUBuffer> {
 
  public:
   CPUBufferManager(ComputeManager *compu_man);
+  ~CPUBufferManager();
   void setGPUBufferManager(GPUBufferManager *man);
   CPUBufferUniquePtr<float> takeImageBuffer(DataType img_type,
                                             int width,
@@ -197,6 +209,7 @@ class GPUBufferManager : public BufferManager<GPUBuffer> {
 
  public:
   GPUBufferManager(ComputeManager *compu_man);
+  ~GPUBufferManager();
   void setCPUBufferManager(CPUBufferManager *man);
   GPUBufferUniquePtr takeImageBuffer(DataType img_type,
                                      int width,
