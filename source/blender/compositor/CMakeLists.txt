@@ -80,6 +80,8 @@ set(SRC
   intern/COM_NodeOperationBuilder.h
   intern/COM_OutputManager.cc
   intern/COM_OutputManager.h
+  intern/COM_PixelUtil.cc
+  intern/COM_PixelUtil.h
   intern/COM_SimpleOperation.cc
   intern/COM_SimpleOperation.h
   intern/COM_WorkPackage.cc
