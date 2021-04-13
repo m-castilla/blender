@@ -17,6 +17,7 @@
  */
 
 #include "COM_DirectionalBlurOperation.h"
+#include "COM_PixelUtil.h"
 
 #include "BLI_math.h"
 
@@ -30,12 +31,10 @@ DirectionalBlurOperation::DirectionalBlurOperation()
   this->addOutputSocket(DataType::Color);
   flags.complex = true;
   flags.open_cl = true;
-  this->m_inputProgram = nullptr;
 }
 
 void DirectionalBlurOperation::initExecution()
 {
-  this->m_inputProgram = getInputSocketReader(0);
   QualityStepHelper::initExecution(COM_QH_INCREASE);
   const float angle = this->m_data->angle;
   const float zoom = this->m_data->zoom;
@@ -61,58 +60,74 @@ void DirectionalBlurOperation::initExecution()
   this->m_rot = itsc * spin;
 }
 
-void DirectionalBlurOperation::executePixel(float output[4], int x, int y, void * /*data*/)
+void DirectionalBlurOperation::execPixelsMultiCPU(const rcti &render_rect,
+                                                  CPUBuffer<float> &output,
+                                                  blender::Span<const CPUBuffer<float> *> inputs,
+                                                  ExecutionSystem *exec_system,
+                                                  int current_pass)
 {
+  auto &input = *inputs[0];
   const int iterations = pow(2.0f, this->m_data->iter);
   float col[4] = {0.0f, 0.0f, 0.0f, 0.0f};
   float col2[4] = {0.0f, 0.0f, 0.0f, 0.0f};
-  this->m_inputProgram->readSampled(col2, x, y, PixelSampler::Bilinear);
-  float ltx = this->m_tx;
-  float lty = this->m_ty;
-  float lsc = this->m_sc;
-  float lrot = this->m_rot;
-  /* blur the image */
-  for (int i = 0; i < iterations; i++) {
-    const float cs = cosf(lrot), ss = sinf(lrot);
-    const float isc = 1.0f / (1.0f + lsc);
 
-    const float v = isc * (y - this->m_center_y_pix) + lty;
-    const float u = isc * (x - this->m_center_x_pix) + ltx;
+  for (int y = render_rect.ymin; y < render_rect.ymax; y++) {
+    int x = render_rect.xmin;
+    float *output_elem = output.getElem(x, y);
+    for (; x < render_rect.xmax; x++) {
+      PixelUtil::readBilinear(input, col2, x, y);
+      float ltx = this->m_tx;
+      float lty = this->m_ty;
+      float lsc = this->m_sc;
+      float lrot = this->m_rot;
+      /* blur the image */
+      for (int i = 0; i < iterations; i++) {
+        const float cs = cosf(lrot), ss = sinf(lrot);
+        const float isc = 1.0f / (1.0f + lsc);
 
-    this->m_inputProgram->readSampled(col,
-                                      cs * u + ss * v + this->m_center_x_pix,
-                                      cs * v - ss * u + this->m_center_y_pix,
-                                      PixelSampler::Bilinear);
+        const float v = isc * (y - this->m_center_y_pix) + lty;
+        const float u = isc * (x - this->m_center_x_pix) + ltx;
 
-    add_v4_v4(col2, col);
+        PixelUtil::readBilinear(input,
+                                col,
+                                cs * u + ss * v + this->m_center_x_pix,
+                                cs * v - ss * u + this->m_center_y_pix);
 
-    /* double transformations */
-    ltx += this->m_tx;
-    lty += this->m_ty;
-    lrot += this->m_rot;
-    lsc += this->m_sc;
+        add_v4_v4(col2, col);
+
+        /* double transformations */
+        ltx += this->m_tx;
+        lty += this->m_ty;
+        lrot += this->m_rot;
+        lsc += this->m_sc;
+      }
+
+      mul_v4_v4fl(output_elem, col2, 1.0f / (iterations + 1));
+
+      output_elem += output.elem_jump;
+    }
   }
-
-  mul_v4_v4fl(output, col2, 1.0f / (iterations + 1));
 }
 
-void DirectionalBlurOperation::deinitExecution()
+void DirectionalBlurOperation::execPixelsGPU(const rcti &render_rect,
+                                             GPUBuffer &output,
+                                             blender::Span<const GPUBuffer *> inputs,
+                                             ExecutionSystem *exec_system)
 {
-  this->m_inputProgram = nullptr;
-}
-
-bool DirectionalBlurOperation::determineDependingAreaOfInterest(rcti * /*input*/,
-                                                                ReadBufferOperation *readOperation,
-                                                                rcti *output)
-{
-  rcti newInput;
-
-  newInput.xmax = this->getWidth();
-  newInput.xmin = 0;
-  newInput.ymax = this->getHeight();
-  newInput.ymin = 0;
-
-  return NodeOperation::determineDependingAreaOfInterest(&newInput, readOperation, output);
+  const int iterations = pow(2.0f, this->m_data->iter);
+  float ltxy[2] = {this->m_tx, this->m_ty};
+  float centerpix[2] = {this->m_center_x_pix, this->m_center_y_pix};
+  const GPUBuffer *input = inputs[0];
+  exec_system->execWorkGPU(
+      render_rect, "directionalBlurKernel", [=, &output](ComputeKernel *kernel) {
+        kernel->addBufferArg(input);
+        kernel->addBufferArg(&output);
+        kernel->addIntArg(iterations);
+        kernel->addFloatArg(m_sc);
+        kernel->addFloatArg(m_rot);
+        kernel->addFloat2Arg(ltxy);
+        kernel->addFloat2Arg(centerpix);
+      });
 }
 
 }  // namespace blender::compositor

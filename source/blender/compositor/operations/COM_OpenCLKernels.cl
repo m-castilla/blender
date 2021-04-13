@@ -28,6 +28,14 @@ const sampler_t SAMPLER_NEAREST_CLAMP = CLK_NORMALIZED_COORDS_FALSE | CLK_ADDRES
 
 __constant const int2 zero = {0,0};
 
+// Macros
+#define BOOL int
+#define INPUT_IMAGE_PARAM(name) __read_only image2d_t name##_image, BOOL name##_is_not_single_elem
+#define OUTPUT_IMAGE_PARAM(name) __write_only image2d_t name##_image, BOOL name##_is_not_single_elem
+#define READ_PIXEL(name, coords) read_imagef(name##_image, coords * name##_is_not_single_elem)
+#define SAMPLE_PIXEL(name, sampler, coords) read_imagef(name##_image, sampler, coords * name##_is_not_single_elem)
+#define WRITE_PIXEL(name, coords, pixel) write_imagef(name##_image, coords * name##_is_not_single_elem, pixel)
+
 // KERNEL --- BOKEH BLUR ---
 __kernel void bokehBlurKernel(__read_only image2d_t boundingBox, __read_only image2d_t inputImage, 
                               __read_only image2d_t bokehImage, __write_only image2d_t output, 
@@ -211,34 +219,32 @@ __kernel void erodeKernel(__read_only image2d_t inputImage,  __write_only image2
 }
 
 // KERNEL --- DIRECTIONAL BLUR ---
-__kernel void directionalBlurKernel(__read_only image2d_t inputImage,  __write_only image2d_t output,
-                                    int2 offsetOutput, int iterations, float scale, float rotation, float2 translate,
-                                     float2 center, int2 offset)
+__kernel void directionalBlurKernel(INPUT_IMAGE_PARAM(input),  OUTPUT_IMAGE_PARAM(output),
+                                    int iterations, float scale, float rotation, float2 translate,
+                                     float2 center)
 {
 	int2 coords = {get_global_id(0), get_global_id(1)};
-	coords += offset;
-	const int2 realCoordinate = coords + offsetOutput;
 
 	float4 col;
 	float2 ltxy = translate;
 	float lsc = scale;
 	float lrot = rotation;
 	
-	col = read_imagef(inputImage, SAMPLER_NEAREST, realCoordinate);
+	col = READ_PIXEL(input, coords);
 
 	/* blur the image */
 	for (int i = 0; i < iterations; ++i) {
 		const float cs = cos(lrot), ss = sin(lrot);
 		const float isc = 1.0f / (1.0f + lsc);
 
-		const float v = isc * (realCoordinate.s1 - center.s1) + ltxy.s1;
-		const float u = isc * (realCoordinate.s0 - center.s0) + ltxy.s0;
+		const float v = isc * (coords.s1 - center.s1) + ltxy.s1;
+		const float u = isc * (coords.s0 - center.s0) + ltxy.s0;
 		float2 uv = {
 			cs * u + ss * v + center.s0,
 			cs * v - ss * u + center.s1
 		};
 
-		col += read_imagef(inputImage, SAMPLER_NEAREST_CLAMP, uv);
+		col += SAMPLE_PIXEL(input, SAMPLER_NEAREST_CLAMP, uv);
 
 		/* double transformations */
 		ltxy += translate;
@@ -248,7 +254,7 @@ __kernel void directionalBlurKernel(__read_only image2d_t inputImage,  __write_o
 
 	col *= (1.0f/(iterations+1));
 
-	write_imagef(output, coords, col);
+	WRITE_PIXEL(output, coords, col);
 }
 
 // KERNEL --- GAUSSIAN BLUR ---

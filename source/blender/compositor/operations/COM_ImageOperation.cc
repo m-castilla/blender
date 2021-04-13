@@ -156,52 +156,94 @@ static void sampleImageAtLocation(
   }
 }
 
-void ImageOperation::executePixelSampled(float output[4], float x, float y, PixelSampler sampler)
+static void copyImBufRect(const rcti &render_rect,
+                          ImBuf &im_buf,
+                          CPUBuffer<float> &output,
+                          int ch_offset,
+                          int im_buf_elem_chs,
+                          int im_buf_elem_chs_stride)
 {
-  int ix = x, iy = y;
-  if (this->m_imageFloatBuffer == nullptr && this->m_imageByteBuffer == nullptr) {
-    zero_v4(output);
-  }
-  else if (ix < 0 || iy < 0 || ix >= this->m_buffer->x || iy >= this->m_buffer->y) {
-    zero_v4(output);
-  }
-  else {
-    sampleImageAtLocation(this->m_buffer, x, y, sampler, true, output);
-  }
-}
+  int width = im_buf.x;
+  if (im_buf.rect_float) {
+    for (int y = render_rect.ymin; y < render_rect.ymax; y++) {
+      int x = render_rect.xmin;
+      float *output_elem = output.getElem(x, y);
+      float *input_elem = im_buf.rect_float + y * width * im_buf_elem_chs_stride +
+                          x * im_buf_elem_chs_stride;
+      for (; x < render_rect.xmax; x++) {
+        for (int ch = ch_offset; ch < im_buf_elem_chs; ch++) {
+          output_elem[ch] = input_elem[ch];
+        }
 
-void ImageAlphaOperation::executePixelSampled(float output[4],
-                                              float x,
-                                              float y,
-                                              PixelSampler sampler)
-{
-  float tempcolor[4];
-
-  if (this->m_imageFloatBuffer == nullptr && this->m_imageByteBuffer == nullptr) {
-    output[0] = 0.0f;
-  }
-  else {
-    tempcolor[3] = 1.0f;
-    sampleImageAtLocation(this->m_buffer, x, y, sampler, false, tempcolor);
-    output[0] = tempcolor[3];
-  }
-}
-
-void ImageDepthOperation::executePixelSampled(float output[4],
-                                              float x,
-                                              float y,
-                                              PixelSampler /*sampler*/)
-{
-  if (this->m_depthBuffer == nullptr) {
-    output[0] = 0.0f;
-  }
-  else {
-    if (x < 0 || y < 0 || x >= this->getWidth() || y >= this->getHeight()) {
-      output[0] = 0.0f;
+        output_elem += output.elem_jump;
+        input_elem += im_buf_elem_chs_stride;
+      }
     }
-    else {
-      int offset = y * this->m_width + x;
-      output[0] = this->m_depthBuffer[offset];
+  }
+  else {
+    for (int y = render_rect.ymin; y < render_rect.ymax; y++) {
+      int x = render_rect.xmin;
+      float *output_elem = output.getElem(x, y);
+      unsigned char *input_elem = ((unsigned char *)im_buf.rect) +
+                                  y * width * im_buf_elem_chs_stride + x * im_buf_elem_chs_stride;
+      for (; x < render_rect.xmax; x++) {
+        rgba_uchar_to_float(output_elem, input_elem);
+        output_elem += output.elem_jump;
+        input_elem += im_buf_elem_chs_stride;
+      }
+    }
+  }
+}
+
+void ImageOperation::execPixelsMultiCPU(const rcti &render_rect,
+                                        CPUBuffer<float> &output,
+                                        blender::Span<const CPUBuffer<float> *> inputs,
+                                        ExecutionSystem *exec_system,
+                                        int current_pass)
+{
+  if (m_buffer) {
+    constexpr int n_chs = COM_data_type_num_channels(DataType::Color);
+    int width = BLI_rcti_size_x(&render_rect);
+    copyImBufRect(render_rect, *m_buffer, output, 0, n_chs, n_chs);
+
+    /* Convert colorspace to scene linear per row */
+    for (int y = render_rect.ymin; y < render_rect.ymax; y++) {
+      int x = render_rect.xmin;
+      float *output_elem = output.getElem(x, y);
+      IMB_colormanagement_colorspace_to_scene_linear(
+          output_elem, width, 1, n_chs, m_buffer->rect_colorspace, false);
+    }
+  }
+}
+
+void ImageAlphaOperation::execPixelsMultiCPU(const rcti &render_rect,
+                                             CPUBuffer<float> &output,
+                                             blender::Span<const CPUBuffer<float> *> inputs,
+                                             ExecutionSystem *exec_system,
+                                             int current_pass)
+{
+  if (m_buffer) {
+    copyImBufRect(render_rect, *m_buffer, output, 3, 1, 1);
+  }
+}
+
+void ImageDepthOperation::execPixelsMultiCPU(const rcti &render_rect,
+                                             CPUBuffer<float> &output,
+                                             blender::Span<const CPUBuffer<float> *> inputs,
+                                             ExecutionSystem *exec_system,
+                                             int current_pass)
+{
+  if (m_depthBuffer) {
+    int width = BLI_rcti_size_x(&render_rect);
+    int height = BLI_rcti_size_y(&render_rect);
+    for (int y = render_rect.ymin; y < render_rect.ymax; y++) {
+      int x = render_rect.xmin;
+      float *output_elem = output.getElem(x, y);
+      float *input_elem = m_depthBuffer + y * width + x * height;
+      for (; x < render_rect.xmax; x++) {
+        output_elem += output.elem_jump;
+        input_elem++;
+      }
     }
   }
 }

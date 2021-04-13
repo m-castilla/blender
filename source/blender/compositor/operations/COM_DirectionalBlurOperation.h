@@ -18,41 +18,34 @@
 
 #pragma once
 
-#include "COM_NodeOperation.h"
 #include "COM_QualityStepHelper.h"
+#include "COM_SimpleOperation.h"
 
 namespace blender::compositor {
 
-class DirectionalBlurOperation : public NodeOperation, public QualityStepHelper {
+class DirectionalBlurOperation : public SimpleOperation, public QualityStepHelper {
  private:
-  SocketReader *m_inputProgram;
   NodeDBlurData *m_data;
-
   float m_center_x_pix, m_center_y_pix;
   float m_tx, m_ty;
   float m_sc, m_rot;
 
  public:
   DirectionalBlurOperation();
-
-  /**
-   * The inner loop of this operation.
-   */
-  void executePixel(float output[4], int x, int y, void *data) override;
-
   /**
    * Initialize the execution
    */
   void initExecution() override;
 
-  /**
-   * Deinitialize the execution
-   */
-  void deinitExecution() override;
-
-  bool determineDependingAreaOfInterest(rcti *input,
-                                        ReadBufferOperation *readOperation,
-                                        rcti *output) override;
+  void execPixelsMultiCPU(const rcti &render_rect,
+                          CPUBuffer<float> &output,
+                          blender::Span<const CPUBuffer<float> *> inputs,
+                          ExecutionSystem *exec_system,
+                          int current_pass) override;
+  void execPixelsGPU(const rcti &render_rect,
+                     GPUBuffer &output,
+                     blender::Span<const GPUBuffer *> inputs,
+                     ExecutionSystem *exec_system) override;
 
   void setData(NodeDBlurData *data)
   {

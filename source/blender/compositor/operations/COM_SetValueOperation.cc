@@ -26,11 +26,12 @@ SetValueOperation::SetValueOperation()
   flags.is_set_operation = true;
 }
 
-void SetValueOperation::executePixelSampled(float output[4],
-                                            float /*x*/,
-                                            float /*y*/,
-                                            PixelSampler /*sampler*/)
+void SetValueOperation::execPixelsCPU(const rcti &render_rect,
+                                      CPUBuffer<float> &output,
+                                      blender::Span<const CPUBuffer<float> *> inputs,
+                                      ExecutionSystem *exec_system)
 {
+  BLI_assert(output.is_single_elem);
   output[0] = this->m_value;
 }
 

@@ -18,75 +18,111 @@
 
 #pragma once
 
-#include "COM_NodeOperation.h"
+#include "COM_SimpleOperation.h"
 
 namespace blender::compositor {
 
-class ConvertBaseOperation : public NodeOperation {
- protected:
-  SocketReader *m_inputOperation;
-
+class ConvertBaseOperation : public SimpleOperation {
  public:
-  ConvertBaseOperation();
+  void execPixelsMultiCPU(const rcti &render_rect,
+                          CPUBuffer<float> &output,
+                          blender::Span<const CPUBuffer<float> *> inputs,
+                          ExecutionSystem *exec_system,
+                          int current_pass) override;
 
-  void initExecution() override;
-  void deinitExecution() override;
+  virtual void execPixelsRowCPU(float *output,
+                                const float *output_end,
+                                int output_jump,
+                                const float *input,
+                                int input_jump) = 0;
 };
 
 class ConvertValueToColorOperation : public ConvertBaseOperation {
  public:
   ConvertValueToColorOperation();
 
-  void executePixelSampled(float output[4], float x, float y, PixelSampler sampler) override;
+  void execPixelsRowCPU(float *output,
+                        const float *output_end,
+                        int output_jump,
+                        const float *input,
+                        int input_jump) override;
 };
 
 class ConvertColorToValueOperation : public ConvertBaseOperation {
  public:
   ConvertColorToValueOperation();
 
-  void executePixelSampled(float output[4], float x, float y, PixelSampler sampler) override;
+  void execPixelsRowCPU(float *output,
+                        const float *output_end,
+                        int output_jump,
+                        const float *input,
+                        int input_jump) override;
 };
 
 class ConvertColorToVectorOperation : public ConvertBaseOperation {
  public:
   ConvertColorToVectorOperation();
 
-  void executePixelSampled(float output[4], float x, float y, PixelSampler sampler) override;
+  void execPixelsRowCPU(float *output,
+                        const float *output_end,
+                        int output_jump,
+                        const float *input,
+                        int input_jump) override;
 };
 
 class ConvertValueToVectorOperation : public ConvertBaseOperation {
  public:
   ConvertValueToVectorOperation();
 
-  void executePixelSampled(float output[4], float x, float y, PixelSampler sampler) override;
+  void execPixelsRowCPU(float *output,
+                        const float *output_end,
+                        int output_jump,
+                        const float *input,
+                        int input_jump) override;
 };
 
 class ConvertVectorToColorOperation : public ConvertBaseOperation {
  public:
   ConvertVectorToColorOperation();
 
-  void executePixelSampled(float output[4], float x, float y, PixelSampler sampler) override;
+  void execPixelsRowCPU(float *output,
+                        const float *output_end,
+                        int output_jump,
+                        const float *input,
+                        int input_jump) override;
 };
 
 class ConvertVectorToValueOperation : public ConvertBaseOperation {
  public:
   ConvertVectorToValueOperation();
 
-  void executePixelSampled(float output[4], float x, float y, PixelSampler sampler) override;
+  void execPixelsRowCPU(float *output,
+                        const float *output_end,
+                        int output_jump,
+                        const float *input,
+                        int input_jump) override;
 };
 
 class ConvertPremulToStraightOperation : public ConvertBaseOperation {
  public:
   ConvertPremulToStraightOperation();
 
-  void executePixelSampled(float output[4], float x, float y, PixelSampler sampler) override;
+  void execPixelsRowCPU(float *output,
+                        const float *output_end,
+                        int output_jump,
+                        const float *input,
+                        int input_jump) override;
 };
 
 class ConvertStraightToPremulOperation : public ConvertBaseOperation {
  public:
   ConvertStraightToPremulOperation();
 
-  void executePixelSampled(float output[4], float x, float y, PixelSampler sampler) override;
+  void execPixelsRowCPU(float *output,
+                        const float *output_end,
+                        int output_jump,
+                        const float *input,
+                        int input_jump) override;
 };
 
 }  // namespace blender::compositor

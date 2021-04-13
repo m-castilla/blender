@@ -80,46 +80,42 @@ void ViewerOperation::deinitExecution()
   this->m_outputBuffer = nullptr;
 }
 
-void ViewerOperation::executeRegion(rcti *rect, unsigned int /*tileNumber*/)
+void ViewerOperation::execPixelsMultiCPU(const rcti &render_rect,
+                                         CPUBuffer<float> &output,
+                                         blender::Span<const CPUBuffer<float> *> inputs,
+                                         ExecutionSystem *exec_system,
+                                         int current_pass)
 {
-  float *buffer = this->m_outputBuffer;
-  float *depthbuffer = this->m_depthBuffer;
-  if (!buffer) {
+  auto &image_input = *inputs[0];
+  auto &alpha_input = *inputs[1];
+  auto &depth_input = *inputs[2];
+
+  int op_width = getWidth();
+  if (!m_outputBuffer) {
     return;
   }
-  const int x1 = rect->xmin;
-  const int y1 = rect->ymin;
-  const int x2 = rect->xmax;
-  const int y2 = rect->ymax;
-  const int offsetadd = (this->getWidth() - (x2 - x1));
-  const int offsetadd4 = offsetadd * 4;
-  int offset = (y1 * this->getWidth() + x1);
-  int offset4 = offset * 4;
-  float alpha[4], depth[4];
-  int x;
-  int y;
-  bool breaked = false;
-
-  for (y = y1; y < y2 && (!breaked); y++) {
-    for (x = x1; x < x2; x++) {
-      this->m_imageInput->readSampled(&(buffer[offset4]), x, y, PixelSampler::Nearest);
-      if (this->m_useAlphaInput) {
-        this->m_alphaInput->readSampled(alpha, x, y, PixelSampler::Nearest);
-        buffer[offset4 + 3] = alpha[0];
+  for (int y = render_rect.ymin; y < render_rect.ymax; y++) {
+    int x = render_rect.xmin;
+    auto *image_elem = image_input.getElem(x, y);
+    auto *alpha_elem = alpha_input.getElem(x, y);
+    auto *depth_elem = image_input.getElem(x, y);
+    float *out_image_elem = this->m_outputBuffer + y * op_width * 4 + x * 4;
+    float *out_depth_elem = this->m_depthBuffer + y * op_width + x;
+    for (; x < render_rect.xmax; x++) {
+      copy_v4_v4(out_image_elem, image_elem);
+      if (m_useAlphaInput) {
+        out_image_elem[3] = alpha_elem[0];
       }
-      this->m_depthInput->readSampled(depth, x, y, PixelSampler::Nearest);
-      depthbuffer[offset] = depth[0];
+      out_depth_elem[0] = depth_input[0];
 
-      offset++;
-      offset4 += 4;
+      image_elem += image_input.elem_jump;
+      alpha_elem += alpha_input.elem_jump;
+      depth_elem += depth_input.elem_jump;
+      out_image_elem += 4;
+      out_depth_elem += 1;
     }
-    if (isBraked()) {
-      breaked = true;
-    }
-    offset += offsetadd;
-    offset4 += offsetadd4;
   }
-  updateImage(rect);
+  updateImage(&render_rect);
 }
 
 void ViewerOperation::determineResolution(unsigned int resolution[2],
@@ -191,7 +187,7 @@ void ViewerOperation::initImage()
   BLI_thread_unlock(LOCK_DRAW_IMAGE);
 }
 
-void ViewerOperation::updateImage(rcti *rect)
+void ViewerOperation::updateImage(const rcti *rect)
 {
   IMB_partial_display_buffer_update(this->m_ibuf,
                                     this->m_outputBuffer,

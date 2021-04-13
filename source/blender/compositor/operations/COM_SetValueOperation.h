@@ -45,10 +45,10 @@ class SetValueOperation : public NodeOperation {
     this->m_value = value;
   }
 
-  /**
-   * The inner loop of this operation.
-   */
-  void executePixelSampled(float output[4], float x, float y, PixelSampler sampler) override;
+  void execPixelsCPU(const rcti &render_rect,
+                     CPUBuffer<float> &output,
+                     blender::Span<const CPUBuffer<float> *> inputs,
+                     ExecutionSystem *exec_system) override;
   void determineResolution(unsigned int resolution[2],
                            unsigned int preferredResolution[2]) override;
 };

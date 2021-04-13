@@ -21,7 +21,7 @@
 #include "BKE_image.h"
 #include "BLI_listbase.h"
 #include "BLI_utildefines.h"
-#include "COM_NodeOperation.h"
+#include "COM_SimpleOperation.h"
 #include "MEM_guardedalloc.h"
 
 #include "RE_pipeline.h"
@@ -32,7 +32,7 @@ namespace blender::compositor {
 /**
  * \brief Base class for all image operations
  */
-class BaseImageOperation : public NodeOperation {
+class BaseImageOperation : public SimpleOperation {
  protected:
   ImBuf *m_buffer;
   Image *m_image;
@@ -86,7 +86,11 @@ class ImageOperation : public BaseImageOperation {
    * Constructor
    */
   ImageOperation();
-  void executePixelSampled(float output[4], float x, float y, PixelSampler sampler) override;
+  void execPixelsMultiCPU(const rcti &render_rect,
+                          CPUBuffer<float> &output,
+                          blender::Span<const CPUBuffer<float> *> inputs,
+                          ExecutionSystem *exec_system,
+                          int current_pass) override;
 };
 class ImageAlphaOperation : public BaseImageOperation {
  public:
@@ -94,7 +98,11 @@ class ImageAlphaOperation : public BaseImageOperation {
    * Constructor
    */
   ImageAlphaOperation();
-  void executePixelSampled(float output[4], float x, float y, PixelSampler sampler) override;
+  void execPixelsMultiCPU(const rcti &render_rect,
+                          CPUBuffer<float> &output,
+                          blender::Span<const CPUBuffer<float> *> inputs,
+                          ExecutionSystem *exec_system,
+                          int current_pass) override;
 };
 class ImageDepthOperation : public BaseImageOperation {
  public:
@@ -102,7 +110,11 @@ class ImageDepthOperation : public BaseImageOperation {
    * Constructor
    */
   ImageDepthOperation();
-  void executePixelSampled(float output[4], float x, float y, PixelSampler sampler) override;
+  void execPixelsMultiCPU(const rcti &render_rect,
+                          CPUBuffer<float> &output,
+                          blender::Span<const CPUBuffer<float> *> inputs,
+                          ExecutionSystem *exec_system,
+                          int current_pass) override;
 };
 
 }  // namespace blender::compositor

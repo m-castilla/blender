@@ -22,19 +22,22 @@
 
 namespace blender::compositor {
 
-ConvertBaseOperation::ConvertBaseOperation()
+void ConvertBaseOperation::execPixelsMultiCPU(const rcti &render_rect,
+                                              CPUBuffer<float> &output,
+                                              blender::Span<const CPUBuffer<float> *> inputs,
+                                              ExecutionSystem *exec_system,
+                                              int current_pass)
 {
-  this->m_inputOperation = nullptr;
-}
-
-void ConvertBaseOperation::initExecution()
-{
-  this->m_inputOperation = this->getInputSocketReader(0);
-}
-
-void ConvertBaseOperation::deinitExecution()
-{
-  this->m_inputOperation = nullptr;
+  auto &input = *inputs[0];
+  int x_end = render_rect.xmax;
+  int y_end = render_rect.ymax;
+  int x = render_rect.xmin;
+  for (int y = render_rect.ymin; y < y_end; y++) {
+    auto output_elem = output.getElem(x, y);
+    auto input_elem = input.getElem(x, y);
+    auto output_end_elem = output.getElem(x_end, y_end);
+    execPixelsRowCPU(output_elem, output_end_elem, output.elem_jump, input_elem, input.elem_jump);
+  }
 }
 
 /* ******** Value to Color ******** */
@@ -45,15 +48,16 @@ ConvertValueToColorOperation::ConvertValueToColorOperation() : ConvertBaseOperat
   this->addOutputSocket(DataType::Color);
 }
 
-void ConvertValueToColorOperation::executePixelSampled(float output[4],
-                                                       float x,
-                                                       float y,
-                                                       PixelSampler sampler)
+void ConvertValueToColorOperation::execPixelsRowCPU(
+    float *output, const float *output_end, int output_jump, const float *input, int input_jump)
 {
-  float value;
-  this->m_inputOperation->readSampled(&value, x, y, sampler);
-  output[0] = output[1] = output[2] = value;
-  output[3] = 1.0f;
+  while (output < output_end) {
+    output[0] = output[1] = output[2] = input[0];
+    output[3] = 1.0f;
+
+    output += output_jump;
+    input += input_jump;
+  }
 }
 
 /* ******** Color to Value ******** */
@@ -64,14 +68,15 @@ ConvertColorToValueOperation::ConvertColorToValueOperation() : ConvertBaseOperat
   this->addOutputSocket(DataType::Value);
 }
 
-void ConvertColorToValueOperation::executePixelSampled(float output[4],
-                                                       float x,
-                                                       float y,
-                                                       PixelSampler sampler)
+void ConvertColorToValueOperation::execPixelsRowCPU(
+    float *output, const float *output_end, int output_jump, const float *input, int input_jump)
 {
-  float inputColor[4];
-  this->m_inputOperation->readSampled(inputColor, x, y, sampler);
-  output[0] = (inputColor[0] + inputColor[1] + inputColor[2]) / 3.0f;
+  while (output < output_end) {
+    output[0] = (input[0] + input[1] + input[2]) / 3.0f;
+
+    output += output_jump;
+    input += input_jump;
+  }
 }
 
 /* ******** Color to Vector ******** */
@@ -82,14 +87,15 @@ ConvertColorToVectorOperation::ConvertColorToVectorOperation() : ConvertBaseOper
   this->addOutputSocket(DataType::Vector);
 }
 
-void ConvertColorToVectorOperation::executePixelSampled(float output[4],
-                                                        float x,
-                                                        float y,
-                                                        PixelSampler sampler)
+void ConvertColorToVectorOperation::execPixelsRowCPU(
+    float *output, const float *output_end, int output_jump, const float *input, int input_jump)
 {
-  float color[4];
-  this->m_inputOperation->readSampled(color, x, y, sampler);
-  copy_v3_v3(output, color);
+  while (output < output_end) {
+    copy_v3_v3(output, input);
+
+    output += output_jump;
+    input += input_jump;
+  }
 }
 
 /* ******** Value to Vector ******** */
@@ -100,14 +106,15 @@ ConvertValueToVectorOperation::ConvertValueToVectorOperation() : ConvertBaseOper
   this->addOutputSocket(DataType::Vector);
 }
 
-void ConvertValueToVectorOperation::executePixelSampled(float output[4],
-                                                        float x,
-                                                        float y,
-                                                        PixelSampler sampler)
+void ConvertValueToVectorOperation::execPixelsRowCPU(
+    float *output, const float *output_end, int output_jump, const float *input, int input_jump)
 {
-  float value;
-  this->m_inputOperation->readSampled(&value, x, y, sampler);
-  output[0] = output[1] = output[2] = value;
+  while (output < output_end) {
+    output[0] = output[1] = output[2] = input[0];
+
+    output += output_jump;
+    input += input_jump;
+  }
 }
 
 /* ******** Vector to Color ******** */
@@ -118,13 +125,16 @@ ConvertVectorToColorOperation::ConvertVectorToColorOperation() : ConvertBaseOper
   this->addOutputSocket(DataType::Color);
 }
 
-void ConvertVectorToColorOperation::executePixelSampled(float output[4],
-                                                        float x,
-                                                        float y,
-                                                        PixelSampler sampler)
+void ConvertVectorToColorOperation::execPixelsRowCPU(
+    float *output, const float *output_end, int output_jump, const float *input, int input_jump)
 {
-  this->m_inputOperation->readSampled(output, x, y, sampler);
-  output[3] = 1.0f;
+  while (output < output_end) {
+    copy_v3_v3(output, input);
+    output[3] = 1.0f;
+
+    output += output_jump;
+    input += input_jump;
+  }
 }
 
 /* ******** Vector to Value ******** */
@@ -135,14 +145,15 @@ ConvertVectorToValueOperation::ConvertVectorToValueOperation() : ConvertBaseOper
   this->addOutputSocket(DataType::Value);
 }
 
-void ConvertVectorToValueOperation::executePixelSampled(float output[4],
-                                                        float x,
-                                                        float y,
-                                                        PixelSampler sampler)
+void ConvertVectorToValueOperation::execPixelsRowCPU(
+    float *output, const float *output_end, int output_jump, const float *input, int input_jump)
 {
-  float input[4];
-  this->m_inputOperation->readSampled(input, x, y, sampler);
-  output[0] = (input[0] + input[1] + input[2]) / 3.0f;
+  while (output < output_end) {
+    output[0] = (input[0] + input[1] + input[2]) / 3.0f;
+
+    output += output_jump;
+    input += input_jump;
+  }
 }
 
 /* ******** Premul to Straight ******** */
@@ -153,26 +164,25 @@ ConvertPremulToStraightOperation::ConvertPremulToStraightOperation() : ConvertBa
   this->addOutputSocket(DataType::Color);
 }
 
-void ConvertPremulToStraightOperation::executePixelSampled(float output[4],
-                                                           float x,
-                                                           float y,
-                                                           PixelSampler sampler)
+void ConvertPremulToStraightOperation::execPixelsRowCPU(
+    float *output, const float *output_end, int output_jump, const float *input, int input_jump)
 {
-  float inputValue[4];
-  float alpha;
+  while (output < output_end) {
+    float alpha = input[3];
 
-  this->m_inputOperation->readSampled(inputValue, x, y, sampler);
-  alpha = inputValue[3];
+    if (fabsf(alpha) < 1e-5f) {
+      zero_v3(output);
+    }
+    else {
+      mul_v3_v3fl(output, input, 1.0f / alpha);
+    }
 
-  if (fabsf(alpha) < 1e-5f) {
-    zero_v3(output);
+    /* never touches the alpha */
+    output[3] = alpha;
+
+    output += output_jump;
+    input += input_jump;
   }
-  else {
-    mul_v3_v3fl(output, inputValue, 1.0f / alpha);
-  }
-
-  /* never touches the alpha */
-  output[3] = alpha;
 }
 
 /* ******** Straight to Premul ******** */
@@ -183,21 +193,20 @@ ConvertStraightToPremulOperation::ConvertStraightToPremulOperation() : ConvertBa
   this->addOutputSocket(DataType::Color);
 }
 
-void ConvertStraightToPremulOperation::executePixelSampled(float output[4],
-                                                           float x,
-                                                           float y,
-                                                           PixelSampler sampler)
+void ConvertStraightToPremulOperation::execPixelsRowCPU(
+    float *output, const float *output_end, int output_jump, const float *input, int input_jump)
 {
-  float inputValue[4];
-  float alpha;
+  while (output < output_end) {
+    float alpha = input[3];
 
-  this->m_inputOperation->readSampled(inputValue, x, y, sampler);
-  alpha = inputValue[3];
+    mul_v3_v3fl(output, input, alpha);
 
-  mul_v3_v3fl(output, inputValue, alpha);
+    /* never touches the alpha */
+    output[3] = alpha;
 
-  /* never touches the alpha */
-  output[3] = alpha;
+    output += output_jump;
+    input += input_jump;
+  }
 }
 
 }  // namespace blender::compositor

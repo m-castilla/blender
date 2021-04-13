@@ -26,12 +26,13 @@ SetColorOperation::SetColorOperation()
   flags.is_set_operation = true;
 }
 
-void SetColorOperation::executePixelSampled(float output[4],
-                                            float /*x*/,
-                                            float /*y*/,
-                                            PixelSampler /*sampler*/)
+void SetColorOperation::execPixelsCPU(const rcti &render_rect,
+                                      CPUBuffer<float> &output,
+                                      blender::Span<const CPUBuffer<float> *> inputs,
+                                      ExecutionSystem *exec_system)
 {
-  copy_v4_v4(output, this->m_color);
+  BLI_assert(output.is_single_elem);
+  copy_v4_v4(&output[0], this->m_color);
 }
 
 void SetColorOperation::determineResolution(unsigned int resolution[2],

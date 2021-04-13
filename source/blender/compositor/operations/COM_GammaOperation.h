@@ -18,35 +18,18 @@
 
 #pragma once
 
-#include "COM_NodeOperation.h"
+#include "COM_SimpleOperation.h"
 
 namespace blender::compositor {
 
-class GammaOperation : public NodeOperation {
- private:
-  /**
-   * Cached reference to the inputProgram
-   */
-  SocketReader *m_inputProgram;
-  SocketReader *m_inputGammaProgram;
-
+class GammaOperation : public SimpleOperation {
  public:
   GammaOperation();
-
-  /**
-   * The inner loop of this operation.
-   */
-  void executePixelSampled(float output[4], float x, float y, PixelSampler sampler) override;
-
-  /**
-   * Initialize the execution
-   */
-  void initExecution() override;
-
-  /**
-   * Deinitialize the execution
-   */
-  void deinitExecution() override;
+  void execPixelsMultiCPU(const rcti &render_rect,
+                          CPUBuffer<float> &output,
+                          blender::Span<const CPUBuffer<float> *> inputs,
+                          ExecutionSystem *exec_system,
+                          int current_pass) override;
 };
 
 }  // namespace blender::compositor

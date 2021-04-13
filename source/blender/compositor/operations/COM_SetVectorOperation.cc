@@ -27,11 +27,12 @@ SetVectorOperation::SetVectorOperation()
   flags.is_set_operation = true;
 }
 
-void SetVectorOperation::executePixelSampled(float output[4],
-                                             float /*x*/,
-                                             float /*y*/,
-                                             PixelSampler /*sampler*/)
+void SetVectorOperation::execPixelsCPU(const rcti &render_rect,
+                                       CPUBuffer<float> &output,
+                                       blender::Span<const CPUBuffer<float> *> inputs,
+                                       ExecutionSystem *exec_system)
 {
+  BLI_assert(output.is_single_elem);
   output[0] = this->m_x;
   output[1] = this->m_y;
   output[2] = this->m_z;

@@ -28,6 +28,11 @@
 #include <memory>
 
 namespace blender::compositor {
+typedef enum MemoryBufferExtend {
+  COM_MB_CLIP,
+  COM_MB_EXTEND,
+  COM_MB_REPEAT,
+} MemoryBufferExtend;
 
 enum class BufferType {
   /**
@@ -160,6 +165,11 @@ struct BaseBuffer {
     return is_single_elem ? 1 : height;
   }
 
+  int getOffset(int x, int y) const
+  {
+    return y * row_jump + x * elem_jump;
+  }
+
   virtual ~BaseBuffer(){};
 
  protected:
@@ -173,7 +183,6 @@ struct BaseBuffer {
 };
 
 struct GPUBuffer : BaseBuffer {
- private:
   void *buf;
 
   friend class CPUBufferManager;
@@ -215,6 +224,26 @@ template<typename T> struct CPUBuffer : BaseCPUBuffer {
   const T &operator[](int index) const
   {
     return typed_buf[index];
+  }
+
+  T *getElem(int x, int y)
+  {
+    return &typed_buf[getOffset(x, y)];
+  }
+
+  const T *getElem(int x, int y) const
+  {
+    return &typed_buf[getOffset(x, y)];
+  }
+
+  T &getValue(int x, int y, int ch)
+  {
+    return typed_buf[getOffset(x, y) + ch];
+  }
+
+  const T &getValue(int x, int y, int ch) const
+  {
+    return typed_buf[getOffset(x, y) + ch];
   }
 
 #ifdef WITH_CXX_GUARDEDALLOC

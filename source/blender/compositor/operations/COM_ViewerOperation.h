@@ -20,12 +20,12 @@
 
 #include "BKE_global.h"
 #include "BLI_rect.h"
-#include "COM_NodeOperation.h"
+#include "COM_SimpleOperation.h"
 #include "DNA_image_types.h"
 
 namespace blender::compositor {
 
-class ViewerOperation : public NodeOperation {
+class ViewerOperation : public SimpleOperation {
  private:
   float *m_outputBuffer;
   float *m_depthBuffer;
@@ -52,7 +52,11 @@ class ViewerOperation : public NodeOperation {
   ViewerOperation();
   void initExecution() override;
   void deinitExecution() override;
-  void executeRegion(rcti *rect, unsigned int tileNumber) override;
+  void execPixelsMultiCPU(const rcti &render_rect,
+                          CPUBuffer<float> &output,
+                          blender::Span<const CPUBuffer<float> *> inputs,
+                          ExecutionSystem *exec_system,
+                          int current_pass) override;
   void determineResolution(unsigned int resolution[2],
                            unsigned int preferredResolution[2]) override;
   bool isOutputOperation(bool /*rendering*/) const override
@@ -126,7 +130,7 @@ class ViewerOperation : public NodeOperation {
   }
 
  private:
-  void updateImage(rcti *rect);
+  void updateImage(const rcti *rect);
   void initImage();
 };
 

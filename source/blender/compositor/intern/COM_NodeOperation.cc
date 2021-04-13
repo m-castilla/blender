@@ -158,31 +158,37 @@ void NodeOperation::renderPixels(ExecutionSystem *exec_system)
   OutputManager *output_man = exec_system->getOutputManager();
   if (!output_man->isOutputRendered(this)) {
     /* ensure inputs are rendered */
-    int n_inputs = getNumberOfInputSockets();
-    blender::Vector<NodeOperation *> inputs_ops(n_inputs);
-    for (int i = 0; i < n_inputs; i++) {
+    int n_inputs_sockets = getNumberOfInputSockets();
+    blender::Vector<NodeOperation *> input_ops;
+    for (int i = 0; i < n_inputs_sockets; i++) {
       auto input_op = getInputOperation(i);
-      if (!output_man->isOutputRendered(input_op)) {
-        input_op->renderPixels(exec_system);
+      if (input_op) {
+        if (!output_man->isOutputRendered(input_op)) {
+          input_op->renderPixels(exec_system);
+        }
+        input_ops.append(input_op);
       }
-      inputs_ops.append(input_op);
     }
 
     initExecution();
     auto render_rects = output_man->getRectsToRender(this);
-    auto data_type = getOutputSocket(0)->getDataType();
-    bool has_gpu_support = get_flags().open_cl;
+    bool has_output = m_outputs.size() > 0;
+    auto data_type = has_output ? getOutputSocket(0)->getDataType() : DataType::Color;
+    bool has_gpu_support = exec_system->hasGpuSupport() && get_flags().open_cl;
     if (has_gpu_support) {
       /* get inputs as gpu buffers */
-      blender::Vector<const GPUBuffer *> inputs_bufs(n_inputs);
-      for (auto input_op : inputs_ops) {
+      blender::Vector<const GPUBuffer *> inputs_bufs;
+      for (auto input_op : input_ops) {
         inputs_bufs.append(output_man->getOutputGPU(input_op));
       }
 
       /* gpu render */
       auto gpu_man = exec_system->getGPUBufferManager();
-      GPUBufferUniquePtr output_buf = gpu_man->takeImageBuffer(
-          data_type, getWidth(), getHeight(), get_flags().is_set_operation);
+      GPUBufferUniquePtr output_buf;
+      if (has_output) {
+        output_buf = gpu_man->takeImageBuffer(
+            data_type, getWidth(), getHeight(), get_flags().is_set_operation);
+      }
       for (const rcti &render_rect : render_rects) {
         execPixelsGPU(render_rect, *output_buf.get(), inputs_bufs.as_span(), exec_system);
       }
@@ -190,15 +196,18 @@ void NodeOperation::renderPixels(ExecutionSystem *exec_system)
     }
     else {
       /* get inputs as cpu buffers */
-      blender::Vector<const CPUBuffer<float> *> inputs_bufs(n_inputs);
-      for (auto input_op : inputs_ops) {
+      blender::Vector<const CPUBuffer<float> *> inputs_bufs;
+      for (auto input_op : input_ops) {
         inputs_bufs.append(output_man->getOutputCPU(input_op));
       }
 
       /* cpu render */
       auto cpu_man = exec_system->getCPUBufferManager();
-      CPUBufferUniquePtr<float> output_buf = cpu_man->takeImageBuffer(
-          data_type, getWidth(), getHeight(), get_flags().is_set_operation);
+      CPUBufferUniquePtr<float> output_buf;
+      if (has_output) {
+        output_buf = cpu_man->takeImageBuffer(
+            data_type, getWidth(), getHeight(), get_flags().is_set_operation);
+      }
       for (const rcti &render_rect : render_rects) {
         execPixelsCPU(render_rect, *output_buf.get(), inputs_bufs.as_span(), exec_system);
       }
@@ -207,7 +216,7 @@ void NodeOperation::renderPixels(ExecutionSystem *exec_system)
     deinitExecution();
 
     /* report inputs reads so that buffers may be freed/recycled when total reads reached */
-    for (auto input_op : inputs_ops) {
+    for (auto input_op : input_ops) {
       output_man->reportRead(input_op);
     }
 

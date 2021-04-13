@@ -26,35 +26,34 @@ GammaOperation::GammaOperation()
   this->addInputSocket(DataType::Color);
   this->addInputSocket(DataType::Value);
   this->addOutputSocket(DataType::Color);
-  this->m_inputProgram = nullptr;
-  this->m_inputGammaProgram = nullptr;
-}
-void GammaOperation::initExecution()
-{
-  this->m_inputProgram = this->getInputSocketReader(0);
-  this->m_inputGammaProgram = this->getInputSocketReader(1);
 }
 
-void GammaOperation::executePixelSampled(float output[4], float x, float y, PixelSampler sampler)
+void GammaOperation::execPixelsMultiCPU(const rcti &render_rect,
+                                        CPUBuffer<float> &output,
+                                        blender::Span<const CPUBuffer<float> *> inputs,
+                                        ExecutionSystem *exec_system,
+                                        int current_pass)
 {
-  float inputValue[4];
-  float inputGamma[4];
+  auto &input = *inputs[0];
+  auto &gamma = *inputs[1];
+  for (int y = render_rect.ymin; y < render_rect.ymax; y++) {
+    int x = render_rect.xmin;
+    float *output_elem = output.getElem(x, y);
+    const float *input_elem = input.getElem(x, y);
+    const float *gamma_elem = gamma.getElem(x, y);
+    for (; x < render_rect.xmax; x++) {
+      const float gamma_value = gamma_elem[0];
+      /* check for negative to avoid nan's */
+      output_elem[0] = input_elem[0] > 0.0f ? powf(input_elem[0], gamma_value) : input_elem[0];
+      output_elem[1] = input_elem[1] > 0.0f ? powf(input_elem[1], gamma_value) : input_elem[1];
+      output_elem[2] = input_elem[2] > 0.0f ? powf(input_elem[2], gamma_value) : input_elem[2];
+      output_elem[3] = input_elem[3];
 
-  this->m_inputProgram->readSampled(inputValue, x, y, sampler);
-  this->m_inputGammaProgram->readSampled(inputGamma, x, y, sampler);
-  const float gamma = inputGamma[0];
-  /* check for negative to avoid nan's */
-  output[0] = inputValue[0] > 0.0f ? powf(inputValue[0], gamma) : inputValue[0];
-  output[1] = inputValue[1] > 0.0f ? powf(inputValue[1], gamma) : inputValue[1];
-  output[2] = inputValue[2] > 0.0f ? powf(inputValue[2], gamma) : inputValue[2];
-
-  output[3] = inputValue[3];
-}
-
-void GammaOperation::deinitExecution()
-{
-  this->m_inputProgram = nullptr;
-  this->m_inputGammaProgram = nullptr;
+      output_elem += output.elem_jump;
+      input_elem += input.elem_jump;
+      gamma_elem += gamma.elem_jump;
+    }
+  }
 }
 
 }  // namespace blender::compositor
